@@ -427,3 +427,6 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# OpenCaw generated local evidence reports
+.ai/reports/
