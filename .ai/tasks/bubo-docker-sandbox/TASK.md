@@ -32,7 +32,12 @@ Implement Docker sandbox configuration and command execution for Bubo with safe 
 
 ## Review
 
-- Confirm generated Docker arguments do not mount more than the allowed directories.
+- Confirmed generated Docker arguments include no-network default, dropped capabilities, no-new-privileges, read-only root filesystem, resource limits, writable workspace/output/cache mounts, and read-only input/models mounts.
+- Validation passed:
+  - `dotnet restore Bubo.sln`
+  - `dotnet build Bubo.sln --no-restore`
+  - `dotnet test Bubo.sln --no-build`
+  - `dotnet run --project src/LocalAgent.Cli -- sandbox test --workspace .` returned the expected clear failure when Docker was not installed on PATH.
 
 ## Issue
 
