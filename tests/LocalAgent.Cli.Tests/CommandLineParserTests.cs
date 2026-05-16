@@ -42,4 +42,21 @@ public sealed class CommandLineParserTests
         Assert.False(result.IsSuccess);
         Assert.Contains("Unsupported mode", result.ErrorMessage);
     }
+
+    [Theory]
+    [InlineData("doctor", null, "doctor")]
+    [InlineData("models", "list", "models-list")]
+    [InlineData("native", "test", "native-test")]
+    public void ParseUtilityCommands(string command, string? subcommand, string expected)
+    {
+        var args = subcommand is null
+            ? new[] { command }
+            : new[] { command, subcommand };
+
+        var result = CommandLineParser.Parse(args);
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Options);
+        Assert.Equal(expected, result.Options.Command);
+    }
 }

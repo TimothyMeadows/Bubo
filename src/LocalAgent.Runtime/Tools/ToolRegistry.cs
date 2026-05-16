@@ -26,6 +26,7 @@ public sealed class ToolRegistry
             new WriteFileTool(),
             new ListFilesTool(),
             new SearchTextTool(),
+            new RunCommandTool(),
             new GitStatusTool(),
             new GitDiffTool()
         });

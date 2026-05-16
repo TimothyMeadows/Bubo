@@ -3,6 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="..\LocalAgent.Abstractions\LocalAgent.Abstractions.csproj" />
     <ProjectReference Include="..\LocalAgent.Runtime\LocalAgent.Runtime.csproj" />
+    <ProjectReference Include="..\LlamaCppSharp\LlamaCppSharp.csproj" />
     <ProjectReference Include="..\LocalAgent.Inference.LlamaCpp\LocalAgent.Inference.LlamaCpp.csproj" />
     <ProjectReference Include="..\LocalAgent.Inference.CodexCli\LocalAgent.Inference.CodexCli.csproj" />
     <ProjectReference Include="..\LocalAgent.Sandbox.Docker\LocalAgent.Sandbox.Docker.csproj" />
@@ -13,6 +14,16 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>bubo</ToolCommandName>
+    <PackageId>Bubo.LocalAgent.Cli</PackageId>
+    <Title>Bubo local/cloud coding agent CLI</Title>
+    <Description>Command-line entrypoint for the Bubo local/cloud coding agent runtime.</Description>
+    <PackageReadmeFile>PACKAGE.md</PackageReadmeFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="PACKAGE.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
 
 </Project>

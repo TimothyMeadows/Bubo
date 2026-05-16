@@ -8,6 +8,14 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <PackageId>Bubo.LlamaCppSharp</PackageId>
+    <Title>Bubo llama.cpp managed wrapper</Title>
+    <Description>Managed .NET 8 wrapper surface for Bubo's pinned llama.cpp native assets.</Description>
+    <PackageReadmeFile>PACKAGE.md</PackageReadmeFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="PACKAGE.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
 
 </Project>

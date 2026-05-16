@@ -33,7 +33,23 @@ Add end-to-end fixture validation, CI, documentation, packaging scaffolding, and
 
 ## Review
 
-- Confirm PR ordering and merge dependency notes are complete.
+- Added deterministic `bubo-actions` fixtures for no-op, file edit, and command execution flows.
+- Added guarded `run_command` support with a small executable allowlist and no shell expansion.
+- Added CLI E2E coverage that exercises `bubo run` through `Program.Main`.
+- Added GitHub Actions workflow for .NET 8 restore/build/test/package validation.
+- Added manual native asset workflow scaffold for `win-x64`, `linux-x64`, and `osx-arm64` llama.cpp shared libraries.
+- Added README, security, packaging, configuration, examples, and scripted E2E documentation.
+- Added .NET tool packaging metadata for `Bubo.LocalAgent.Cli` and managed wrapper package metadata for `Bubo.LlamaCppSharp`.
+- Validation passed:
+  - `dotnet restore Bubo.sln`
+  - `dotnet build Bubo.sln --configuration Release --no-restore`
+  - `dotnet test Bubo.sln --configuration Release --no-build` passed: 29 tests across 5 assemblies.
+  - `powershell -ExecutionPolicy Bypass -File .\scripts\run-e2e-fixture.ps1 -Configuration Release`
+  - `dotnet pack` for `LlamaCppSharp.Native`, `Bubo.LlamaCppSharp`, and `Bubo.LocalAgent.Cli`.
+  - `dotnet run --no-build --configuration Release --project src/LocalAgent.Cli/LocalAgent.Cli.csproj -- doctor`
+  - `dotnet run --no-build --configuration Release --project src/LocalAgent.Cli/LocalAgent.Cli.csproj -- models list`
+  - `dotnet format Bubo.sln --verify-no-changes`
+  - `git diff --check`
 
 ## Issue
 

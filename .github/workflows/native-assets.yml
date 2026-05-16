@@ -1,0 +1,62 @@
+name: native llama.cpp assets
+
+on:
+  workflow_dispatch:
+    inputs:
+      llama_ref:
+        description: llama.cpp tag or commit to build
+        required: true
+        default: b9189
+
+jobs:
+  build-native:
+    name: Build ${{ matrix.rid }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            rid: linux-x64
+            artifact: libllama.so
+          - os: windows-latest
+            rid: win-x64
+            artifact: llama.dll
+          - os: macos-14
+            rid: osx-arm64
+            artifact: libllama.dylib
+
+    steps:
+      - name: Checkout Bubo
+        uses: actions/checkout@v4
+
+      - name: Checkout llama.cpp
+        uses: actions/checkout@v4
+        with:
+          repository: ggml-org/llama.cpp
+          ref: ${{ inputs.llama_ref }}
+          path: llama.cpp
+
+      - name: Configure llama.cpp
+        run: cmake -S llama.cpp -B llama.cpp/build -DBUILD_SHARED_LIBS=ON -DGGML_NATIVE=OFF -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_EXAMPLES=OFF
+
+      - name: Build llama.cpp
+        run: cmake --build llama.cpp/build --config Release --parallel
+
+      - name: Stage native asset
+        shell: pwsh
+        run: |
+          $destination = "artifacts/native/${{ matrix.rid }}"
+          New-Item -ItemType Directory -Force -Path $destination | Out-Null
+          $asset = Get-ChildItem -Path "llama.cpp/build" -Recurse -Filter "${{ matrix.artifact }}" | Select-Object -First 1
+          if (-not $asset) {
+            throw "Could not find ${{ matrix.artifact }} in llama.cpp/build"
+          }
+          Copy-Item -LiteralPath $asset.FullName -Destination $destination
+
+      - name: Upload native asset
+        uses: actions/upload-artifact@v4
+        with:
+          name: llama-${{ matrix.rid }}
+          path: artifacts/native/${{ matrix.rid }}
+          if-no-files-found: error

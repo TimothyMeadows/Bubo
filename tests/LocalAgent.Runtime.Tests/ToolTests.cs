@@ -89,6 +89,52 @@ public sealed class ToolTests
         Assert.Contains("src/app.txt:2:Bubo", result.Output);
     }
 
+    [Fact]
+    public async Task RunCommandAllowsDotnetWithoutShell()
+    {
+        var workspace = CreateWorkspace();
+        var tool = new RunCommandTool();
+
+        var result = await tool.InvokeAsync(
+            new ToolRequest
+            {
+                Name = "run_command",
+                WorkspaceRoot = workspace,
+                Arguments = new Dictionary<string, string>
+                {
+                    ["executable"] = "dotnet",
+                    ["arguments"] = "--version"
+                }
+            },
+            CancellationToken.None);
+
+        Assert.True(result.Success);
+        Assert.Equal(0, result.ExitCode);
+        Assert.False(string.IsNullOrWhiteSpace(result.Output));
+    }
+
+    [Fact]
+    public async Task RunCommandRejectsUnlistedExecutable()
+    {
+        var workspace = CreateWorkspace();
+        var tool = new RunCommandTool();
+
+        var result = await tool.InvokeAsync(
+            new ToolRequest
+            {
+                Name = "run_command",
+                WorkspaceRoot = workspace,
+                Arguments = new Dictionary<string, string>
+                {
+                    ["executable"] = "powershell"
+                }
+            },
+            CancellationToken.None);
+
+        Assert.False(result.Success);
+        Assert.Contains("not allowlisted", result.Error);
+    }
+
     private static string CreateWorkspace()
     {
         var workspace = Path.Combine(

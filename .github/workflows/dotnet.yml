@@ -1,0 +1,43 @@
+name: dotnet
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-test-pack:
+    name: Restore, build, test, and pack
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        run: dotnet restore Bubo.sln
+
+      - name: Build
+        run: dotnet build Bubo.sln --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test Bubo.sln --configuration Release --no-build --verbosity normal
+
+      - name: Pack packageable projects
+        run: |
+          dotnet pack src/LlamaCppSharp.Native/LlamaCppSharp.Native.csproj --configuration Release --no-build --output artifacts/packages
+          dotnet pack src/LlamaCppSharp/LlamaCppSharp.csproj --configuration Release --no-build --output artifacts/packages
+          dotnet pack src/LocalAgent.Cli/LocalAgent.Cli.csproj --configuration Release --no-build --output artifacts/packages
+
+      - name: Upload packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages
+          path: artifacts/packages
+          if-no-files-found: error

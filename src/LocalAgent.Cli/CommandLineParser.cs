@@ -16,6 +16,21 @@ public static class CommandLineParser
             return ParseSandbox(args);
         }
 
+        if (string.Equals(args[0], "doctor", StringComparison.OrdinalIgnoreCase))
+        {
+            return ParseSimpleCommand(args, "doctor");
+        }
+
+        if (string.Equals(args[0], "models", StringComparison.OrdinalIgnoreCase))
+        {
+            return ParseNestedSimpleCommand(args, "list", "models-list");
+        }
+
+        if (string.Equals(args[0], "native", StringComparison.OrdinalIgnoreCase))
+        {
+            return ParseNestedSimpleCommand(args, "test", "native-test");
+        }
+
         if (!string.Equals(args[0], "run", StringComparison.OrdinalIgnoreCase))
         {
             return ParseResult.Failure($"Unknown command: {args[0]}");
@@ -81,7 +96,10 @@ public static class CommandLineParser
         return """
                Usage:
                  bubo run --workspace <path> --input <INPUT.md> --output <OUTPUT.md> --mode <local|cloud>
+                 bubo doctor
+                 bubo models list
                  bubo sandbox test --workspace <path>
+                 bubo native test
 
                Defaults:
                  --workspace current directory
@@ -125,6 +143,58 @@ public static class CommandLineParser
         return ParseResult.Success(new CommandLineOptions
         {
             Command = "sandbox-test",
+            WorkspacePath = workspace,
+            InputPath = Path.Combine(workspace, "INPUT.md"),
+            OutputPath = Path.Combine(workspace, "OUTPUT.md")
+        });
+    }
+
+    private static ParseResult ParseSimpleCommand(IReadOnlyList<string> args, string command)
+    {
+        if (args.Count > 1 && IsHelp(args[1]))
+        {
+            return ParseResult.Help();
+        }
+
+        if (args.Count > 1)
+        {
+            return ParseResult.Failure($"Unexpected argument for {args[0]}: {args[1]}");
+        }
+
+        var workspace = Environment.CurrentDirectory;
+        return ParseResult.Success(new CommandLineOptions
+        {
+            Command = command,
+            WorkspacePath = workspace,
+            InputPath = Path.Combine(workspace, "INPUT.md"),
+            OutputPath = Path.Combine(workspace, "OUTPUT.md")
+        });
+    }
+
+    private static ParseResult ParseNestedSimpleCommand(
+        IReadOnlyList<string> args,
+        string expectedSubcommand,
+        string command)
+    {
+        if (args.Count < 2 || !string.Equals(args[1], expectedSubcommand, StringComparison.OrdinalIgnoreCase))
+        {
+            return ParseResult.Failure($"Unsupported {args[0]} command. Use: bubo {args[0]} {expectedSubcommand}");
+        }
+
+        if (args.Count > 2 && IsHelp(args[2]))
+        {
+            return ParseResult.Help();
+        }
+
+        if (args.Count > 2)
+        {
+            return ParseResult.Failure($"Unexpected argument for {args[0]} {expectedSubcommand}: {args[2]}");
+        }
+
+        var workspace = Environment.CurrentDirectory;
+        return ParseResult.Success(new CommandLineOptions
+        {
+            Command = command,
             WorkspacePath = workspace,
             InputPath = Path.Combine(workspace, "INPUT.md"),
             OutputPath = Path.Combine(workspace, "OUTPUT.md")

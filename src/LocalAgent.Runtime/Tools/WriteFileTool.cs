@@ -20,7 +20,7 @@ public sealed class WriteFileTool : WorkspaceToolBase
         return new ToolResult
         {
             Success = true,
-            Output = Path.GetRelativePath(guard.WorkspaceRoot, path)
+            Output = Path.GetRelativePath(guard.WorkspaceRoot, path).Replace('\\', '/')
         };
     }
 }
