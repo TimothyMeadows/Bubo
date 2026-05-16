@@ -1,0 +1,4 @@
+[submodule ".codex"]
+	path = .codex
+	url = https://github.com/TimothyMeadows/OpenCaw
+	branch = main
