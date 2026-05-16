@@ -4,6 +4,8 @@ namespace Bubo.LocalAgent.Cli;
 
 public sealed record CommandLineOptions
 {
+    public string Command { get; init; } = "run";
+
     public required string WorkspacePath { get; init; }
 
     public required string InputPath { get; init; }

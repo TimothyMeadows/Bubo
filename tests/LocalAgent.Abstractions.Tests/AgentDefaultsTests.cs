@@ -35,8 +35,12 @@ public sealed class AgentDefaultsTests
 
         Assert.Equal(AgentMode.Local, config.Mode);
         Assert.Equal("planner", config.Planner.Role);
+        Assert.Contains("Qwen3", config.Planner.Family);
+        Assert.Equal("/models/planner.gguf", config.Planner.Path);
         Assert.Equal(0.2, config.Planner.Temperature);
         Assert.Equal("coder", config.Coder.Role);
+        Assert.Contains("Coder", config.Coder.Family);
+        Assert.Equal("/models/coder.gguf", config.Coder.Path);
         Assert.Equal(0.1, config.Coder.Temperature);
     }
 }

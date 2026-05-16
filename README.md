@@ -16,7 +16,7 @@ The name comes from Bubo, the mythical robotic owl created by Hephaestus.
 8. [Core Concepts](#core-concepts)
 9. [Input And Output Contract](#input-and-output-contract)
 10. [CLI Overview](#cli-overview)
-11. [Guided Example 1: Run The Foundation File Contract](#guided-example-1-run-the-foundation-file-contract)
+11. [Guided Example 1: Run The File Contract](#guided-example-1-run-the-file-contract)
 12. [Guided Example 2: Read The Audit Artifacts](#guided-example-2-read-the-audit-artifacts)
 13. [Guided Example 3: Local Model Configuration](#guided-example-3-local-model-configuration)
 14. [Guided Example 4: Docker Sandbox Shape](#guided-example-4-docker-sandbox-shape)
@@ -38,9 +38,9 @@ The name comes from Bubo, the mythical robotic owl created by Hephaestus.
 
 ## Project Status
 
-Bubo is being built in incremental goal-flow slices. The current `main` branch contains the foundation slice: a .NET 8 solution, shared contracts, a CLI entrypoint, and a no-op runtime that proves the file contract.
+Bubo is being built in incremental goal-flow slices. This integration branch brings the completed v1 scaffold onto the documentation baseline: a .NET 8 solution, shared contracts, CLI commands, deterministic action execution, Docker sandbox command construction, direct llama.cpp native interop scaffolding, cloud inference through `codex-cli`, guarded tools, package scaffolding, and end-to-end fixtures.
 
-The broader v1 design includes Docker sandbox execution, direct llama.cpp native interop, cloud inference through `codex-cli`, guarded tools, package scaffolding, and end-to-end fixtures. Some of those pieces may exist on stacked feature branches before they are integrated into `main`.
+The remaining limits are deliberate: full autonomous planner/coder model orchestration is still roadmap work, local llama.cpp generation requires populated native assets plus fuller decode/sampling bindings, and cloud mode depends on stable non-interactive `codex-cli` behavior.
 
 Status language used in this README:
 
@@ -94,13 +94,13 @@ Bubo treats model output as untrusted. File writes, command execution, Git opera
 | Workspace guard | Available | Canonicalizes paths and rejects traversal outside the workspace. |
 | Agent contracts | Available | Interfaces for inference, tools, sandboxing, model profiles, and transcripts. |
 | No-op runner | Available | Proves the file contract without editing source files. |
-| Docker sandbox runner | Scaffolded | Project exists; full command construction and execution are later v1 work if not in the current checkout. |
-| llama.cpp native wrapper | Scaffolded | Native asset metadata and wrapper shape are part of the v1 design. |
-| Local inference provider | Scaffolded | Uses the shared inference abstraction. |
-| codex-cli provider | Scaffolded | Uses the shared inference abstraction. |
-| Guarded file/search/Git tools | Planned | Tool calls must enforce workspace boundaries. |
-| Deterministic tool fixtures | Planned | Useful for E2E validation without a model. |
-| Package workflows | Planned | Native RID assets and managed packages are part of the packaging plan. |
+| Docker sandbox runner | Available | Builds deterministic `docker run` invocations and exposes `bubo sandbox test`. |
+| llama.cpp native wrapper | Scaffolded | Native library probing, safe handles, pinned upstream metadata, and RID asset layout are present. |
+| Local inference provider | Scaffolded | Uses the shared inference abstraction and reports native runtime availability. |
+| codex-cli provider | Scaffolded | Builds non-interactive `codex exec` invocations through the shared inference abstraction. |
+| Guarded file/search/Git tools | Available | Deterministic action execution routes through workspace-guarded tools. |
+| Deterministic tool fixtures | Available | `bubo-actions` fixtures validate file writes and command execution without a model. |
+| Package workflows | Available | CI and package metadata cover managed, native, and CLI package outputs. |
 
 ## Architecture At A Glance
 
@@ -173,6 +173,13 @@ tests/
   Unit and smoke tests for contracts, CLI behavior, runtime behavior, native wrapper behavior, and sandbox command construction.
 ```
 
+Additional guides:
+
+- [Configuration](docs/configuration.md)
+- [Security Model](docs/security.md)
+- [Packaging](docs/packaging.md)
+- [Examples](examples/README.md)
+
 ## Core Concepts
 
 ### Workspace
@@ -202,7 +209,7 @@ Bubo supports two conceptual modes:
 - `local`: use local GGUF models through llama.cpp interop.
 - `cloud`: use `codex-cli` as the inference backend.
 
-The current foundation CLI accepts both mode names even when the deeper inference backend is still scaffolded.
+The CLI accepts both mode names. Current runs execute the file contract and deterministic actions; full autonomous planner/coder model orchestration remains roadmap work.
 
 ## Input And Output Contract
 
@@ -252,7 +259,7 @@ Bubo writes a stable report skeleton:
 ## Next Steps
 ```
 
-The foundation runner fills these sections with no-op validation details. Later runtime slices fill them with actual tool and command results.
+The runner fills these sections with no-op validation details or deterministic tool and command results.
 
 ## CLI Overview
 
@@ -275,7 +282,7 @@ Defaults:
 --mode local
 ```
 
-Planned v1 utility commands:
+Utility commands:
 
 ```bash
 bubo doctor
@@ -286,9 +293,9 @@ bubo native test
 
 These utility commands are intended to validate host prerequisites, model profiles, Docker availability, and native llama.cpp loading.
 
-## Guided Example 1: Run The Foundation File Contract
+## Guided Example 1: Run The File Contract
 
-This example works with the foundation slice.
+This example works with the no-action path of the current runtime.
 
 1. Create a temporary workspace:
 
@@ -327,7 +334,7 @@ Expected behavior:
 - `OUTPUT.md` exists.
 - `agent-debug.jsonl` exists.
 - `agent-transcript.md` exists.
-- No repository files are modified by the no-op foundation runner.
+- No repository files are modified by the no-action runner.
 
 ## Guided Example 2: Read The Audit Artifacts
 
@@ -346,7 +353,7 @@ This transcript records observable events and does not include hidden chain-of-t
 
 ## run.started
 
-Bubo no-op foundation run started.
+Bubo run started.
 
 ## input.read
 
@@ -354,7 +361,7 @@ Read task input.
 
 ## run.completed
 
-No-op foundation run completed without modifying files.
+Bubo run completed successfully.
 ```
 
 Example `agent-debug.jsonl` event:
@@ -479,7 +486,7 @@ Important implementation note:
 
 ## Guided Example 6: Deterministic Tool Fixture
 
-Later runtime slices use deterministic fixtures to validate tool execution without a model. A fixture is an `INPUT.md` with an explicit tool block.
+The runtime includes deterministic fixtures to validate tool execution without a model. A fixture is an `INPUT.md` with an explicit tool block.
 
 Example:
 
@@ -508,14 +515,21 @@ Write a generated note and verify the .NET SDK version.
 ```
 ````
 
-Expected guardrails:
+Guardrails:
 
 - `write_file` can only write inside the workspace.
 - `run_command` avoids shell expansion.
+- `run_command`, `git_status`, and `git_diff` execute through the Docker sandbox runner.
 - Executables are allowlisted.
 - Results are recorded in `OUTPUT.md`, `agent-debug.jsonl`, and `agent-transcript.md`.
 
 This fixture format is for validation and controlled automation. It is not a replacement for the planner/coder model loop.
+
+Command fixtures require the Docker sandbox image:
+
+```bash
+docker build -t bubo-sandbox:local docker/bubo-sandbox
+```
 
 ## Guided Example 7: Native llama.cpp Asset Packaging
 
@@ -651,18 +665,23 @@ public interface IAgentTool
 }
 ```
 
-Initial tool set:
+Current default registry:
 
 | Tool | Purpose |
 | --- | --- |
 | `read_file` | Read a UTF-8 file inside the workspace. |
 | `write_file` | Write a UTF-8 file inside the workspace. |
-| `patch_file` | Apply a bounded patch inside the workspace. |
 | `list_files` | Enumerate files under the workspace. |
 | `search_text` | Search text under the workspace. |
 | `run_command` | Run allowlisted commands without shell expansion. |
 | `git_status` | Inspect Git status. |
 | `git_diff` | Inspect Git diffs. |
+
+Planned next tools:
+
+| Tool | Purpose |
+| --- | --- |
+| `patch_file` | Apply a bounded patch inside the workspace. |
 | `git_apply_patch` | Apply Git patches when allowed. |
 | `git_commit_optional` | Commit only when explicitly configured. |
 
@@ -738,7 +757,7 @@ Recommended practice:
 
 Bubo is designed to support Git workflows without surprising remote mutations.
 
-Supported or planned operations:
+Supported operations and guarded defaults:
 
 - Read current branch.
 - Read `git status`.
@@ -877,7 +896,7 @@ Check Docker:
 docker version
 ```
 
-If Docker is unavailable, local command execution through the sandbox cannot run. The foundation file contract can still be validated.
+If Docker is unavailable, local command execution through the sandbox cannot run. The file contract can still be validated.
 
 ### llama.cpp Native Library Is Missing
 
@@ -912,14 +931,13 @@ Fix:
 
 Short-term:
 
-- Complete Docker sandbox command construction and execution.
-- Complete llama.cpp native asset build workflow.
-- Expand P/Invoke bindings for tokenization, decode, logits, sampling, and streaming.
-- Implement guarded file/search/patch/Git tools.
-- Implement planner/coder orchestration loop.
-- Implement cloud mode child-process provider.
-- Add deterministic E2E fixtures.
-- Add CI and package validation.
+- Populate and smoke-test llama.cpp native assets for supported RIDs.
+- Expand P/Invoke bindings for tokenization, decode, logits, sampling, and streaming generation.
+- Add `patch_file`, `git_apply_patch`, and optional guarded commit tooling.
+- Implement planner/coder orchestration over inference providers and guarded tools.
+- Add richer config loading for model profiles, sandbox policy, and loop limits.
+- Harden command approval policy and secret redaction.
+- Keep `codex-cli` non-interactive invocation checks current as CLI flags evolve.
 
 Medium-term:
 
