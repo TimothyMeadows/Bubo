@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\LocalAgent.Cli\LocalAgent.Cli.csproj" />
+    <ProjectReference Include="..\..\src\LocalAgent.Inference.CodexCli\LocalAgent.Inference.CodexCli.csproj" />
   </ItemGroup>
 
 </Project>
