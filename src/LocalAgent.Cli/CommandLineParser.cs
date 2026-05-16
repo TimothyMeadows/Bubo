@@ -11,6 +11,11 @@ public static class CommandLineParser
             return ParseResult.Help();
         }
 
+        if (string.Equals(args[0], "sandbox", StringComparison.OrdinalIgnoreCase))
+        {
+            return ParseSandbox(args);
+        }
+
         if (!string.Equals(args[0], "run", StringComparison.OrdinalIgnoreCase))
         {
             return ParseResult.Failure($"Unknown command: {args[0]}");
@@ -63,6 +68,7 @@ public static class CommandLineParser
 
         return ParseResult.Success(new CommandLineOptions
         {
+            Command = "run",
             WorkspacePath = workspace,
             InputPath = input,
             OutputPath = output,
@@ -75,6 +81,7 @@ public static class CommandLineParser
         return """
                Usage:
                  bubo run --workspace <path> --input <INPUT.md> --output <OUTPUT.md> --mode <local|cloud>
+                 bubo sandbox test --workspace <path>
 
                Defaults:
                  --workspace current directory
@@ -82,6 +89,46 @@ public static class CommandLineParser
                  --output <workspace>/OUTPUT.md
                  --mode local
                """;
+    }
+
+    private static ParseResult ParseSandbox(IReadOnlyList<string> args)
+    {
+        if (args.Count < 2 || !string.Equals(args[1], "test", StringComparison.OrdinalIgnoreCase))
+        {
+            return ParseResult.Failure("Unsupported sandbox command. Use: bubo sandbox test");
+        }
+
+        var workspace = Environment.CurrentDirectory;
+        for (var index = 2; index < args.Count; index++)
+        {
+            var current = args[index];
+            if (IsHelp(current))
+            {
+                return ParseResult.Help();
+            }
+
+            if (index + 1 >= args.Count)
+            {
+                return ParseResult.Failure($"Missing value for option: {current}");
+            }
+
+            var value = args[++index];
+            if (string.Equals(current, "--workspace", StringComparison.OrdinalIgnoreCase))
+            {
+                workspace = value;
+                continue;
+            }
+
+            return ParseResult.Failure($"Unknown option: {current}");
+        }
+
+        return ParseResult.Success(new CommandLineOptions
+        {
+            Command = "sandbox-test",
+            WorkspacePath = workspace,
+            InputPath = Path.Combine(workspace, "INPUT.md"),
+            OutputPath = Path.Combine(workspace, "OUTPUT.md")
+        });
     }
 
     private static bool TryParseMode(string value, out AgentMode mode)

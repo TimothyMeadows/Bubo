@@ -1,5 +1,6 @@
 using Bubo.LocalAgent.Abstractions;
 using Bubo.LocalAgent.Runtime;
+using Bubo.LocalAgent.Sandbox.Docker;
 
 namespace Bubo.LocalAgent.Cli;
 
@@ -23,6 +24,11 @@ public static class Program
 
         try
         {
+            if (string.Equals(parseResult.Options.Command, "sandbox-test", StringComparison.Ordinal))
+            {
+                return await RunSandboxTestAsync(parseResult.Options);
+            }
+
             var runner = new AgentRunner();
             await runner.RunAsync(
                 new AgentRunRequest
@@ -41,5 +47,42 @@ public static class Program
             Console.Error.WriteLine(exception.Message);
             return 1;
         }
+    }
+
+    private static async Task<int> RunSandboxTestAsync(CommandLineOptions options)
+    {
+        if (!DockerAvailability.IsDockerLikelyAvailable())
+        {
+            Console.Error.WriteLine("Docker executable was not found on PATH.");
+            return 1;
+        }
+
+        var runner = new DockerSandboxRunner();
+        var result = await runner.RunCommandAsync(
+            "sh",
+            new[] { "-lc", "git --version && gh --version && dotnet --version" },
+            new SandboxOptions
+            {
+                WorkspacePath = options.WorkspacePath,
+                InputPath = options.WorkspacePath,
+                OutputPath = options.WorkspacePath,
+                CachePath = options.WorkspacePath,
+                ModelsPath = null,
+                Network = NetworkPolicy.None,
+                Gpu = null
+            },
+            CancellationToken.None);
+
+        if (!string.IsNullOrWhiteSpace(result.Output))
+        {
+            Console.Write(result.Output);
+        }
+
+        if (!result.Success && !string.IsNullOrWhiteSpace(result.Error))
+        {
+            Console.Error.Write(result.Error);
+        }
+
+        return result.Success ? 0 : 1;
     }
 }

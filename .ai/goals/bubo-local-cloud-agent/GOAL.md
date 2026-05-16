@@ -32,18 +32,19 @@ Implement Bubo as a .NET 8 LTS coding-agent runtime with a Docker sandbox, local
 
 ## Task Queue
 1. [x] Bubo foundation contracts and CLI no-op flow (`../.ai/tasks/bubo-foundation-contracts/TASK.md`)
-2. [ ] Bubo Docker sandbox runtime (`../.ai/tasks/bubo-docker-sandbox/TASK.md`)
+2. [x] Bubo Docker sandbox runtime (`../.ai/tasks/bubo-docker-sandbox/TASK.md`)
 3. [ ] Bubo llama.cpp native wrapper (`../.ai/tasks/bubo-llamacpp-native-wrapper/TASK.md`)
 4. [ ] Bubo agent runtime and inference providers (`../.ai/tasks/bubo-agent-runtime-inference/TASK.md`)
 5. [ ] Bubo end-to-end hardening and packaging (`../.ai/tasks/bubo-e2e-hardening-packaging/TASK.md`)
 
 ## Current Task
 
-bubo-foundation-contracts
+bubo-docker-sandbox
 
 ## Branch Chain
 - base-structure | base: `main` | head: `chore/opencaw-base-structure` | PR: https://github.com/TimothyMeadows/Bubo/pull/1 | depends on: none | status: merged
 - bubo-foundation-contracts | base: `main` | head: `feature/bubo-foundation-contracts` | PR: https://github.com/TimothyMeadows/Bubo/pull/7 | depends on: base-structure
+- bubo-docker-sandbox | base: `feature/bubo-foundation-contracts` | head: `feature/bubo-docker-sandbox` | PR: pending | depends on: bubo-foundation-contracts
 
 ## Automation Rules
 - Complete one task at a time unless the project-manager lane plan explicitly marks safe parallel work.
@@ -65,6 +66,8 @@ bubo-foundation-contracts
 
 - Base structure PR #1 QA comment posted before this goal started.
 - bubo-foundation-contracts local validation passed: `dotnet restore Bubo.sln`, `dotnet build Bubo.sln --no-restore`, `dotnet test Bubo.sln --no-build`, and CLI smoke run.
+- bubo-foundation-contracts post-PR QA posted on PR #7.
+- bubo-docker-sandbox local validation passed: `dotnet restore Bubo.sln`, `dotnet build Bubo.sln --no-restore`, `dotnet test Bubo.sln --no-build`, and `bubo sandbox test` no-Docker failure path.
 
 ## Goal Completion Report
 - Generate with `./commands/create-goal-completion-report.sh "bubo-local-cloud-agent"`.
