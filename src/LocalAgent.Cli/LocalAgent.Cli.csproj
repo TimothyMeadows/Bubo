@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\LocalAgent.Abstractions\LocalAgent.Abstractions.csproj" />
+    <ProjectReference Include="..\LocalAgent.Runtime\LocalAgent.Runtime.csproj" />
+    <ProjectReference Include="..\LocalAgent.Inference.LlamaCpp\LocalAgent.Inference.LlamaCpp.csproj" />
+    <ProjectReference Include="..\LocalAgent.Inference.CodexCli\LocalAgent.Inference.CodexCli.csproj" />
+    <ProjectReference Include="..\LocalAgent.Sandbox.Docker\LocalAgent.Sandbox.Docker.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>
