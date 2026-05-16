@@ -33,18 +33,19 @@ Implement Bubo as a .NET 8 LTS coding-agent runtime with a Docker sandbox, local
 ## Task Queue
 1. [x] Bubo foundation contracts and CLI no-op flow (`../.ai/tasks/bubo-foundation-contracts/TASK.md`)
 2. [x] Bubo Docker sandbox runtime (`../.ai/tasks/bubo-docker-sandbox/TASK.md`)
-3. [ ] Bubo llama.cpp native wrapper (`../.ai/tasks/bubo-llamacpp-native-wrapper/TASK.md`)
+3. [x] Bubo llama.cpp native wrapper (`../.ai/tasks/bubo-llamacpp-native-wrapper/TASK.md`)
 4. [ ] Bubo agent runtime and inference providers (`../.ai/tasks/bubo-agent-runtime-inference/TASK.md`)
 5. [ ] Bubo end-to-end hardening and packaging (`../.ai/tasks/bubo-e2e-hardening-packaging/TASK.md`)
 
 ## Current Task
 
-bubo-docker-sandbox
+bubo-llamacpp-native-wrapper
 
 ## Branch Chain
 - base-structure | base: `main` | head: `chore/opencaw-base-structure` | PR: https://github.com/TimothyMeadows/Bubo/pull/1 | depends on: none | status: merged
 - bubo-foundation-contracts | base: `main` | head: `feature/bubo-foundation-contracts` | PR: https://github.com/TimothyMeadows/Bubo/pull/7 | depends on: base-structure
 - bubo-docker-sandbox | base: `feature/bubo-foundation-contracts` | head: `feature/bubo-docker-sandbox` | PR: https://github.com/TimothyMeadows/Bubo/pull/8 | depends on: bubo-foundation-contracts
+- bubo-llamacpp-native-wrapper | base: `feature/bubo-docker-sandbox` | head: `feature/bubo-llamacpp-native-wrapper` | PR: pending | depends on: bubo-docker-sandbox
 
 ## Automation Rules
 - Complete one task at a time unless the project-manager lane plan explicitly marks safe parallel work.
@@ -69,6 +70,8 @@ bubo-docker-sandbox
 - bubo-foundation-contracts local validation passed: `dotnet restore Bubo.sln`, `dotnet build Bubo.sln --no-restore`, `dotnet test Bubo.sln --no-build`, and CLI smoke run.
 - bubo-foundation-contracts post-PR QA posted on PR #7.
 - bubo-docker-sandbox local validation passed: `dotnet restore Bubo.sln`, `dotnet build Bubo.sln --no-restore`, `dotnet test Bubo.sln --no-build`, and `bubo sandbox test` no-Docker failure path.
+- bubo-docker-sandbox post-PR QA posted on PR #8.
+- bubo-llamacpp-native-wrapper local validation passed: pinned llama.cpp `b9189`, `dotnet build Bubo.sln --no-restore`, `dotnet test Bubo.sln --no-build`, and `dotnet pack src/LlamaCppSharp.Native/LlamaCppSharp.Native.csproj -c Debug --no-build`.
 
 ## Goal Completion Report
 - Generate with `./commands/create-goal-completion-report.sh "bubo-local-cloud-agent"`.

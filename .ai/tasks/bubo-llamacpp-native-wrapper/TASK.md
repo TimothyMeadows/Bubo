@@ -31,7 +31,13 @@ Add the first safe managed wrapper surface for `ggml-org/llama.cpp`, including p
 
 ## Review
 
-- Confirm package layout matches NuGet RID asset conventions.
+- Confirmed package layout uses NuGet RID asset conventions for `win-x64`, `linux-x64`, and `osx-arm64`.
+- Pinned upstream `ggml-org/llama.cpp` release `b9189` at commit `64b38b561b987679c4e1c6231f93860d3eec2638`.
+- Validation passed:
+  - `dotnet restore Bubo.sln`
+  - `dotnet build Bubo.sln --no-restore`
+  - `dotnet test Bubo.sln --no-build`
+  - `dotnet pack src/LlamaCppSharp.Native/LlamaCppSharp.Native.csproj -c Debug --no-build -o .ai/reports/native-pack-clean`
 
 ## Issue
 
