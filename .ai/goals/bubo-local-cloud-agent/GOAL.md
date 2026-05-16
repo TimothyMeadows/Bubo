@@ -35,11 +35,11 @@ Implement Bubo as a .NET 8 LTS coding-agent runtime with a Docker sandbox, local
 2. [x] Bubo Docker sandbox runtime (`../.ai/tasks/bubo-docker-sandbox/TASK.md`)
 3. [x] Bubo llama.cpp native wrapper (`../.ai/tasks/bubo-llamacpp-native-wrapper/TASK.md`)
 4. [x] Bubo agent runtime and inference providers (`../.ai/tasks/bubo-agent-runtime-inference/TASK.md`)
-5. [ ] Bubo end-to-end hardening and packaging (`../.ai/tasks/bubo-e2e-hardening-packaging/TASK.md`)
+5. [x] Bubo end-to-end hardening and packaging (`../.ai/tasks/bubo-e2e-hardening-packaging/TASK.md`)
 
 ## Current Task
 
-bubo-agent-runtime-inference
+bubo-e2e-hardening-packaging
 
 ## Branch Chain
 - base-structure | base: `main` | head: `chore/opencaw-base-structure` | PR: https://github.com/TimothyMeadows/Bubo/pull/1 | depends on: none | status: merged
@@ -47,6 +47,7 @@ bubo-agent-runtime-inference
 - bubo-docker-sandbox | base: `feature/bubo-foundation-contracts` | head: `feature/bubo-docker-sandbox` | PR: https://github.com/TimothyMeadows/Bubo/pull/8 | depends on: bubo-foundation-contracts
 - bubo-llamacpp-native-wrapper | base: `feature/bubo-docker-sandbox` | head: `feature/bubo-llamacpp-native-wrapper` | PR: https://github.com/TimothyMeadows/Bubo/pull/9 | depends on: bubo-docker-sandbox
 - bubo-agent-runtime-inference | base: `feature/bubo-llamacpp-native-wrapper` | head: `feature/bubo-agent-runtime-inference` | PR: https://github.com/TimothyMeadows/Bubo/pull/10 | depends on: bubo-llamacpp-native-wrapper
+- bubo-e2e-hardening-packaging | base: `feature/bubo-agent-runtime-inference` | head: `feature/bubo-e2e-hardening-packaging` | PR: pending | depends on: bubo-agent-runtime-inference
 
 ## Automation Rules
 - Complete one task at a time unless the project-manager lane plan explicitly marks safe parallel work.
@@ -66,6 +67,7 @@ bubo-agent-runtime-inference
 - Bubo Docker sandbox runtime: https://github.com/TimothyMeadows/Bubo/pull/8
 - Bubo llama.cpp native wrapper: https://github.com/TimothyMeadows/Bubo/pull/9
 - Bubo agent runtime and inference providers: https://github.com/TimothyMeadows/Bubo/pull/10
+- Bubo end-to-end hardening and packaging: pending
 
 ## QA Evidence
 
@@ -77,6 +79,8 @@ bubo-agent-runtime-inference
 - bubo-llamacpp-native-wrapper local validation passed: pinned llama.cpp `b9189`, `dotnet build Bubo.sln --no-restore`, `dotnet test Bubo.sln --no-build`, and `dotnet pack src/LlamaCppSharp.Native/LlamaCppSharp.Native.csproj -c Debug --no-build`.
 - bubo-llamacpp-native-wrapper post-PR QA posted on PR #9.
 - bubo-agent-runtime-inference local validation passed: `dotnet restore Bubo.sln`, `dotnet build Bubo.sln --no-restore`, `dotnet test Bubo.sln --no-build`, and codex-cli `0.131.0-alpha.9` non-interactive help check.
+- bubo-agent-runtime-inference post-PR QA posted on PR #10.
+- bubo-e2e-hardening-packaging local validation passed: `dotnet restore Bubo.sln`, `dotnet build Bubo.sln --configuration Release --no-restore`, `dotnet test Bubo.sln --configuration Release --no-build`, scripted E2E fixture, package validation for three packages, doctor/models CLI checks, `dotnet format Bubo.sln --verify-no-changes`, and `git diff --check`.
 
 ## Goal Completion Report
 - Generate with `./commands/create-goal-completion-report.sh "bubo-local-cloud-agent"`.

@@ -4,6 +4,8 @@ public sealed record ModelProfile
 {
     public string Role { get; init; } = string.Empty;
 
+    public string Family { get; init; } = string.Empty;
+
     public string? Path { get; init; }
 
     public int ContextSize { get; init; } = 32_768;

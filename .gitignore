@@ -430,3 +430,7 @@ FodyWeavers.xsd
 
 # OpenCaw generated local evidence reports
 .ai/reports/
+examples/**/OUTPUT.md
+examples/**/agent-debug.jsonl
+examples/**/agent-transcript.md
+examples/**/generated/

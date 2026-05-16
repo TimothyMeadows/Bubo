@@ -35,6 +35,101 @@ public sealed class AgentRunnerTests
         Assert.Contains("## Next Steps", output);
     }
 
+    [Fact]
+    public async Task RunAsyncExecutesBuboActions()
+    {
+        var workspace = CreateWorkspace();
+        var inputPath = Path.Combine(workspace, "INPUT.md");
+        var outputPath = Path.Combine(workspace, "OUTPUT.md");
+        await File.WriteAllTextAsync(
+            inputPath,
+            """
+            # Task
+
+            ```bubo-actions
+            [
+              {
+                "tool": "write_file",
+                "arguments": {
+                  "path": "notes/result.txt",
+                  "content": "Hello from Bubo\n"
+                }
+              },
+              {
+                "tool": "run_command",
+                "arguments": {
+                  "executable": "dotnet",
+                  "arguments": ["--version"]
+                }
+              }
+            ]
+            ```
+            """);
+
+        var runner = new AgentRunner();
+        var result = await runner.RunAsync(
+            new AgentRunRequest
+            {
+                WorkspacePath = workspace,
+                InputPath = inputPath,
+                OutputPath = outputPath,
+                Mode = AgentMode.Local
+            },
+            CancellationToken.None);
+
+        Assert.True(result.Success);
+        Assert.Contains("notes/result.txt", result.FilesChanged);
+        Assert.Contains("dotnet --version", result.CommandsRun);
+        Assert.Equal("Hello from Bubo\n", await File.ReadAllTextAsync(Path.Combine(workspace, "notes", "result.txt")));
+
+        var output = await File.ReadAllTextAsync(outputPath);
+        Assert.Contains("Bubo executed 2 action", output);
+        Assert.Contains("dotnet --version", output);
+    }
+
+    [Fact]
+    public async Task RunAsyncDeniesActionPathTraversal()
+    {
+        var workspace = CreateWorkspace();
+        var inputPath = Path.Combine(workspace, "INPUT.md");
+        var outputPath = Path.Combine(workspace, "OUTPUT.md");
+        await File.WriteAllTextAsync(
+            inputPath,
+            """
+            # Task
+
+            ```bubo-actions
+            [
+              {
+                "tool": "write_file",
+                "arguments": {
+                  "path": "../escape.txt",
+                  "content": "nope"
+                }
+              }
+            ]
+            ```
+            """);
+
+        var runner = new AgentRunner();
+        var result = await runner.RunAsync(
+            new AgentRunRequest
+            {
+                WorkspacePath = workspace,
+                InputPath = inputPath,
+                OutputPath = outputPath,
+                Mode = AgentMode.Local
+            },
+            CancellationToken.None);
+
+        Assert.False(result.Success);
+        Assert.False(File.Exists(Path.Combine(Directory.GetParent(workspace)!.FullName, "escape.txt")));
+
+        var output = await File.ReadAllTextAsync(outputPath);
+        Assert.Contains("Bubo stopped", output);
+        Assert.Contains("write_file failed", output);
+    }
+
     private static string CreateWorkspace()
     {
         var workspace = Path.Combine(
