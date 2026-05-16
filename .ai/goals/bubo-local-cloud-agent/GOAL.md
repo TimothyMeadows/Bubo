@@ -36,11 +36,11 @@ Implement Bubo as a .NET 8 LTS coding-agent runtime with a Docker sandbox, local
 3. [x] Bubo llama.cpp native wrapper (`../.ai/tasks/bubo-llamacpp-native-wrapper/TASK.md`)
 4. [x] Bubo agent runtime and inference providers (`../.ai/tasks/bubo-agent-runtime-inference/TASK.md`)
 5. [x] Bubo end-to-end hardening and packaging (`../.ai/tasks/bubo-e2e-hardening-packaging/TASK.md`)
-6. [ ] Integrate Bubo goal stack onto main (`../.ai/tasks/bubo-main-stack-integration/TASK.md`)
+6. [x] Integrate Bubo goal stack onto main (`../.ai/tasks/bubo-main-stack-integration/TASK.md`)
 
 ## Current Task
 
-bubo-main-stack-integration
+complete
 
 ## Branch Chain
 - base-structure | base: `main` | head: `chore/opencaw-base-structure` | PR: https://github.com/TimothyMeadows/Bubo/pull/1 | depends on: none | status: merged
@@ -49,7 +49,7 @@ bubo-main-stack-integration
 - bubo-llamacpp-native-wrapper | base: `feature/bubo-docker-sandbox` | head: `feature/bubo-llamacpp-native-wrapper` | PR: https://github.com/TimothyMeadows/Bubo/pull/9 | depends on: bubo-docker-sandbox | status: merged
 - bubo-agent-runtime-inference | base: `feature/bubo-llamacpp-native-wrapper` | head: `feature/bubo-agent-runtime-inference` | PR: https://github.com/TimothyMeadows/Bubo/pull/10 | depends on: bubo-llamacpp-native-wrapper | status: merged
 - bubo-e2e-hardening-packaging | base: `feature/bubo-agent-runtime-inference` | head: `feature/bubo-e2e-hardening-packaging` | PR: https://github.com/TimothyMeadows/Bubo/pull/11 | depends on: bubo-agent-runtime-inference | status: merged
-- bubo-main-stack-integration | base: `main` | head: `feature/bubo-main-stack-integration` | PR: pending | depends on: bubo-e2e-hardening-packaging | status: in_progress
+- bubo-main-stack-integration | base: `main` | head: `feature/bubo-main-stack-integration` | PR: https://github.com/TimothyMeadows/Bubo/pull/14 | depends on: bubo-e2e-hardening-packaging | status: post_pr_qa_passed
 
 ## Automation Rules
 - Complete one task at a time unless the project-manager lane plan explicitly marks safe parallel work.
@@ -70,7 +70,7 @@ bubo-main-stack-integration
 - Bubo llama.cpp native wrapper: https://github.com/TimothyMeadows/Bubo/pull/9
 - Bubo agent runtime and inference providers: https://github.com/TimothyMeadows/Bubo/pull/10
 - Bubo end-to-end hardening and packaging: https://github.com/TimothyMeadows/Bubo/pull/11
-- Integrate Bubo goal stack onto main: pending
+- Integrate Bubo goal stack onto main: https://github.com/TimothyMeadows/Bubo/pull/14
 
 ## QA Evidence
 
@@ -86,7 +86,7 @@ bubo-main-stack-integration
 - bubo-e2e-hardening-packaging local validation passed: `dotnet restore Bubo.sln`, `dotnet build Bubo.sln --configuration Release --no-restore`, `dotnet test Bubo.sln --configuration Release --no-build`, scripted E2E fixture, package validation for three packages, doctor/models CLI checks, `dotnet format Bubo.sln --verify-no-changes`, and `git diff --check`.
 - bubo-e2e-hardening-packaging post-PR QA posted on PR #11.
 - bubo-main-stack-integration local validation passed: `dotnet restore Bubo.sln`, `dotnet build Bubo.sln --configuration Release --no-restore`, `dotnet test Bubo.sln --configuration Release --no-build --verbosity normal` with 32 passing tests, package validation for three packages, doctor/models CLI checks, Docker image build and sandbox smoke, scripted E2E fixture, `dotnet format Bubo.sln --verify-no-changes`, and `git diff --check`.
-- bubo-main-stack-integration post-PR QA: pending.
+- bubo-main-stack-integration post-PR QA posted on PR #14.
 
 ## Goal Completion Report
 - Generated at `.ai/goals/bubo-local-cloud-agent/GOAL_REPORT.md`.

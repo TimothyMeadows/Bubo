@@ -16,7 +16,7 @@
 ### lane-1
 - Role: computer-science/git-workflow-master
 - Agent type: default
-- Status: in_progress
+- Status: completed
 - Scope: Main-agent lane. Integrate `origin/feature/bubo-agent-runtime-inference` onto `main`, resolve conflicts, preserve README and `.ai` context from PR #12, and prepare PR.
 - Write set: repository integration branch
 - Dependencies: none
@@ -74,3 +74,4 @@
 - lane-3 technical writing review: recommended keeping the expanded PR #12 README, current memory/fragments/learnings, open issue #13 only, and adding clear links to stack docs/examples. Integrated response: README keeps the exhaustive structure, updates current feature status, and links `docs/configuration.md`, `docs/security.md`, `docs/packaging.md`, and `examples/README.md`.
 - lane-4 DevOps review: identified package naming drift, host tool PATH realities, Docker smoke validation needs, and native asset release limitations. Integrated response: native package ID/readme now use `Bubo.LlamaCppSharp.Native`, Docker discovery has a Windows fallback, and final validation includes Docker image build/smoke plus tool-version checks.
 - lane-5 QA review: supplied the final validation matrix covering merge cleanliness, Release build/test, E2E fixture, packaging, Docker smoke, doctor/models, codex-cli, CMake, and Ninja checks. Integrated response: Release build and tests have passed; remaining checklist items will run after the merge index is clean.
+- lane-1 integration: completed the merge, resolved README/goal conflicts, pushed `feature/bubo-main-stack-integration`, opened PR #14, and prepared post-PR QA evidence.

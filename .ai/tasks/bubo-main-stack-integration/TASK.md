@@ -71,6 +71,10 @@ Integrate the completed stacked Bubo goal work from PRs #8 through #11 onto `mai
   - Ninja 1.13.2
   - codex-cli 0.131.0-alpha.9
 
+## Pull Request
+
+https://github.com/TimothyMeadows/Bubo/pull/14
+
 ## Issue
 
 https://github.com/TimothyMeadows/Bubo/issues/13
