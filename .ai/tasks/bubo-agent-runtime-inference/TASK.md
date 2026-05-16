@@ -31,7 +31,15 @@ Implement the first practical Bubo agent loop with interchangeable local llama.c
 
 ## Review
 
-- Confirm no hidden chain-of-thought is written to output artifacts.
+- Confirmed no hidden chain-of-thought is written to output artifacts by the foundation runtime.
+- Added guarded file/list/search/git tools, codex-cli non-interactive command construction/provider, and llama.cpp native-probe provider behavior.
+- codex-cli spike evidence: local `codex-cli 0.131.0-alpha.9` supports `codex exec`, stdin prompt via `-`, `--json`, `--output-last-message`, `--cd`, `--sandbox`, and `--ask-for-approval`.
+- Validation passed:
+  - `dotnet restore Bubo.sln`
+  - `dotnet build Bubo.sln --no-restore`
+  - `dotnet test Bubo.sln --no-build`
+  - `codex --version`
+  - `codex exec --help`
 
 ## Issue
 
