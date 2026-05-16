@@ -4,6 +4,16 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <PackageId>Bubo.LlamaCppSharp.Native</PackageId>
+    <Description>Native llama.cpp runtime asset package for Bubo.</Description>
+    <RepositoryUrl>https://github.com/ggml-org/llama.cpp</RepositoryUrl>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <PackageReadmeFile>PACKAGE.md</PackageReadmeFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="PACKAGE.md" Pack="true" PackagePath="\" />
+    <None Include="runtimes\**\native\*.dll; runtimes\**\native\*.so; runtimes\**\native\*.dylib" Pack="true" PackagePath="runtimes\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
 
 </Project>

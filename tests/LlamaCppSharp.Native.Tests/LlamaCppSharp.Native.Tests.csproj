@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\LlamaCppSharp.Native\LlamaCppSharp.Native.csproj" />
+    <ProjectReference Include="..\..\src\LlamaCppSharp\LlamaCppSharp.csproj" />
+    <ProjectReference Include="..\..\src\LocalAgent.Abstractions\LocalAgent.Abstractions.csproj" />
+    <ProjectReference Include="..\..\src\LocalAgent.Inference.LlamaCpp\LocalAgent.Inference.LlamaCpp.csproj" />
+  </ItemGroup>
+
+</Project>
