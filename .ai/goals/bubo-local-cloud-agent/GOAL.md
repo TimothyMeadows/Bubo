@@ -43,7 +43,7 @@ bubo-foundation-contracts
 
 ## Branch Chain
 - base-structure | base: `main` | head: `chore/opencaw-base-structure` | PR: https://github.com/TimothyMeadows/Bubo/pull/1 | depends on: none | status: merged
-- bubo-foundation-contracts | base: `main` | head: `feature/bubo-foundation-contracts` | PR: pending | depends on: base-structure
+- bubo-foundation-contracts | base: `main` | head: `feature/bubo-foundation-contracts` | PR: https://github.com/TimothyMeadows/Bubo/pull/7 | depends on: base-structure
 
 ## Automation Rules
 - Complete one task at a time unless the project-manager lane plan explicitly marks safe parallel work.
@@ -59,6 +59,7 @@ bubo-foundation-contracts
 ## PRs
 
 - Base structure: https://github.com/TimothyMeadows/Bubo/pull/1
+- Bubo foundation contracts and CLI no-op flow: https://github.com/TimothyMeadows/Bubo/pull/7
 
 ## QA Evidence
 
