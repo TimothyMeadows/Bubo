@@ -9,11 +9,24 @@
     <RepositoryUrl>https://github.com/ggml-org/llama.cpp</RepositoryUrl>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <PackageReadmeFile>PACKAGE.md</PackageReadmeFile>
+    <RequireNativeAssetsForPack>false</RequireNativeAssetsForPack>
+    <RequiredNativeRid></RequiredNativeRid>
   </PropertyGroup>
 
   <ItemGroup>
     <None Include="PACKAGE.md" Pack="true" PackagePath="\" />
-    <None Include="runtimes\**\native\*.dll; runtimes\**\native\*.so; runtimes\**\native\*.dylib" Pack="true" PackagePath="runtimes\%(RecursiveDir)%(Filename)%(Extension)" />
+    <None Include="runtimes\**\native\*.dll; runtimes\**\native\*.so; runtimes\**\native\*.so.*; runtimes\**\native\*.dylib" Pack="true" PackagePath="runtimes\%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
+
+  <Target Name="ValidateNativeAssetsForPack" BeforeTargets="GenerateNuspec" Condition="'$(RequireNativeAssetsForPack)' == 'true'">
+    <ItemGroup>
+      <RequiredNativeAsset Include="runtimes\win-x64\native\llama.dll" Condition="'$(RequiredNativeRid)' == '' or '$(RequiredNativeRid)' == 'win-x64'" />
+      <RequiredNativeAsset Include="runtimes\linux-x64\native\libllama.so" Condition="'$(RequiredNativeRid)' == '' or '$(RequiredNativeRid)' == 'linux-x64'" />
+      <RequiredNativeAsset Include="runtimes\osx-arm64\native\libllama.dylib" Condition="'$(RequiredNativeRid)' == '' or '$(RequiredNativeRid)' == 'osx-arm64'" />
+    </ItemGroup>
+
+    <Error Condition="'@(RequiredNativeAsset)' == ''" Text="RequiredNativeRid '$(RequiredNativeRid)' is not supported by package validation." />
+    <Error Condition="!Exists('%(RequiredNativeAsset.Identity)')" Text="Missing required native asset: %(RequiredNativeAsset.Identity). Run scripts/build-llama-native.ps1 -Rid $(RequiredNativeRid) -StageToPackage, or omit RequiredNativeRid to validate all supported assets." />
+  </Target>
 
 </Project>

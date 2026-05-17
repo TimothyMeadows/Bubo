@@ -80,4 +80,55 @@ public sealed class CommandLineParserTests
         Assert.NotNull(result.Options);
         Assert.Equal(expected, result.Options.Command);
     }
+
+    [Fact]
+    public void ParseNativeTestAcceptsBaseDirectoryOption()
+    {
+        var result = CommandLineParser.Parse(new[]
+        {
+            "native",
+            "test",
+            "--base-directory",
+            "src/LlamaCppSharp.Native",
+            "--strict"
+        });
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Options);
+        Assert.Equal("native-test", result.Options.Command);
+        Assert.Equal("src/LlamaCppSharp.Native", result.Options.NativeBaseDirectory);
+        Assert.True(result.Options.NativeStrict);
+    }
+
+    [Fact]
+    public void ParseNativeTestRejectsUnknownOption()
+    {
+        var result = CommandLineParser.Parse(new[]
+        {
+            "native",
+            "test",
+            "--rid",
+            "linux-x64"
+        });
+
+        Assert.False(result.IsSuccess);
+        Assert.Contains("Unknown option", result.ErrorMessage);
+    }
+
+    [Fact]
+    public void ParseNativeTestAcceptsStrictWithoutBaseDirectory()
+    {
+        var result = CommandLineParser.Parse(new[]
+        {
+            "native",
+            "test",
+            "--strict"
+        });
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Options);
+        Assert.Equal("native-test", result.Options.Command);
+        Assert.True(result.Options.NativeStrict);
+        Assert.Null(result.Options.NativeBaseDirectory);
+    }
 }

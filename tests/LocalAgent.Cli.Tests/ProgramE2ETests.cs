@@ -283,6 +283,37 @@ public sealed class ProgramE2ETests
         Assert.False(File.Exists(outputPath));
     }
 
+    [Fact]
+    public async Task NativeTestReportsMissingStrictBaseDirectoryAsset()
+    {
+        var baseDirectory = CreateWorkspace();
+        using var error = new StringWriter();
+        var originalError = Console.Error;
+        Console.SetError(error);
+        try
+        {
+            var exitCode = await Program.Main(new[]
+            {
+                "native",
+                "test",
+                "--base-directory",
+                baseDirectory,
+                "--strict"
+            });
+
+            Assert.Equal(1, exitCode);
+        }
+        finally
+        {
+            Console.SetError(originalError);
+        }
+
+        var message = error.ToString();
+        Assert.Contains("Unable to load llama.cpp native library", message);
+        Assert.Contains("runtimes", message);
+        Assert.DoesNotContain("or by name", message);
+    }
+
     private static string CreateWorkspace()
     {
         var workspace = Path.Combine(

@@ -28,7 +28,7 @@ public static class CommandLineParser
 
         if (string.Equals(args[0], "native", StringComparison.OrdinalIgnoreCase))
         {
-            return ParseNestedSimpleCommand(args, "test", "native-test");
+            return ParseNative(args);
         }
 
         if (!string.Equals(args[0], "run", StringComparison.OrdinalIgnoreCase))
@@ -107,7 +107,7 @@ public static class CommandLineParser
                  bubo doctor
                  bubo models list
                  bubo sandbox test --workspace <path>
-                 bubo native test
+                 bubo native test --base-directory <path> --strict
 
                Defaults:
                  --workspace current directory
@@ -155,6 +155,56 @@ public static class CommandLineParser
             WorkspacePath = workspace,
             InputPath = Path.Combine(workspace, "INPUT.md"),
             OutputPath = Path.Combine(workspace, "OUTPUT.md")
+        });
+    }
+
+    private static ParseResult ParseNative(IReadOnlyList<string> args)
+    {
+        if (args.Count < 2 || !string.Equals(args[1], "test", StringComparison.OrdinalIgnoreCase))
+        {
+            return ParseResult.Failure("Unsupported native command. Use: bubo native test");
+        }
+
+        string? baseDirectory = null;
+        var strict = false;
+        for (var index = 2; index < args.Count; index++)
+        {
+            var current = args[index];
+            if (IsHelp(current))
+            {
+                return ParseResult.Help();
+            }
+
+            if (string.Equals(current, "--strict", StringComparison.OrdinalIgnoreCase))
+            {
+                strict = true;
+                continue;
+            }
+
+            if (index + 1 >= args.Count)
+            {
+                return ParseResult.Failure($"Missing value for option: {current}");
+            }
+
+            var value = args[++index];
+            if (string.Equals(current, "--base-directory", StringComparison.OrdinalIgnoreCase))
+            {
+                baseDirectory = value;
+                continue;
+            }
+
+            return ParseResult.Failure($"Unknown option: {current}");
+        }
+
+        var workspace = Environment.CurrentDirectory;
+        return ParseResult.Success(new CommandLineOptions
+        {
+            Command = "native-test",
+            WorkspacePath = workspace,
+            InputPath = Path.Combine(workspace, "INPUT.md"),
+            OutputPath = Path.Combine(workspace, "OUTPUT.md"),
+            NativeBaseDirectory = baseDirectory,
+            NativeStrict = strict
         });
     }
 

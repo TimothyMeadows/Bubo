@@ -34,7 +34,7 @@ public static class Program
                 case "models-list":
                     return RunModelsList();
                 case "native-test":
-                    return RunNativeTest();
+                    return RunNativeTest(parseResult.Options);
                 case "sandbox-test":
                     return await RunSandboxTestAsync(parseResult.Options);
             }
@@ -133,9 +133,11 @@ public static class Program
         return 0;
     }
 
-    private static int RunNativeTest()
+    private static int RunNativeTest(CommandLineOptions options)
     {
-        var native = LlamaRuntimeAvailability.Probe();
+        var native = LlamaRuntimeAvailability.Probe(
+            options.NativeBaseDirectory,
+            allowFallbackByName: !options.NativeStrict);
         if (native.Success)
         {
             Console.WriteLine($"Loaded llama.cpp native library from: {native.ResolvedPath}");

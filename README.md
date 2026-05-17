@@ -19,12 +19,13 @@ The name comes from Bubo, the mythical robotic owl created by Hephaestus.
 7. [Guided Examples](#guided-examples)
 8. [Docker Sandbox](#docker-sandbox)
 9. [Inference Modes](#inference-modes)
-10. [Tools](#tools)
-11. [Security Rules](#security-rules)
-12. [Developer Onboarding](#developer-onboarding)
-13. [Agent Onboarding](#agent-onboarding)
-14. [Troubleshooting](#troubleshooting)
-15. [Further Reading](#further-reading)
+10. [Native Assets](#native-assets)
+11. [Tools](#tools)
+12. [Security Rules](#security-rules)
+13. [Developer Onboarding](#developer-onboarding)
+14. [Agent Onboarding](#agent-onboarding)
+15. [Troubleshooting](#troubleshooting)
+16. [Further Reading](#further-reading)
 
 ## Quick Start
 
@@ -481,6 +482,28 @@ Release: b9189
 Commit: 64b38b561b987679c4e1c6231f93860d3eec2638
 ```
 
+## Native Assets
+
+Local mode expects a pinned llama.cpp shared library in the native package layout. Build and stage the current platform asset:
+
+```powershell
+pwsh ./scripts/build-llama-native.ps1 -StageToPackage
+```
+
+Build, stage, smoke test, pack, and verify a specific RID:
+
+```powershell
+pwsh ./scripts/test-native-package.ps1 -Rid linux-x64 -BuildNative
+```
+
+Probe staged assets from source:
+
+```powershell
+dotnet run --project src/LocalAgent.Cli/LocalAgent.Cli.csproj -- native test --base-directory src/LlamaCppSharp.Native --strict
+```
+
+Native build prerequisites are PowerShell 7, Git, CMake, a platform C++ toolchain, and the .NET 8 SDK. `win-x64`, `linux-x64`, and `osx-arm64` are the v1 package-validation RIDs. The manual `native llama.cpp assets` workflow uses the same scripts in CI and uploads both the native asset artifact and a verified RID package.
+
 ## Tools
 
 Default deterministic tools:
@@ -571,6 +594,12 @@ Package checks:
 dotnet pack src/LlamaCppSharp.Native/LlamaCppSharp.Native.csproj --configuration Release --no-build --output artifacts/packages
 dotnet pack src/LlamaCppSharp/LlamaCppSharp.csproj --configuration Release --no-build --output artifacts/packages
 dotnet pack src/LocalAgent.Cli/LocalAgent.Cli.csproj --configuration Release --no-build --output artifacts/packages
+```
+
+Native package check:
+
+```bash
+pwsh ./scripts/test-native-package.ps1 -Rid linux-x64 -BuildNative
 ```
 
 Docker checks:
@@ -706,10 +735,28 @@ Linux:   libllama.so
 macOS:   libllama.dylib
 ```
 
-Place the asset under `runtimes/<rid>/native/`, then run:
+Run the native build script with package staging:
 
 ```bash
-bubo native test
+pwsh ./scripts/build-llama-native.ps1 -StageToPackage
+```
+
+Expected staged path:
+
+```text
+src/LlamaCppSharp.Native/runtimes/<rid>/native/<library>
+```
+
+Then run:
+
+```bash
+bubo native test --base-directory src/LlamaCppSharp.Native --strict
+```
+
+To probe a staged package layout:
+
+```bash
+bubo native test --base-directory src/LlamaCppSharp.Native --strict
 ```
 
 ### `codex` Is Not Found
