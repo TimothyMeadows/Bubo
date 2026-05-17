@@ -7,3 +7,4 @@
 5. [x] Bubo end-to-end hardening and packaging (`.ai/tasks/bubo-e2e-hardening-packaging/TASK.md`)
 6. [x] Integrate Bubo goal stack onto main (`.ai/tasks/bubo-main-stack-integration/TASK.md`)
 7. [x] Harden Bubo workspace tools and patch flow (`.ai/tasks/bubo-tool-hardening/TASK.md`)
+8. [ ] Add Bubo inference-driven action loop (`.ai/tasks/bubo-inference-action-loop/TASK.md`)

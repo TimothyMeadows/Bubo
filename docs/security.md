@@ -12,6 +12,10 @@ Bubo treats repository content, model output, and generated tool requests as unt
 - `patch_file` is a bounded exact old/new text replacement and fails when the old text is absent, ambiguous, oversized, or unsafe to target.
 - Agent-driven command execution runs through the Docker sandbox runner, avoids shell expansion, and starts from a small executable allowlist.
 - `git_apply_patch` preflights unified diff paths before invoking Docker-backed `git apply --check` and `git apply`.
+- Inference output is not executed directly. Bubo only parses fenced `bubo-actions` JSON arrays, rejects invalid or oversized action plans, rejects unknown tools, and routes accepted actions through a model-safe guarded tool registry.
+- One-shot inference excludes generic `run_command`; deterministic/user-authored action fixtures can still use it for guarded validation commands.
+- Runtime config limits override action-supplied patch and file-count limits, so model output cannot raise its own safety ceilings.
+- Sandboxed command execution is bounded by `MaxCommandSeconds`; timed-out child process trees are killed.
 - `gh` and Git operations are available but Bubo does not auto-push or auto-create PRs unless the surrounding goal-flow explicitly asks for it.
 
 ## GPU Notes
@@ -33,5 +37,6 @@ Research should be mediated outside the sandbox when possible instead of giving 
 
 - The deterministic `bubo-actions` fixture format is intended for validation and controlled automation.
 - `run_command`, `git_status`, `git_diff`, and `git_apply_patch` require a Docker sandbox runner in normal CLI execution; unit tests inject fake runners for deterministic coverage.
-- Model-driven planning/coding is scaffolded behind inference abstractions but not yet a fully autonomous loop.
+- Model-driven action proposal is a one-shot guarded path. Multi-iteration planner/coder autonomy is still roadmap work.
+- Debug logs and transcripts may contain untrusted model or tool output, with event payload truncation for readability.
 - Native llama.cpp package publishing requires populated native assets and per-RID smoke tests before release.

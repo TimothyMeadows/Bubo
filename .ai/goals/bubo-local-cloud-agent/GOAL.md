@@ -38,10 +38,11 @@ Implement Bubo as a .NET 8 LTS coding-agent runtime with a Docker sandbox, local
 5. [x] Bubo end-to-end hardening and packaging (`../.ai/tasks/bubo-e2e-hardening-packaging/TASK.md`)
 6. [x] Integrate Bubo goal stack onto main (`../.ai/tasks/bubo-main-stack-integration/TASK.md`)
 7. [x] Harden Bubo workspace tools and patch flow (`../.ai/tasks/bubo-tool-hardening/TASK.md`)
+8. [ ] Add Bubo inference-driven action loop (`../.ai/tasks/bubo-inference-action-loop/TASK.md`)
 
 ## Current Task
 
-All planned goal tasks complete; awaiting human PR review/merge.
+bubo-inference-action-loop
 
 ## Branch Chain
 - base-structure | base: `main` | head: `chore/opencaw-base-structure` | PR: https://github.com/TimothyMeadows/Bubo/pull/1 | depends on: none | status: merged
@@ -52,6 +53,7 @@ All planned goal tasks complete; awaiting human PR review/merge.
 - bubo-e2e-hardening-packaging | base: `feature/bubo-agent-runtime-inference` | head: `feature/bubo-e2e-hardening-packaging` | PR: https://github.com/TimothyMeadows/Bubo/pull/11 | depends on: bubo-agent-runtime-inference | status: merged
 - bubo-main-stack-integration | base: `main` | head: `feature/bubo-main-stack-integration` | PR: https://github.com/TimothyMeadows/Bubo/pull/14 | depends on: bubo-e2e-hardening-packaging | status: post_pr_qa_passed
 - bubo-tool-hardening | base: `main` | head: `feature/bubo-tool-hardening` | PR: https://github.com/TimothyMeadows/Bubo/pull/16 | depends on: bubo-main-stack-integration | status: post_pr_qa_passed
+- bubo-inference-action-loop | base: `main` | head: `feature/bubo-inference-action-loop` | PR: pending | depends on: bubo-tool-hardening | status: in_progress
 
 ## Automation Rules
 - Complete one task at a time unless the project-manager lane plan explicitly marks safe parallel work.
@@ -74,6 +76,7 @@ All planned goal tasks complete; awaiting human PR review/merge.
 - Bubo end-to-end hardening and packaging: https://github.com/TimothyMeadows/Bubo/pull/11
 - Integrate Bubo goal stack onto main: https://github.com/TimothyMeadows/Bubo/pull/14
 - Harden Bubo workspace tools and patch flow: https://github.com/TimothyMeadows/Bubo/pull/16
+- Add Bubo inference-driven action loop: pending
 
 ## QA Evidence
 
@@ -103,3 +106,4 @@ All planned goal tasks complete; awaiting human PR review/merge.
 - PRs #7 through #11 are closed and merged. Issues #2 through #6 are closed as completed.
 - PRs #8 through #11 were merged into their stacked base branches, and PR #14 integrates the completed stack back onto `main`.
 - Task #15 hardens workspace/patch tools after PR #14 merged; issue #15 is linked to PR #16 and should close on merge.
+- Task #17 connects inference providers to guarded action generation after PR #16 merged.

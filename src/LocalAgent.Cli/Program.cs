@@ -1,5 +1,7 @@
 using Bubo.LlamaCppSharp;
 using Bubo.LocalAgent.Abstractions;
+using Bubo.LocalAgent.Inference.CodexCli;
+using Bubo.LocalAgent.Inference.LlamaCpp;
 using Bubo.LocalAgent.Runtime;
 using Bubo.LocalAgent.Sandbox.Docker;
 
@@ -37,8 +39,10 @@ public static class Program
                     return await RunSandboxTestAsync(parseResult.Options);
             }
 
-            var runner = CreateAgentRunner();
-            await runner.RunAsync(
+            var runner = CreateAgentRunner(
+                parseResult.Options.Mode,
+                parseResult.Options.WorkspacePath);
+            var result = await runner.RunAsync(
                 new AgentRunRequest
                 {
                     WorkspacePath = parseResult.Options.WorkspacePath,
@@ -48,7 +52,7 @@ public static class Program
                 },
                 CancellationToken.None);
 
-            return 0;
+            return result.Success ? 0 : 1;
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException)
         {
@@ -147,20 +151,36 @@ public static class Program
         Console.WriteLine($"  threads: {profile.Threads}");
     }
 
-    private static AgentRunner CreateAgentRunner()
+    private static AgentRunner CreateAgentRunner(AgentMode mode, string workspacePath)
     {
-        if (!DockerAvailability.TryResolveDockerExecutable("docker", out var dockerExecutable))
+        var inferenceProvider = CreateInferenceProvider(mode, workspacePath);
+        var sandboxOptions = new SandboxOptions
         {
-            return new AgentRunner();
-        }
+            Gpu = null,
+            ModelsPath = null
+        };
 
-        return new AgentRunner(
-            new DockerSandboxRunner(dockerExecutable),
-            new SandboxOptions
-            {
-                Gpu = null,
-                ModelsPath = null
-            });
+        return DockerAvailability.TryResolveDockerExecutable("docker", out var dockerExecutable)
+            ? new AgentRunner(
+                new DockerSandboxRunner(dockerExecutable),
+                sandboxOptions,
+                inferenceProvider)
+            : new AgentRunner(
+                sandboxOptions: sandboxOptions,
+                inferenceProvider: inferenceProvider);
+    }
+
+    private static IInferenceProvider CreateInferenceProvider(AgentMode mode, string workspacePath)
+    {
+        return mode switch
+        {
+            AgentMode.Cloud => new CodexCliInferenceProvider(
+                new CodexCliOptions
+                {
+                    WorkingDirectory = Path.GetFullPath(workspacePath)
+                }),
+            _ => new LlamaCppInferenceProvider()
+        };
     }
 
     private static bool IsExecutableLikelyAvailable(string executable)

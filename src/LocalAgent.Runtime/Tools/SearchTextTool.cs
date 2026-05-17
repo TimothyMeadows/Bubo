@@ -20,9 +20,10 @@ public sealed class SearchTextTool : WorkspaceToolBase
         var root = guard.ResolveExistingDirectoryInsideWorkspace(requestedPath);
         var matches = new List<string>();
 
-        foreach (var file in Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories).Take(1_000))
+        foreach (var discoveredFile in Directory.EnumerateFiles(root, "*", SafeEnumerationOptions()).Take(1_000))
         {
             cancellationToken.ThrowIfCancellationRequested();
+            var file = guard.ResolveExistingFileInsideWorkspace(discoveredFile);
             var lineNumber = 0;
             foreach (var line in await File.ReadAllLinesAsync(file, cancellationToken))
             {
@@ -38,6 +39,16 @@ public sealed class SearchTextTool : WorkspaceToolBase
         {
             Success = true,
             Output = string.Join(Environment.NewLine, matches)
+        };
+    }
+
+    private static EnumerationOptions SafeEnumerationOptions()
+    {
+        return new EnumerationOptions
+        {
+            RecurseSubdirectories = true,
+            IgnoreInaccessible = true,
+            AttributesToSkip = FileAttributes.ReparsePoint
         };
     }
 }

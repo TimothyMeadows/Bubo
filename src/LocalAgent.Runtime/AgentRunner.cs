@@ -10,13 +10,19 @@ public sealed class AgentRunner
     private static readonly JsonSerializerOptions DebugJsonOptions = new(JsonSerializerDefaults.Web);
     private readonly ISandboxRunner? _sandboxRunner;
     private readonly SandboxOptions _sandboxOptions;
+    private readonly IInferenceProvider? _inferenceProvider;
+    private readonly AgentRunConfig _config;
 
     public AgentRunner(
         ISandboxRunner? sandboxRunner = null,
-        SandboxOptions? sandboxOptions = null)
+        SandboxOptions? sandboxOptions = null,
+        IInferenceProvider? inferenceProvider = null,
+        AgentRunConfig? config = null)
     {
         _sandboxRunner = sandboxRunner;
         _sandboxOptions = sandboxOptions ?? new SandboxOptions { Gpu = null, ModelsPath = null };
+        _inferenceProvider = inferenceProvider;
+        _config = config ?? new AgentRunConfig();
     }
 
     public async Task<AgentRunResult> RunAsync(
@@ -69,8 +75,14 @@ public sealed class AgentRunner
         };
 
         var result = actions.Count == 0
-            ? CreateNoOpResult(events)
-            : await ExecuteActionsAsync(actions, guard, events, cancellationToken);
+            ? await PlanWithInferenceOrNoOpAsync(input, guard, events, cancellationToken)
+            : await ExecuteActionsAsync(
+                actions,
+                guard,
+                ToolRegistry.CreateDefault(_sandboxRunner, _sandboxOptions),
+                events,
+                "explicit bubo-actions block",
+                cancellationToken);
 
         events.Add(new TranscriptEvent
         {
@@ -130,23 +142,243 @@ public sealed class AgentRunner
         };
     }
 
-    private async Task<AgentRunResult> ExecuteActionsAsync(
-        IReadOnlyList<AgentInputAction> actions,
+    private async Task<AgentRunResult> PlanWithInferenceOrNoOpAsync(
+        string input,
         WorkspaceGuard guard,
         ICollection<TranscriptEvent> events,
         CancellationToken cancellationToken)
     {
-        var registry = ToolRegistry.CreateDefault(_sandboxRunner, _sandboxOptions);
+        if (_inferenceProvider is null)
+        {
+            return CreateNoOpResult(events);
+        }
+
+        var registry = ToolRegistry.CreateModelSafe(_sandboxRunner, _sandboxOptions);
+        var prompt = InferenceActionPromptBuilder.Build(input, registry.Tools);
+        events.Add(new TranscriptEvent
+        {
+            Type = "inference.started",
+            Message = $"Requesting guarded actions from `{_inferenceProvider.Name}`.",
+            Data = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["provider"] = _inferenceProvider.Name,
+                ["role"] = _config.Coder.Role,
+                ["promptCharacters"] = prompt.Length.ToString()
+            }
+        });
+
+        InferenceResponse response;
+        try
+        {
+            response = await _inferenceProvider.GenerateAsync(
+                new InferenceRequest
+                {
+                    Role = _config.Coder.Role,
+                    Prompt = prompt,
+                    ModelProfile = _config.Coder
+                },
+                cancellationToken);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            events.Add(new TranscriptEvent
+            {
+                Type = "inference.failed",
+                Message = exception.Message
+            });
+
+            return new AgentRunResult
+            {
+                Success = false,
+                Summary = "Bubo could not get model-proposed actions.",
+                Plan = new[]
+                {
+                    "Read INPUT.md.",
+                    "Ask the configured inference provider for a fenced bubo-actions JSON array.",
+                    "Stop before tool execution because inference threw an exception."
+                },
+                ChangesMade = new[] { "No changes made." },
+                FilesChanged = Array.Empty<string>(),
+                CommandsRun = Array.Empty<string>(),
+                TestResults = new[] { "No commands were run." },
+                IssuesOrRisks = new[] { exception.Message },
+                NextSteps = new[]
+                {
+                    "Inspect agent-debug.jsonl for provider details, then fix the provider configuration or use a deterministic bubo-actions block."
+                }
+            };
+        }
+
+        foreach (var providerEvent in response.Events)
+        {
+            events.Add(providerEvent);
+        }
+
+        events.Add(new TranscriptEvent
+        {
+            Type = "inference.completed",
+            Message = $"Inference provider `{_inferenceProvider.Name}` returned a response.",
+            Data = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["responseCharacters"] = response.Text.Length.ToString()
+            }
+        });
+
+        if (!response.Success)
+        {
+            events.Add(new TranscriptEvent
+            {
+                Type = "inference.failed",
+                Message = $"Inference provider `{_inferenceProvider.Name}` failed."
+            });
+
+            return new AgentRunResult
+            {
+                Success = false,
+                Summary = "Bubo could not get model-proposed actions.",
+                Plan = new[]
+                {
+                    "Read INPUT.md.",
+                    "Ask the configured inference provider for a fenced bubo-actions JSON array.",
+                    "Stop before tool execution because inference failed."
+                },
+                ChangesMade = new[] { "No changes made." },
+                FilesChanged = Array.Empty<string>(),
+                CommandsRun = Array.Empty<string>(),
+                TestResults = new[] { "No commands were run." },
+                IssuesOrRisks = new[]
+                {
+                    $"Inference provider `{_inferenceProvider.Name}` failed before returning guarded actions."
+                },
+                NextSteps = new[]
+                {
+                    "Inspect agent-debug.jsonl for provider details, then fix the provider configuration or use a deterministic bubo-actions block."
+                }
+            };
+        }
+
+        IReadOnlyList<AgentInputAction> generatedActions;
+        try
+        {
+            generatedActions = AgentInputActionParser.ParseSingleFence(response.Text);
+        }
+        catch (ArgumentException exception)
+        {
+            events.Add(new TranscriptEvent
+            {
+                Type = "inference.parse_failed",
+                Message = exception.Message
+            });
+
+            return new AgentRunResult
+            {
+                Success = false,
+                Summary = "Bubo could not parse model-proposed actions.",
+                Plan = new[]
+                {
+                    "Read INPUT.md.",
+                    "Ask the configured inference provider for a fenced bubo-actions JSON array.",
+                    "Stop before tool execution because the response was invalid."
+                },
+                ChangesMade = new[] { "No changes made." },
+                FilesChanged = Array.Empty<string>(),
+                CommandsRun = Array.Empty<string>(),
+                TestResults = new[] { "No commands were run." },
+                IssuesOrRisks = new[] { exception.Message },
+                NextSteps = new[]
+                {
+                    "Inspect agent-debug.jsonl and retry with a response that contains valid fenced bubo-actions JSON."
+                }
+            };
+        }
+
+        if (generatedActions.Count == 0)
+        {
+            events.Add(new TranscriptEvent
+            {
+                Type = "inference.no_actions",
+                Message = "Inference response did not include a bubo-actions fence."
+            });
+
+            return new AgentRunResult
+            {
+                Success = true,
+                Summary = "Bubo completed without tool actions from the inference provider.",
+                Plan = new[]
+                {
+                    "Read INPUT.md.",
+                    "Ask the configured inference provider for guarded actions.",
+                    "Skip tool execution because no fenced bubo-actions JSON was returned."
+                },
+                ChangesMade = new[] { "No changes made." },
+                FilesChanged = Array.Empty<string>(),
+                CommandsRun = Array.Empty<string>(),
+                TestResults = new[] { "No commands were run." },
+                IssuesOrRisks = new[]
+                {
+                    "Inference did not produce executable guarded actions."
+                },
+                NextSteps = new[]
+                {
+                    "Use a deterministic bubo-actions block or configure an inference provider that can return one."
+                }
+            };
+        }
+
+        return await ExecuteActionsAsync(
+            generatedActions,
+            guard,
+            registry,
+            events,
+            "inference-generated bubo-actions block",
+            cancellationToken);
+    }
+
+    private async Task<AgentRunResult> ExecuteActionsAsync(
+        IReadOnlyList<AgentInputAction> actions,
+        WorkspaceGuard guard,
+        ToolRegistry registry,
+        ICollection<TranscriptEvent> events,
+        string actionSource,
+        CancellationToken cancellationToken)
+    {
         var filesChanged = new List<string>();
         var commandsRun = new List<string>();
         var changesMade = new List<string>();
         var testResults = new List<string>();
         var issues = new List<string>();
 
+        if (actions.Count > _config.Limits.MaxToolCalls)
+        {
+            var message = $"Action count {actions.Count} exceeds maxToolCalls ({_config.Limits.MaxToolCalls}).";
+            events.Add(new TranscriptEvent
+            {
+                Type = "plan.rejected",
+                Message = message
+            });
+
+            return new AgentRunResult
+            {
+                Success = false,
+                Summary = "Bubo rejected an oversized action plan.",
+                Plan = new[]
+                {
+                    "Read INPUT.md.",
+                    $"Reject the {actionSource} before tool execution because it exceeds configured limits."
+                },
+                ChangesMade = new[] { "No changes made." },
+                FilesChanged = Array.Empty<string>(),
+                CommandsRun = Array.Empty<string>(),
+                TestResults = new[] { "No commands were run." },
+                IssuesOrRisks = new[] { message },
+                NextSteps = new[] { "Reduce the number of requested tool actions and rerun Bubo." }
+            };
+        }
+
         events.Add(new TranscriptEvent
         {
             Type = "plan.created",
-            Message = $"Parsed {actions.Count} bubo-actions item(s) from INPUT.md.",
+            Message = $"Parsed {actions.Count} action(s) from {actionSource}.",
             Data = new Dictionary<string, string>(StringComparer.Ordinal)
             {
                 ["actions"] = string.Join(", ", actions.Select(action => action.Tool))
@@ -160,7 +392,7 @@ public sealed class AgentRunner
             if (!registry.TryGet(action.Tool, out var tool))
             {
                 success = false;
-                var message = $"Unknown tool requested by INPUT.md: {action.Tool}";
+                var message = $"Unknown tool requested by {actionSource}: {action.Tool}";
                 issues.Add(message);
                 events.Add(new TranscriptEvent
                 {
@@ -181,14 +413,29 @@ public sealed class AgentRunner
                 }
             });
 
-            var toolResult = await tool.InvokeAsync(
-                new ToolRequest
+            ToolResult toolResult;
+            using (var toolCallCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
+            {
+                if (_config.Limits.MaxCommandSeconds > 0)
                 {
-                    Name = action.Tool,
-                    WorkspaceRoot = guard.WorkspaceRoot,
-                    Arguments = action.Arguments
-                },
-                cancellationToken);
+                    toolCallCts.CancelAfter(TimeSpan.FromSeconds(_config.Limits.MaxCommandSeconds));
+                }
+
+                try
+                {
+                    toolResult = await tool.InvokeAsync(
+                        CreateToolRequest(action, guard),
+                        toolCallCts.Token);
+                }
+                catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+                {
+                    toolResult = new ToolResult
+                    {
+                        Success = false,
+                        Error = $"{action.Tool} timed out after {_config.Limits.MaxCommandSeconds} second(s)."
+                    };
+                }
+            }
 
             RecordToolResult(
                 action,
@@ -224,12 +471,12 @@ public sealed class AgentRunner
         {
             Success = success,
             Summary = success
-                ? $"Bubo executed {actions.Count} action(s) from INPUT.md."
+                ? $"Bubo executed {actions.Count} action(s) from {actionSource}."
                 : "Bubo stopped after a requested action failed.",
             Plan = new[]
             {
                 "Read INPUT.md.",
-                "Execute the explicit bubo-actions block with guarded tools.",
+                $"Execute the {actionSource} with guarded tools.",
                 "Write auditable OUTPUT.md, agent-debug.jsonl, and agent-transcript.md."
             },
             ChangesMade = changesMade.Count == 0
@@ -241,12 +488,34 @@ public sealed class AgentRunner
                 ? new[] { "No command actions were run." }
                 : testResults,
             IssuesOrRisks = issues.Count == 0
-                ? new[] { "Directive-based execution is deterministic; model-driven planning remains future work." }
+                ? new[] { "Tool execution stayed inside the guarded runtime path." }
                 : issues,
             NextSteps = new[]
             {
                 "Review OUTPUT.md and git diff before committing generated workspace changes."
             }
+        };
+    }
+
+    private ToolRequest CreateToolRequest(AgentInputAction action, WorkspaceGuard guard)
+    {
+        var arguments = new Dictionary<string, string>(action.Arguments, StringComparer.Ordinal);
+        if (string.Equals(action.Tool, "patch_file", StringComparison.OrdinalIgnoreCase))
+        {
+            arguments["maxPatchBytes"] = _config.Limits.MaxPatchBytes.ToString();
+        }
+
+        if (string.Equals(action.Tool, "git_apply_patch", StringComparison.OrdinalIgnoreCase))
+        {
+            arguments["maxPatchBytes"] = _config.Limits.MaxPatchBytes.ToString();
+            arguments["maxFilesChanged"] = _config.Limits.MaxFilesChanged.ToString();
+        }
+
+        return new ToolRequest
+        {
+            Name = action.Tool,
+            WorkspaceRoot = guard.WorkspaceRoot,
+            Arguments = arguments
         };
     }
 
