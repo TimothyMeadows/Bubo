@@ -21,6 +21,8 @@ Bubo now has a bounded inference-generated action repair loop for inputs without
 - `dotnet pack src/LlamaCppSharp.Native/LlamaCppSharp.Native.csproj --configuration Release --no-build --output artifacts/packages`
 - `dotnet pack src/LlamaCppSharp/LlamaCppSharp.csproj --configuration Release --no-build --output artifacts/packages`
 - `dotnet pack src/LocalAgent.Cli/LocalAgent.Cli.csproj --configuration Release --no-build --output artifacts/packages`
+- `docker build --pull -f docker/bubo-sandbox/Dockerfile -t bubo-sandbox:local docker/bubo-sandbox`
+- `dotnet run --no-build --configuration Release --project src/LocalAgent.Cli/LocalAgent.Cli.csproj -- sandbox test --workspace .`
 
 ## Results
 
@@ -30,4 +32,4 @@ Bubo now has a bounded inference-generated action repair loop for inputs without
 - Full solution tests passed: 82 tests after the auditability fix.
 - Build, format, diff, and package validation passed.
 - `git diff --check` reported line-ending normalization warnings only.
-- Docker live sandbox smoke remains blocked locally because Docker is not installed on this host.
+- Docker live sandbox smoke passed after Docker installation. The image build completed and `bubo sandbox test` reported `git version 2.39.5`, `gh version 2.92.0`, and `.NET 8.0.421` from inside the container.

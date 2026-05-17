@@ -49,7 +49,7 @@ Expand Bubo's one-shot inference action proposal into a bounded iterative loop t
 ## Notes
 
 - This task is stacked on PR #20 to reuse config loading and `MaxIterations` wiring before that PR merges.
-- Docker is not installed on this host, so live Docker sandbox smoke is blocked locally.
+- Docker is installed on this host, so live Docker sandbox smoke is now included in final validation.
 
 ## Validation
 
@@ -65,6 +65,8 @@ Expand Bubo's one-shot inference action proposal into a bounded iterative loop t
 - `git diff --check` passed with line-ending normalization warnings only.
 - `dotnet test Bubo.sln --configuration Release --no-build --verbosity minimal` passed with 82 tests after the auditability fix.
 - Package validation passed for `LlamaCppSharp.Native`, `LlamaCppSharp`, and `LocalAgent.Cli`.
+- `docker build --pull -f docker/bubo-sandbox/Dockerfile -t bubo-sandbox:local docker/bubo-sandbox` passed.
+- `dotnet run --no-build --configuration Release --project src/LocalAgent.Cli/LocalAgent.Cli.csproj -- sandbox test --workspace .` passed and reported `git`, `gh`, and .NET from inside the sandbox container.
 
 ## Post-PR QA
 
@@ -73,4 +75,4 @@ Expand Bubo's one-shot inference action proposal into a bounded iterative loop t
 - Post-PR QA evidence was posted to PR #22 and mirrored to issue #21 before the auditability follow-up.
 - A lane-2 auditability risk was resolved before finalizing the task: max-iteration exhaustion now aggregates prior failed-attempt evidence, including partial side effects.
 - Final local validation after the follow-up fix passed: build, full tests with 82 tests, format check, diff check, and package validation.
-- Docker live sandbox smoke remains blocked locally because Docker is not installed on this host.
+- Docker live sandbox smoke passed after Docker installation: the sandbox image built successfully and `bubo sandbox test` reported `git`, `gh`, and .NET from inside the container.
