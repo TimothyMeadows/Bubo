@@ -6,6 +6,8 @@ public sealed record AgentRunResult
 
     public required string Summary { get; init; }
 
+    public string ReportMarkdown { get; init; } = string.Empty;
+
     public IReadOnlyList<string> Plan { get; init; } = Array.Empty<string>();
 
     public IReadOnlyList<string> ChangesMade { get; init; } = Array.Empty<string>();

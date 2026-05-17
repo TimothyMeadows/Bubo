@@ -3,13 +3,13 @@
 ## Bubo Architecture Facts
 
 - Bubo targets .NET 8 LTS and uses `global.json` roll-forward so newer local SDKs can build `net8.0`.
-- The canonical v1 file contract is `INPUT.md` or inline Markdown in and `.ai/artifacts/OUTPUT.md`, `.ai/artifacts/agent-debug.jsonl`, and `.ai/artifacts/agent-transcript.md` out.
+- The canonical v1 file contract is `INPUT.md` or inline Markdown in, Markdown report on stdout, and `.ai/artifacts/agent-debug.jsonl` plus `.ai/artifacts/agent-transcript.md` as review sidecars.
 - Bubo's intended runtime separates contracts, orchestration, inference providers, Docker sandboxing, and CLI entrypoint across `LocalAgent.Abstractions`, `LocalAgent.Runtime`, `LocalAgent.Inference.*`, `LocalAgent.Sandbox.Docker`, and `LocalAgent.Cli`.
 - Local inference is intended to use direct C# interop over pinned llama.cpp native assets; avoid introducing host-installed `llama-cli`, `llama-server`, Ollama, or daemon dependencies.
 - Cloud inference is intended to use `codex-cli` behind the same inference abstraction; the locally observed CLI version during setup was `codex-cli 0.131.0-alpha.9`, so invocation flags should be rechecked before relying on newer versions.
 - The runtime has deterministic patch tools: `patch_file` for exact old/new text replacement and Docker-backed `git_apply_patch` for guarded unified diffs.
 - Workspace tools treat model output as untrusted and reject path traversal, `.git` metadata targets, and symlink/reparse-point escape paths.
-- `bubo run --folder <code> --input <INPUT.md|markdown> --output <OUTPUT.md>` is the preferred workspace shape. `--folder` is the guarded shared code/artifact root; `--input` may be an external Markdown file or inline Markdown prompt text, and Bubo-owned report artifacts must stay under `.ai/artifacts`.
+- `bubo run --folder <code> --input <INPUT.md|markdown>` is the preferred workspace shape. `--folder` is the guarded shared code/artifact root; `--input` may be an external Markdown file or inline Markdown prompt text; `--output` remains a legacy sidecar anchor under `.ai/artifacts`; and the run report is printed to stdout.
 - When `INPUT.md` has no deterministic `bubo-actions` fence, Bubo can do one-shot inference action proposal. The model-safe registry intentionally excludes generic `run_command`; accepted model actions still go through guarded tools.
 - CLI `bubo run` initializes OpenCaw from the folder `.opencaw` submodule before reading `INPUT.md`; host project context stays in `.ai` and is fed to inference as system prompt context.
 

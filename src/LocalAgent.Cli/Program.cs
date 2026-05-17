@@ -61,6 +61,7 @@ public static class Program
                 },
                 CancellationToken.None);
 
+            Console.Write(result.ReportMarkdown);
             return result.Success ? 0 : 1;
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException)

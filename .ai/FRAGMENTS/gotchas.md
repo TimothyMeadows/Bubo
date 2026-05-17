@@ -25,8 +25,8 @@
 
 ## Bubo Folder Workspace Boundary
 
-- `--folder` is the shared writable root for tools, Git, Docker commands, and OpenCaw. External `--input` is allowed as a host-runtime read path, but Bubo-owned report artifacts must resolve under `<folder>/.ai/artifacts`.
-- Do not route generic `write_file`/patch/Git changes into `.ai/artifacts`; those are code/file operations on requested guarded paths. Only Bubo-owned report artifacts belong there by default.
+- `--folder` is the shared writable root for tools, Git, Docker commands, and OpenCaw. External `--input` is allowed as a host-runtime read path, the Markdown run report goes to stdout, and Bubo-owned review sidecars must resolve under `<folder>/.ai/artifacts`.
+- Do not route generic `write_file`/patch/Git changes into `.ai/artifacts`; those are code/file operations on requested guarded paths. Only Bubo-owned review sidecars belong there by default.
 - `--input` can also be inline Markdown text. Missing values that look like Markdown paths, rooted paths, or separator-containing paths still fail as missing files instead of being silently treated as prompts.
 
 ## Windows CUDA Native Builds

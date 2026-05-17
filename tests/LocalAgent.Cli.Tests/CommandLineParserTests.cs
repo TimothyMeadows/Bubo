@@ -16,7 +16,7 @@ public sealed class CommandLineParserTests
             "--input",
             "repo/INPUT.md",
             "--output",
-            "repo/OUTPUT.md",
+            "repo/report.md",
             "--mode",
             "cloud",
             "--config",
@@ -27,7 +27,7 @@ public sealed class CommandLineParserTests
         Assert.NotNull(result.Options);
         Assert.Equal("repo", result.Options.WorkspacePath);
         Assert.Equal("repo/INPUT.md", result.Options.InputPath);
-        Assert.Equal("repo/OUTPUT.md", result.Options.OutputPath);
+        Assert.Equal("repo/report.md", result.Options.OutputPath);
         Assert.Equal(AgentMode.Cloud, result.Options.Mode);
         Assert.True(result.Options.ModeWasSpecified);
         Assert.Equal("repo/bubo.config.json", result.Options.ConfigPath);
@@ -47,7 +47,7 @@ public sealed class CommandLineParserTests
         Assert.NotNull(result.Options);
         Assert.Equal("repo", result.Options.WorkspacePath);
         Assert.Equal(Path.Combine("repo", "INPUT.md"), result.Options.InputPath);
-        Assert.Equal(Path.Combine("repo", ".ai", "artifacts", "OUTPUT.md"), result.Options.OutputPath);
+        Assert.Equal(Path.Combine("repo", ".ai", "artifacts", "run.md"), result.Options.OutputPath);
     }
 
     [Fact]
@@ -61,14 +61,14 @@ public sealed class CommandLineParserTests
             "--input",
             "prompts/INPUT.md",
             "--output",
-            "reports/OUTPUT.md"
+            "reports/run.md"
         });
 
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Options);
         Assert.Equal("repo", result.Options.WorkspacePath);
         Assert.Equal("prompts/INPUT.md", result.Options.InputPath);
-        Assert.Equal("reports/OUTPUT.md", result.Options.OutputPath);
+        Assert.Equal("reports/run.md", result.Options.OutputPath);
     }
 
     [Fact]

@@ -29,7 +29,7 @@ public sealed class ProgramE2ETests
             ```
             """);
 
-        var exitCode = await Program.Main(new[]
+        var (exitCode, stdout) = await RunProgramAsync(new[]
         {
             "run",
             "--opencaw-update",
@@ -45,12 +45,13 @@ public sealed class ProgramE2ETests
         });
 
         Assert.Equal(0, exitCode);
-        Assert.True(File.Exists(outputPath));
+        Assert.False(File.Exists(outputPath));
+        Assert.True(File.Exists(CreateDebugLogPath(workspace)));
+        Assert.True(File.Exists(CreateTranscriptPath(workspace)));
         Assert.True(File.Exists(Path.Combine(workspace, "generated", "cli-result.txt")));
 
-        var output = await File.ReadAllTextAsync(outputPath);
-        Assert.Contains("Bubo executed 1 action", output);
-        Assert.Contains("generated/cli-result.txt", output);
+        Assert.Contains("Bubo executed 1 action", stdout);
+        Assert.Contains("generated/cli-result.txt", stdout);
     }
 
     [Fact]
@@ -64,7 +65,7 @@ public sealed class ProgramE2ETests
         await CreateOpenCawFixtureAsync(folder);
         await WriteHostScaffoldAsync(folder);
         var inputPath = Path.Combine(prompts, "INPUT.md");
-        var outputPath = CreateOutputPath(folder, "reports", "OUTPUT.md");
+        var outputPath = CreateOutputPath(folder, "reports", "run.md");
         await File.WriteAllTextAsync(
             inputPath,
             """
@@ -83,7 +84,7 @@ public sealed class ProgramE2ETests
             ```
             """);
 
-        var exitCode = await Program.Main(new[]
+        var (exitCode, stdout) = await RunProgramAsync(new[]
         {
             "run",
             "--opencaw-update",
@@ -100,21 +101,20 @@ public sealed class ProgramE2ETests
 
         Assert.Equal(0, exitCode);
         Assert.True(File.Exists(Path.Combine(folder, "generated", "folder-result.txt")));
-        Assert.True(File.Exists(outputPath));
+        Assert.False(File.Exists(outputPath));
         Assert.True(File.Exists(CreateDebugLogPath(folder, "reports")));
         Assert.True(File.Exists(CreateTranscriptPath(folder, "reports")));
-        Assert.False(File.Exists(Path.Combine(folder, "OUTPUT.md")));
+        Assert.False(File.Exists(Path.Combine(folder, "run.md")));
 
-        var output = await File.ReadAllTextAsync(outputPath);
-        Assert.Contains("Bubo executed 1 action", output);
-        Assert.Contains("generated/folder-result.txt", output);
+        Assert.Contains("Bubo executed 1 action", stdout);
+        Assert.Contains("generated/folder-result.txt", stdout);
     }
 
     [Fact]
     public async Task RunCommandSupportsInlineMarkdownInput()
     {
         var folder = await CreateWorkspaceWithOpenCawAsync();
-        var outputPath = CreateOutputPath(folder, "reports", "OUTPUT.md");
+        var outputPath = CreateOutputPath(folder, "reports", "run.md");
         var input =
             """
             # CLI Inline Fixture
@@ -132,7 +132,7 @@ public sealed class ProgramE2ETests
             ```
             """;
 
-        var exitCode = await Program.Main(new[]
+        var (exitCode, _) = await RunProgramAsync(new[]
         {
             "run",
             "--opencaw-update",
@@ -149,7 +149,8 @@ public sealed class ProgramE2ETests
 
         Assert.Equal(0, exitCode);
         Assert.True(File.Exists(Path.Combine(folder, "generated", "inline-cli-result.txt")));
-        Assert.True(File.Exists(outputPath));
+        Assert.False(File.Exists(outputPath));
+        Assert.True(File.Exists(CreateTranscriptPath(folder, "reports")));
 
         var debugLog = await File.ReadAllTextAsync(CreateDebugLogPath(folder, "reports"));
         Assert.Contains("inline markdown", debugLog);
@@ -179,7 +180,7 @@ public sealed class ProgramE2ETests
             ```
             """);
 
-        var exitCode = await Program.Main(new[]
+        var (exitCode, stdout) = await RunProgramAsync(new[]
         {
             "run",
             "--opencaw-update",
@@ -195,11 +196,12 @@ public sealed class ProgramE2ETests
         });
 
         Assert.Equal(1, exitCode);
-        Assert.True(File.Exists(outputPath));
+        Assert.False(File.Exists(outputPath));
+        Assert.True(File.Exists(CreateDebugLogPath(workspace)));
+        Assert.True(File.Exists(CreateTranscriptPath(workspace)));
 
-        var output = await File.ReadAllTextAsync(outputPath);
-        Assert.Contains("Bubo stopped", output);
-        Assert.Contains("write_file failed", output);
+        Assert.Contains("Bubo stopped", stdout);
+        Assert.Contains("write_file failed", stdout);
     }
 
     [Fact]
@@ -242,7 +244,7 @@ public sealed class ProgramE2ETests
             ```
             """);
 
-        var exitCode = await Program.Main(new[]
+        var (exitCode, stdout) = await RunProgramAsync(new[]
         {
             "run",
             "--opencaw-update",
@@ -258,9 +260,11 @@ public sealed class ProgramE2ETests
         Assert.Equal(1, exitCode);
         Assert.False(File.Exists(Path.Combine(workspace, "one.txt")));
         Assert.False(File.Exists(Path.Combine(workspace, "two.txt")));
+        Assert.False(File.Exists(outputPath));
+        Assert.True(File.Exists(CreateDebugLogPath(workspace)));
+        Assert.True(File.Exists(CreateTranscriptPath(workspace)));
 
-        var output = await File.ReadAllTextAsync(outputPath);
-        Assert.Contains("exceeds maxToolCalls (1)", output);
+        Assert.Contains("exceeds maxToolCalls (1)", stdout);
     }
 
     [Fact]
@@ -294,7 +298,7 @@ public sealed class ProgramE2ETests
             ```
             """);
 
-        var exitCode = await Program.Main(new[]
+        var (exitCode, _) = await RunProgramAsync(new[]
         {
             "run",
             "--opencaw-update",
@@ -310,6 +314,7 @@ public sealed class ProgramE2ETests
         });
 
         Assert.Equal(0, exitCode);
+        Assert.False(File.Exists(outputPath));
 
         var debugLog = await File.ReadAllTextAsync(CreateDebugLogPath(workspace));
         Assert.Contains("\"mode\":\"Local\"", debugLog);
@@ -346,7 +351,7 @@ public sealed class ProgramE2ETests
             ```
             """);
 
-        var exitCode = await Program.Main(new[]
+        var (exitCode, _) = await RunProgramAsync(new[]
         {
             "run",
             "--opencaw-update",
@@ -361,6 +366,7 @@ public sealed class ProgramE2ETests
 
         Assert.Equal(0, exitCode);
         Assert.True(File.Exists(Path.Combine(workspace, "mode.txt")));
+        Assert.False(File.Exists(outputPath));
 
         var debugLog = await File.ReadAllTextAsync(CreateDebugLogPath(workspace));
         Assert.Contains("\"mode\":\"Cloud\"", debugLog);
@@ -429,6 +435,22 @@ public sealed class ProgramE2ETests
         Assert.Contains("runtimes", message);
         Assert.Contains(Path.Combine("native", "cuda"), message);
         Assert.DoesNotContain("or by name", message);
+    }
+
+    private static async Task<(int ExitCode, string Stdout)> RunProgramAsync(string[] args)
+    {
+        using var output = new StringWriter();
+        var originalOutput = Console.Out;
+        Console.SetOut(output);
+        try
+        {
+            var exitCode = await Program.Main(args);
+            return (exitCode, output.ToString());
+        }
+        finally
+        {
+            Console.SetOut(originalOutput);
+        }
     }
 
     private static string CreateWorkspace()
@@ -509,7 +531,7 @@ public sealed class ProgramE2ETests
     {
         return CreateArtifactPath(
             workspace,
-            relativeSegments.Length == 0 ? new[] { "OUTPUT.md" } : relativeSegments);
+            relativeSegments.Length == 0 ? new[] { "run.md" } : relativeSegments);
     }
 
     private static string CreateDebugLogPath(string workspace, params string[] relativeDirectorySegments)

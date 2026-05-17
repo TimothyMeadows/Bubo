@@ -1,6 +1,6 @@
 # Command Execution Fixture
 
-Run a safe allowlisted command and record the result in `OUTPUT.md`.
+Run a safe allowlisted command and record the result in the stdout report.
 
 ```bubo-actions
 [
