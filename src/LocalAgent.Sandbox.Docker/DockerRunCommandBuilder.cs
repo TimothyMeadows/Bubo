@@ -63,8 +63,13 @@ public static class DockerRunCommandBuilder
             arguments.Add(options.Cpus.Value.ToString("0.###"));
         }
 
-        if (string.Equals(options.Gpu, "nvidia", StringComparison.OrdinalIgnoreCase))
+        if (!string.IsNullOrWhiteSpace(options.Gpu))
         {
+            if (!string.Equals(options.Gpu, "nvidia", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new ArgumentException($"Unsupported Docker GPU mode: {options.Gpu}", nameof(options));
+            }
+
             arguments.Add("--gpus");
             arguments.Add("all");
         }

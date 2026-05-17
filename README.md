@@ -190,8 +190,8 @@ Utility commands:
 ```bash
 bubo doctor
 bubo models list
-bubo sandbox test --workspace ./repo
-bubo native test
+bubo sandbox test --workspace ./repo --gpu nvidia
+bubo native test --backend cpu --strict
 ```
 
 From source:
@@ -199,8 +199,8 @@ From source:
 ```bash
 dotnet run --project src/LocalAgent.Cli/LocalAgent.Cli.csproj -- doctor
 dotnet run --project src/LocalAgent.Cli/LocalAgent.Cli.csproj -- models list
-dotnet run --project src/LocalAgent.Cli/LocalAgent.Cli.csproj -- sandbox test --workspace .
-dotnet run --project src/LocalAgent.Cli/LocalAgent.Cli.csproj -- native test
+dotnet run --project src/LocalAgent.Cli/LocalAgent.Cli.csproj -- sandbox test --workspace . --gpu nvidia
+dotnet run --project src/LocalAgent.Cli/LocalAgent.Cli.csproj -- native test --backend cpu --strict
 ```
 
 ## Configuration
@@ -443,7 +443,11 @@ Network modes:
 | `research` | Controlled research or downloads. |
 | `full` | Explicitly approved unrestricted access. |
 
-GPU mode is explicit. NVIDIA mode uses `--gpus all` and requires host GPU drivers plus NVIDIA Container Toolkit.
+GPU mode is explicit. NVIDIA sandbox mode uses `--gpus all`, requires host NVIDIA drivers plus NVIDIA Container Toolkit, and can be checked with:
+
+```bash
+bubo sandbox test --workspace . --gpu nvidia
+```
 
 ## Inference Modes
 
@@ -484,25 +488,51 @@ Commit: 64b38b561b987679c4e1c6231f93860d3eec2638
 
 ## Native Assets
 
-Local mode expects a pinned llama.cpp shared library in the native package layout. Build and stage the current platform asset:
+Local mode expects a pinned llama.cpp shared library in the native package layout. CPU remains the default backend.
 
 ```powershell
 pwsh ./scripts/build-llama-native.ps1 -StageToPackage
 ```
 
-Build, stage, smoke test, pack, and verify a specific RID:
+Build, stage, smoke test, pack, and verify a specific CPU RID:
 
 ```powershell
 pwsh ./scripts/test-native-package.ps1 -Rid linux-x64 -BuildNative
 ```
 
+CUDA builds use a backend-specific layout so they do not overwrite CPU assets:
+
+```text
+runtimes/<rid>/native/<library>        # CPU
+runtimes/<rid>/native/cuda/<library>   # CUDA
+```
+
+Build CUDA for recent NVIDIA GPUs, including RTX 50xx / Blackwell:
+
+```powershell
+pwsh ./scripts/test-native-package.ps1 -Rid linux-x64 -Backend cuda -CudaArchitectures "86;89;120" -BuildNative
+```
+
+RTX 50xx GPUs require architecture `120` and CUDA Toolkit 12.8 or newer. Use `-CudaCompiler` when `nvcc` is not on `PATH`.
+On Windows, run from a Visual Studio developer shell or pass CMake generator details explicitly. Ninja is the simplest path when it is available:
+
+```powershell
+pwsh ./scripts/test-native-package.ps1 `
+  -Rid win-x64 `
+  -Backend cuda `
+  -CudaArchitectures "120" `
+  -CudaToolkitRoot "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.2" `
+  -Generator Ninja `
+  -BuildNative
+```
+
 Probe staged assets from source:
 
 ```powershell
-dotnet run --project src/LocalAgent.Cli/LocalAgent.Cli.csproj -- native test --base-directory src/LlamaCppSharp.Native --strict
+dotnet run --project src/LocalAgent.Cli/LocalAgent.Cli.csproj -- native test --base-directory src/LlamaCppSharp.Native --backend cuda --strict
 ```
 
-Native build prerequisites are PowerShell 7, Git, CMake, a platform C++ toolchain, and the .NET 8 SDK. `win-x64`, `linux-x64`, and `osx-arm64` are the v1 package-validation RIDs. The manual `native llama.cpp assets` workflow uses the same scripts in CI and uploads both the native asset artifact and a verified RID package.
+Native build prerequisites are PowerShell 7, Git, CMake, a platform C++ toolchain, and the .NET 8 SDK. CUDA builds additionally require CUDA Toolkit 12.8+ for RTX 50xx. Windows CUDA builds can use `-Generator`, `-Platform`, `-Toolset`, and `-CudaToolkitRoot` when the default CMake generator cannot infer the toolchain; `-CudaToolkitRoot` also helps runtime smoke tests find CUDA `bin` and `bin/x64` dependencies. The manual `native llama.cpp assets` workflow uses the same scripts in CI. CUDA lanes are opt-in and expect self-hosted NVIDIA runners.
 
 ## Tools
 
@@ -600,6 +630,8 @@ Native package check:
 
 ```bash
 pwsh ./scripts/test-native-package.ps1 -Rid linux-x64 -BuildNative
+pwsh ./scripts/test-native-package.ps1 -Rid linux-x64 -Backend cuda -CudaArchitectures "86;89;120" -BuildNative
+pwsh ./scripts/test-native-package.ps1 -Rid win-x64 -Backend cuda -CudaArchitectures "120" -CudaToolkitRoot "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.2" -Generator Ninja -BuildNative
 ```
 
 Docker checks:
@@ -607,6 +639,7 @@ Docker checks:
 ```bash
 docker build --pull -f docker/bubo-sandbox/Dockerfile -t bubo-sandbox:local docker/bubo-sandbox
 dotnet run --no-build --configuration Release --project src/LocalAgent.Cli/LocalAgent.Cli.csproj -- sandbox test --workspace .
+dotnet run --no-build --configuration Release --project src/LocalAgent.Cli/LocalAgent.Cli.csproj -- sandbox test --workspace . --gpu nvidia
 ```
 
 When adding a tool:
@@ -744,19 +777,21 @@ pwsh ./scripts/build-llama-native.ps1 -StageToPackage
 Expected staged path:
 
 ```text
-src/LlamaCppSharp.Native/runtimes/<rid>/native/<library>
+src/LlamaCppSharp.Native/runtimes/<rid>/native/<library>              # CPU
+src/LlamaCppSharp.Native/runtimes/<rid>/native/cuda/<library>         # CUDA
 ```
 
 Then run:
 
 ```bash
-bubo native test --base-directory src/LlamaCppSharp.Native --strict
+bubo native test --base-directory src/LlamaCppSharp.Native --backend cpu --strict
+bubo native test --base-directory src/LlamaCppSharp.Native --backend cuda --strict
 ```
 
 To probe a staged package layout:
 
 ```bash
-bubo native test --base-directory src/LlamaCppSharp.Native --strict
+bubo native test --base-directory src/LlamaCppSharp.Native --backend cuda --strict
 ```
 
 ### `codex` Is Not Found

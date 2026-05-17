@@ -21,3 +21,9 @@ When a goal-flow stack is merged:
 
 - Run `./.codex/commands/pr-readiness-check.sh --goal` for the durable gate, but verify the actual commit scope with native `git status --short --branch` when WSL reports many unrelated line-ending changes.
 - For Bubo tool hardening, include both unit validation and CLI fixture validation before opening the PR: Release build, Release tests, scripted E2E fixture, live Docker-backed `git_apply_patch` fixture, `dotnet format --verify-no-changes`, and `git diff --check`.
+
+## RTX 50xx CUDA Native Validation
+
+1. Verify host GPU and CUDA with `nvidia-smi` and `nvcc --version`; RTX 50xx requires CUDA Toolkit 12.8+ and architecture `120`.
+2. For Docker GPU validation, prepend Docker Desktop's resources directory to `PATH` if `docker-credential-desktop` is not found, then run `docker run --rm --gpus all ubuntu nvidia-smi`.
+3. For Windows native builds, run from `vcvars64.bat`, add CUDA `bin`, CUDA `bin\x64`, CMake, Docker, and Ninja to `PATH`, then use `scripts/test-native-package.ps1 -Rid win-x64 -Backend cuda -CudaArchitectures "120" -CudaToolkitRoot "<CUDA root>" -Generator Ninja -BuildNative`.

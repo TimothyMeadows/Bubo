@@ -90,6 +90,8 @@ public sealed class CommandLineParserTests
             "test",
             "--base-directory",
             "src/LlamaCppSharp.Native",
+            "--backend",
+            "cuda",
             "--strict"
         });
 
@@ -97,6 +99,7 @@ public sealed class CommandLineParserTests
         Assert.NotNull(result.Options);
         Assert.Equal("native-test", result.Options.Command);
         Assert.Equal("src/LlamaCppSharp.Native", result.Options.NativeBaseDirectory);
+        Assert.Equal("cuda", result.Options.NativeBackend);
         Assert.True(result.Options.NativeStrict);
     }
 
@@ -130,5 +133,21 @@ public sealed class CommandLineParserTests
         Assert.Equal("native-test", result.Options.Command);
         Assert.True(result.Options.NativeStrict);
         Assert.Null(result.Options.NativeBaseDirectory);
+        Assert.Equal("cpu", result.Options.NativeBackend);
+    }
+
+    [Fact]
+    public void ParseNativeTestRejectsUnsupportedBackend()
+    {
+        var result = CommandLineParser.Parse(new[]
+        {
+            "native",
+            "test",
+            "--backend",
+            "quantum"
+        });
+
+        Assert.False(result.IsSuccess);
+        Assert.Contains("Unsupported native backend", result.ErrorMessage);
     }
 }

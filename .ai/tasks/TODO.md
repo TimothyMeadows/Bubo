@@ -11,3 +11,4 @@
 9. [x] Add Bubo configuration loading (`.ai/tasks/bubo-config-loading/TASK.md`)
 10. [x] Add Bubo iterative inference repair loop (`.ai/tasks/bubo-iterative-repair-loop/TASK.md`)
 11. [x] Add full llama.cpp native build and package pipeline (`.ai/tasks/bubo-native-build-pipeline/TASK.md`)
+12. [x] Add GPU backend native build support (`.ai/tasks/bubo-gpu-native-build-support/TASK.md`)

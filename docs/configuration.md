@@ -101,6 +101,8 @@ bubo run --workspace ./repo --config ./bubo.trusted.config.json
 
 Security hardening booleans cannot be disabled through config, and `sandbox.useDocker` cannot be set to `false`.
 
+`sandbox.gpu` accepts `nvidia` or `none`. NVIDIA mode only exposes Docker GPU devices; model offload still also requires a CUDA-enabled native llama.cpp backend and model `gpuLayers` configuration.
+
 ## Cloud Mode Example
 
 ```json

@@ -11,22 +11,28 @@
     <PackageReadmeFile>PACKAGE.md</PackageReadmeFile>
     <RequireNativeAssetsForPack>false</RequireNativeAssetsForPack>
     <RequiredNativeRid></RequiredNativeRid>
+    <RequiredNativeBackend>cpu</RequiredNativeBackend>
   </PropertyGroup>
 
   <ItemGroup>
     <None Include="PACKAGE.md" Pack="true" PackagePath="\" />
-    <None Include="runtimes\**\native\*.dll; runtimes\**\native\*.so; runtimes\**\native\*.so.*; runtimes\**\native\*.dylib" Pack="true" PackagePath="runtimes\%(RecursiveDir)%(Filename)%(Extension)" />
+    <None Include="runtimes\**\*.dll; runtimes\**\*.so; runtimes\**\*.so.*; runtimes\**\*.dylib" Pack="true" PackagePath="%(Identity)" />
   </ItemGroup>
 
   <Target Name="ValidateNativeAssetsForPack" BeforeTargets="GenerateNuspec" Condition="'$(RequireNativeAssetsForPack)' == 'true'">
     <ItemGroup>
-      <RequiredNativeAsset Include="runtimes\win-x64\native\llama.dll" Condition="'$(RequiredNativeRid)' == '' or '$(RequiredNativeRid)' == 'win-x64'" />
-      <RequiredNativeAsset Include="runtimes\linux-x64\native\libllama.so" Condition="'$(RequiredNativeRid)' == '' or '$(RequiredNativeRid)' == 'linux-x64'" />
-      <RequiredNativeAsset Include="runtimes\osx-arm64\native\libllama.dylib" Condition="'$(RequiredNativeRid)' == '' or '$(RequiredNativeRid)' == 'osx-arm64'" />
+      <RequiredNativeAsset Include="runtimes\win-x64\native\llama.dll" Condition="'$(RequiredNativeBackend)' == 'cpu' and ('$(RequiredNativeRid)' == '' or '$(RequiredNativeRid)' == 'win-x64')" />
+      <RequiredNativeAsset Include="runtimes\linux-x64\native\libllama.so" Condition="'$(RequiredNativeBackend)' == 'cpu' and ('$(RequiredNativeRid)' == '' or '$(RequiredNativeRid)' == 'linux-x64')" />
+      <RequiredNativeAsset Include="runtimes\osx-arm64\native\libllama.dylib" Condition="'$(RequiredNativeBackend)' == 'cpu' and ('$(RequiredNativeRid)' == '' or '$(RequiredNativeRid)' == 'osx-arm64')" />
+      <RequiredNativeAsset Include="runtimes\win-x64\native\cuda\llama.dll" Condition="'$(RequiredNativeBackend)' == 'cuda' and ('$(RequiredNativeRid)' == '' or '$(RequiredNativeRid)' == 'win-x64')" />
+      <RequiredNativeAsset Include="runtimes\linux-x64\native\cuda\libllama.so" Condition="'$(RequiredNativeBackend)' == 'cuda' and ('$(RequiredNativeRid)' == '' or '$(RequiredNativeRid)' == 'linux-x64')" />
+      <RequiredNativeAsset Include="runtimes\osx-arm64\native\metal\libllama.dylib" Condition="'$(RequiredNativeBackend)' == 'metal' and ('$(RequiredNativeRid)' == '' or '$(RequiredNativeRid)' == 'osx-arm64')" />
+      <RequiredNativeAsset Include="runtimes\win-x64\native\vulkan\llama.dll" Condition="'$(RequiredNativeBackend)' == 'vulkan' and ('$(RequiredNativeRid)' == '' or '$(RequiredNativeRid)' == 'win-x64')" />
+      <RequiredNativeAsset Include="runtimes\linux-x64\native\vulkan\libllama.so" Condition="'$(RequiredNativeBackend)' == 'vulkan' and ('$(RequiredNativeRid)' == '' or '$(RequiredNativeRid)' == 'linux-x64')" />
     </ItemGroup>
 
-    <Error Condition="'@(RequiredNativeAsset)' == ''" Text="RequiredNativeRid '$(RequiredNativeRid)' is not supported by package validation." />
-    <Error Condition="!Exists('%(RequiredNativeAsset.Identity)')" Text="Missing required native asset: %(RequiredNativeAsset.Identity). Run scripts/build-llama-native.ps1 -Rid $(RequiredNativeRid) -StageToPackage, or omit RequiredNativeRid to validate all supported assets." />
+    <Error Condition="'@(RequiredNativeAsset)' == ''" Text="RequiredNativeBackend '$(RequiredNativeBackend)' with RequiredNativeRid '$(RequiredNativeRid)' is not supported by package validation." />
+    <Error Condition="!Exists('%(RequiredNativeAsset.Identity)')" Text="Missing required native asset: %(RequiredNativeAsset.Identity). Run scripts/build-llama-native.ps1 -Rid $(RequiredNativeRid) -Backend $(RequiredNativeBackend) -StageToPackage, or omit RequiredNativeRid to validate all supported assets for that backend." />
   </Target>
 
 </Project>

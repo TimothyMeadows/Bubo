@@ -7,10 +7,19 @@ on:
         description: llama.cpp tag or commit to build
         required: true
         default: 64b38b561b987679c4e1c6231f93860d3eec2638
+      include_cuda:
+        description: Run CUDA build lanes on self-hosted NVIDIA runners
+        required: true
+        type: boolean
+        default: false
+      cuda_architectures:
+        description: CUDA architectures for CUDA lanes, e.g. 86;89;120
+        required: true
+        default: "86;89;120"
 
 jobs:
-  build-native:
-    name: Build, smoke test, and pack ${{ matrix.rid }}
+  build-native-cpu:
+    name: Build, smoke test, and pack CPU ${{ matrix.rid }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -32,20 +41,61 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
-      - name: Build, smoke test, and pack native asset
+      - name: Build, smoke test, and pack CPU native asset
         shell: pwsh
-        run: ./scripts/test-native-package.ps1 -Rid '${{ matrix.rid }}' -Ref '${{ inputs.llama_ref }}' -Configuration Release -BuildNative
+        run: ./scripts/test-native-package.ps1 -Rid '${{ matrix.rid }}' -Backend cpu -Ref '${{ inputs.llama_ref }}' -Configuration Release -BuildNative
 
       - name: Upload native asset
         uses: actions/upload-artifact@v4
         with:
-          name: llama-${{ matrix.rid }}
+          name: llama-cpu-${{ matrix.rid }}
           path: artifacts/native/${{ matrix.rid }}
           if-no-files-found: error
 
       - name: Upload native package
         uses: actions/upload-artifact@v4
         with:
-          name: package-${{ matrix.rid }}
+          name: package-cpu-${{ matrix.rid }}
+          path: artifacts/packages/*.nupkg
+          if-no-files-found: error
+
+  build-native-cuda:
+    name: Build, smoke test, and pack CUDA linux-x64
+    if: ${{ inputs.include_cuda }}
+    runs-on: [self-hosted, linux, x64, nvidia, cuda]
+
+    steps:
+      - name: Checkout Bubo
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Validate NVIDIA runner
+        shell: pwsh
+        run: |
+          nvidia-smi
+          docker version
+          docker run --rm --gpus all ubuntu nvidia-smi
+          docker build --pull -f docker/bubo-sandbox/Dockerfile -t bubo-sandbox:local docker/bubo-sandbox
+          dotnet run --configuration Release --project src/LocalAgent.Cli/LocalAgent.Cli.csproj -- sandbox test --workspace . --gpu nvidia
+
+      - name: Build, smoke test, and pack CUDA native asset
+        shell: pwsh
+        run: ./scripts/test-native-package.ps1 -Rid linux-x64 -Backend cuda -Ref '${{ inputs.llama_ref }}' -Configuration Release -CudaArchitectures '${{ inputs.cuda_architectures }}' -BuildNative
+
+      - name: Upload CUDA native asset
+        uses: actions/upload-artifact@v4
+        with:
+          name: llama-cuda-linux-x64
+          path: artifacts/native/cuda/linux-x64
+          if-no-files-found: error
+
+      - name: Upload CUDA native package
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-cuda-linux-x64
           path: artifacts/packages/*.nupkg
           if-no-files-found: error

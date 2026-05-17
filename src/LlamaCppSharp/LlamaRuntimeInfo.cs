@@ -10,8 +10,10 @@ public static class LlamaRuntimeInfo
 
     public static string ReleaseCommit => NativeAssetInfo.ReleaseCommit;
 
-    public static string ExpectedNativeLibraryPath(string baseDirectory)
+    public static string ExpectedNativeLibraryPath(
+        string baseDirectory,
+        string backend = Native.LlamaNativeLibrary.CpuBackend)
     {
-        return LlamaNativeLibrary.ExpectedRidAssetPath(baseDirectory);
+        return LlamaNativeLibrary.ExpectedRidAssetPath(baseDirectory, backend);
     }
 }

@@ -2,8 +2,16 @@ param(
     [string]$Ref = "64b38b561b987679c4e1c6231f93860d3eec2638",
     [ValidateSet("", "win-x64", "linux-x64", "osx-arm64", "linux-arm64", "osx-x64", "win-arm64")]
     [string]$Rid = "",
+    [ValidateSet("cpu", "cuda", "metal", "vulkan")]
+    [string]$Backend = "cpu",
     [ValidateSet("Debug", "Release")]
     [string]$Configuration = "Release",
+    [string]$CudaArchitectures = "86;89;120",
+    [string]$CudaCompiler = "",
+    [string]$CudaToolkitRoot = "",
+    [string]$Generator = "",
+    [string]$Platform = "",
+    [string]$Toolset = "",
     [string]$SourceRoot = "artifacts/src/llama.cpp",
     [string]$BuildRoot = "artifacts/native-build",
     [string]$OutputRoot = "artifacts/native",
@@ -66,6 +74,129 @@ function Get-NativeLibraryPattern {
     }
 
     return "*.so*"
+}
+
+function Get-BackendArtifactDirectory {
+    param(
+        [string]$Root,
+        [string]$RuntimeIdentifier,
+        [string]$NativeBackend
+    )
+
+    if ($NativeBackend -eq "cpu") {
+        return Join-Path $Root $RuntimeIdentifier
+    }
+
+    return Join-Path (Join-Path $Root $NativeBackend) $RuntimeIdentifier
+}
+
+function Get-PackageNativeDirectory {
+    param(
+        [string]$RuntimeIdentifier,
+        [string]$NativeBackend
+    )
+
+    $nativeDirectory = Join-Path $RepoRoot "src/LlamaCppSharp.Native/runtimes/$RuntimeIdentifier/native"
+    if ($NativeBackend -eq "cpu") {
+        return $nativeDirectory
+    }
+
+    return Join-Path $nativeDirectory $NativeBackend
+}
+
+function Assert-BackendRidSupported {
+    param(
+        [string]$RuntimeIdentifier,
+        [string]$NativeBackend
+    )
+
+    $supported = switch ($NativeBackend) {
+        "cpu" { $true }
+        "cuda" { $RuntimeIdentifier -in @("linux-x64", "win-x64") }
+        "metal" { $RuntimeIdentifier -in @("osx-arm64", "osx-x64") }
+        "vulkan" { $RuntimeIdentifier -in @("linux-x64", "win-x64") }
+        default { $false }
+    }
+
+    if (-not $supported) {
+        throw "Backend '$NativeBackend' is not supported for RID '$RuntimeIdentifier' by this build script."
+    }
+}
+
+function Get-BackendCMakeArgs {
+    param(
+        [string]$NativeBackend,
+        [string]$CudaArchList,
+        [string]$CudaCompilerPath,
+        [string]$CudaToolkitRootPath
+    )
+
+    $args = @(
+        "-DGGML_NATIVE=OFF",
+        "-DGGML_CUDA=OFF",
+        "-DGGML_METAL=OFF",
+        "-DGGML_VULKAN=OFF"
+    )
+
+    switch ($NativeBackend) {
+        "cuda" {
+            $args[1] = "-DGGML_CUDA=ON"
+            if (-not [string]::IsNullOrWhiteSpace($CudaArchList)) {
+                $args += "-DCMAKE_CUDA_ARCHITECTURES=$CudaArchList"
+            }
+
+            if (-not [string]::IsNullOrWhiteSpace($CudaCompilerPath)) {
+                $args += "-DCMAKE_CUDA_COMPILER=$CudaCompilerPath"
+            }
+
+            if (-not [string]::IsNullOrWhiteSpace($CudaToolkitRootPath)) {
+                $args += "-DCUDAToolkit_ROOT=$CudaToolkitRootPath"
+                $args += "-DCUDA_TOOLKIT_ROOT_DIR=$CudaToolkitRootPath"
+
+                if ([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([System.Runtime.InteropServices.OSPlatform]::Windows)) {
+                    $cudaToolkitDir = $CudaToolkitRootPath.TrimEnd(
+                        [System.IO.Path]::DirectorySeparatorChar,
+                        [System.IO.Path]::AltDirectorySeparatorChar) + [System.IO.Path]::DirectorySeparatorChar
+                    $args += "-DCMAKE_VS_GLOBALS=CudaToolkitDir=$cudaToolkitDir"
+                }
+            }
+        }
+        "metal" {
+            $args[2] = "-DGGML_METAL=ON"
+        }
+        "vulkan" {
+            $args[3] = "-DGGML_VULKAN=ON"
+        }
+    }
+
+    return $args
+}
+
+function Assert-CudaToolchain {
+    param(
+        [string]$CudaArchList,
+        [string]$CudaCompilerPath
+    )
+
+    $nvcc = if ([string]::IsNullOrWhiteSpace($CudaCompilerPath)) { "nvcc" } else { $CudaCompilerPath }
+    $versionOutput = & $nvcc --version 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        throw "CUDA backend requires nvcc. Install CUDA Toolkit 12.8+ for RTX 50xx / Blackwell support, or pass -CudaCompiler."
+    }
+
+    $versionText = $versionOutput -join "`n"
+    $match = [regex]::Match($versionText, "release\s+(?<major>\d+)\.(?<minor>\d+)")
+    if (-not $match.Success) {
+        Write-Warning "Could not parse nvcc version. Output: $versionText"
+        return
+    }
+
+    $major = [int]$match.Groups["major"].Value
+    $minor = [int]$match.Groups["minor"].Value
+    $requiresBlackwellCompiler = $CudaArchList -match "(^|[;,\s])1(00|01|20)($|[;,\s])"
+    if ($requiresBlackwellCompiler -and ($major -lt 12 -or ($major -eq 12 -and $minor -lt 8))) {
+        throw "CUDA architectures '$CudaArchList' require CUDA Toolkit 12.8+ for Blackwell / RTX 50xx support. Detected nvcc release $major.$minor."
+    }
 }
 
 function Resolve-RepoPath {
@@ -145,14 +276,33 @@ if ([string]::IsNullOrWhiteSpace($Rid)) {
     $Rid = Get-CurrentRid
 }
 
+Assert-BackendRidSupported -RuntimeIdentifier $Rid -NativeBackend $Backend
+
+$CudaToolkitRootPath = ""
+if (-not [string]::IsNullOrWhiteSpace($CudaToolkitRoot)) {
+    $CudaToolkitRootPath = [System.IO.Path]::GetFullPath($CudaToolkitRoot)
+}
+
+if ($Backend -eq "cuda" -and [string]::IsNullOrWhiteSpace($CudaCompiler) -and -not [string]::IsNullOrWhiteSpace($CudaToolkitRootPath)) {
+    $candidateNvcc = Join-Path $CudaToolkitRootPath "bin/nvcc.exe"
+    if (-not (Test-Path -LiteralPath $candidateNvcc)) {
+        $candidateNvcc = Join-Path $CudaToolkitRootPath "bin/nvcc"
+    }
+
+    if (Test-Path -LiteralPath $candidateNvcc) {
+        $CudaCompiler = $candidateNvcc
+    }
+}
+
 $SourceRootPath = Resolve-RepoPath $SourceRoot
 $BuildRootPath = Resolve-RepoPath $BuildRoot
-$BuildDir = Join-Path $BuildRootPath $Rid
+$BuildDir = Get-BackendArtifactDirectory -Root $BuildRootPath -RuntimeIdentifier $Rid -NativeBackend $Backend
 $OutputRootPath = Resolve-RepoPath $OutputRoot
-$OutputDir = Join-Path $OutputRootPath $Rid
+$OutputDir = Get-BackendArtifactDirectory -Root $OutputRootPath -RuntimeIdentifier $Rid -NativeBackend $Backend
 $NativeLibraryName = Get-NativeLibraryName -RuntimeIdentifier $Rid
 $NativeLibraryPattern = Get-NativeLibraryPattern -RuntimeIdentifier $Rid
-$StagedPackagePath = Join-Path $RepoRoot (Join-Path "src/LlamaCppSharp.Native/runtimes/$Rid/native" $NativeLibraryName)
+$PackageNativeDir = Get-PackageNativeDirectory -RuntimeIdentifier $Rid -NativeBackend $Backend
+$StagedPackagePath = Join-Path $PackageNativeDir $NativeLibraryName
 
 Assert-UnderRepo -PathValue $SourceRootPath -Description "llama.cpp source root"
 Assert-UnderRepo -PathValue $BuildDir -Description "native build directory"
@@ -183,20 +333,38 @@ if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($ResolvedCommit)) {
 New-Item -ItemType Directory -Force -Path $BuildDir | Out-Null
 New-Item -ItemType Directory -Force -Path $OutputDir | Out-Null
 
-$ConfigureArgs = @(
+if ($Backend -eq "cuda") {
+    Assert-CudaToolchain -CudaArchList $CudaArchitectures -CudaCompilerPath $CudaCompiler
+}
+
+ $ConfigureArgs = @()
+if (-not [string]::IsNullOrWhiteSpace($Generator)) {
+    $ConfigureArgs += @("-G", $Generator)
+}
+
+if (-not [string]::IsNullOrWhiteSpace($Platform)) {
+    $ConfigureArgs += @("-A", $Platform)
+}
+
+if (-not [string]::IsNullOrWhiteSpace($Toolset)) {
+    $ConfigureArgs += @("-T", $Toolset)
+}
+
+$ConfigureArgs += @(
     "-S", $SourceRootPath,
     "-B", $BuildDir,
     "-DBUILD_SHARED_LIBS=ON",
-    "-DGGML_NATIVE=OFF",
-    "-DGGML_CUDA=OFF",
-    "-DGGML_METAL=OFF",
-    "-DGGML_VULKAN=OFF",
+    "-DCMAKE_BUILD_TYPE=$Configuration",
+    "-DCMAKE_BUILD_WITH_INSTALL_RPATH=ON",
+    '-DCMAKE_INSTALL_RPATH=$ORIGIN',
     "-DLLAMA_BUILD_TESTS=OFF",
     "-DLLAMA_BUILD_EXAMPLES=OFF",
     "-DLLAMA_BUILD_TOOLS=OFF",
     "-DLLAMA_BUILD_COMMON=OFF",
     "-DLLAMA_BUILD_SERVER=OFF"
 )
+
+$ConfigureArgs += Get-BackendCMakeArgs -NativeBackend $Backend -CudaArchList $CudaArchitectures -CudaCompilerPath $CudaCompiler -CudaToolkitRootPath $CudaToolkitRootPath
 
 Invoke-NativeCommand -FilePath "cmake" -Arguments $ConfigureArgs
 Invoke-NativeCommand -FilePath "cmake" -Arguments @("--build", $BuildDir, "--config", $Configuration, "--parallel")
@@ -224,7 +392,10 @@ $Manifest = [ordered]@{
     requestedRef = $Ref
     resolvedCommit = $ResolvedCommit
     rid = $Rid
+    backend = $Backend
     configuration = $Configuration
+    cudaArchitectures = if ($Backend -eq "cuda") { $CudaArchitectures } else { $null }
+    cudaToolkitRoot = if ($Backend -eq "cuda") { $CudaToolkitRootPath } else { $null }
     nativeLibrary = $NativeLibraryName
     nativeAssets = @($CopiedAssets | ForEach-Object { Split-Path -Leaf $_ })
     sourceRoot = $SourceRootPath
@@ -237,7 +408,6 @@ $ManifestPath = Join-Path $OutputDir "llama-native-build.json"
 $Manifest | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $ManifestPath -Encoding UTF8
 
 if ($StageToPackage) {
-    $PackageNativeDir = Split-Path -Parent $StagedPackagePath
     New-Item -ItemType Directory -Force -Path $PackageNativeDir | Out-Null
     Get-ChildItem -LiteralPath $PackageNativeDir -File |
         Where-Object { $_.Extension -in @(".dll", ".dylib", ".so") -or $_.Name -match "\.so\." } |
