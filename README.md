@@ -1,110 +1,78 @@
 # Bubo
 
-Bubo is a local-first .NET 8 coding-agent runtime designed to inspect repositories, plan changes, edit files, run commands, use Git, and produce auditable Markdown output while keeping code execution and file writes inside a Docker-based sandbox.
+Bubo is a local-first .NET 8 coding-agent runtime. It reads a task from `INPUT.md`, works inside a repository workspace, runs guarded tools, and writes auditable results to Markdown and JSONL artifacts.
 
 The name comes from Bubo, the mythical robotic owl created by Hephaestus.
 
 ## Table Of Contents
 
-1. [Project Status](#project-status)
-2. [What Bubo Is](#what-bubo-is)
-3. [Design Goals](#design-goals)
-4. [Non-Goals](#non-goals)
-5. [Feature Overview](#feature-overview)
-6. [Architecture At A Glance](#architecture-at-a-glance)
-7. [Repository Layout](#repository-layout)
-8. [Core Concepts](#core-concepts)
-9. [Input And Output Contract](#input-and-output-contract)
-10. [CLI Overview](#cli-overview)
-11. [Guided Example 1: Run The File Contract](#guided-example-1-run-the-file-contract)
-12. [Guided Example 2: Read The Audit Artifacts](#guided-example-2-read-the-audit-artifacts)
-13. [Guided Example 3: Local Model Configuration](#guided-example-3-local-model-configuration)
-14. [Guided Example 4: Docker Sandbox Shape](#guided-example-4-docker-sandbox-shape)
-15. [Guided Example 5: Cloud Mode Through codex-cli](#guided-example-5-cloud-mode-through-codex-cli)
-16. [Guided Example 6: Deterministic Tool Fixture](#guided-example-6-deterministic-tool-fixture)
-17. [Guided Example 7: Native llama.cpp Asset Packaging](#guided-example-7-native-llamacpp-asset-packaging)
-18. [Inference Modes](#inference-modes)
-19. [Model Profiles](#model-profiles)
-20. [Tool System](#tool-system)
-21. [Docker Sandbox](#docker-sandbox)
-22. [Network Policy](#network-policy)
-23. [Git And GitHub Support](#git-and-github-support)
-24. [Security Model](#security-model)
-25. [Auditing And Logs](#auditing-and-logs)
-26. [Build, Test, And Package](#build-test-and-package)
-27. [Troubleshooting](#troubleshooting)
-28. [Roadmap](#roadmap)
-29. [Glossary](#glossary)
+1. [Quick Start](#quick-start)
+2. [What Bubo Does](#what-bubo-does)
+3. [How A Run Works](#how-a-run-works)
+4. [Input And Output Contract](#input-and-output-contract)
+5. [CLI Usage](#cli-usage)
+6. [Configuration](#configuration)
+7. [Guided Examples](#guided-examples)
+8. [Docker Sandbox](#docker-sandbox)
+9. [Inference Modes](#inference-modes)
+10. [Tools](#tools)
+11. [Security Rules](#security-rules)
+12. [Developer Onboarding](#developer-onboarding)
+13. [Agent Onboarding](#agent-onboarding)
+14. [Troubleshooting](#troubleshooting)
+15. [Further Reading](#further-reading)
 
-## Project Status
+## Quick Start
 
-Bubo is being built in incremental goal-flow slices. This integration branch brings the completed v1 scaffold onto the documentation baseline: a .NET 8 solution, shared contracts, CLI commands, deterministic action execution, bounded inference-generated action repair, Docker sandbox command construction, direct llama.cpp native interop scaffolding, cloud inference through `codex-cli`, guarded tools, package scaffolding, and end-to-end fixtures.
+Prerequisites:
 
-The remaining limits are deliberate: separate planner/coder model orchestration is still roadmap work, local llama.cpp generation requires populated native assets plus fuller decode/sampling bindings, and cloud mode depends on stable non-interactive `codex-cli` behavior.
+- .NET 8 SDK.
+- Docker Desktop or Docker Engine for sandboxed command execution.
+- Optional: `codex-cli` for cloud mode.
+- Optional: GGUF models and native llama.cpp assets for local model inference.
 
-Status language used in this README:
+Build and test:
 
-| Status | Meaning |
-| --- | --- |
-| Available | Present in the current checkout and expected to work. |
-| Scaffolded | Type, project, or package shape exists, but runtime behavior is intentionally limited. |
-| Planned | Part of the v1 architecture but not fully wired in the current checkout. |
+```powershell
+dotnet restore Bubo.sln
+dotnet build Bubo.sln --configuration Release --no-restore
+dotnet test Bubo.sln --configuration Release --no-build
+```
 
-## What Bubo Is
+Build the sandbox image:
 
-Bubo is a pure C# agent runtime for software development tasks. It is intended to run from a repository workspace, read a task from `INPUT.md`, reason over the codebase, apply bounded edits, run validation commands, and write a human-readable result to `OUTPUT.md`.
+```powershell
+docker build --pull -f docker/bubo-sandbox/Dockerfile -t bubo-sandbox:local docker/bubo-sandbox
+```
 
-The long-term runtime has two inference modes:
+Check the sandbox:
 
-- Local mode uses direct C# interop over `llama.cpp` and GGUF models.
-- Cloud mode delegates inference to `codex-cli` while preserving the same agent abstractions and output contract.
+```powershell
+dotnet run --no-build --configuration Release --project src/LocalAgent.Cli/LocalAgent.Cli.csproj -- sandbox test --workspace .
+```
 
-Bubo treats model output as untrusted. File writes, command execution, Git operations, and future network access are mediated by runtime tools and sandbox policy rather than handed directly to the model.
+Run Bubo against a workspace:
 
-## Design Goals
+```powershell
+dotnet run --project src/LocalAgent.Cli/LocalAgent.Cli.csproj -- run --workspace ./repo
+```
 
-- Target .NET 8 LTS.
-- Keep the agent runtime pure C# where practical.
-- Use direct llama.cpp interop instead of shelling out to `llama-cli`, `llama-server`, Ollama, or a host daemon.
-- Make local mode first-class for private repositories and offline workflows.
-- Provide cloud mode through `codex-cli` for stronger hosted inference when explicitly selected.
-- Keep the user-facing workflow file-driven and auditable.
-- Keep all generated code changes inside the mounted workspace.
-- Make Docker the execution boundary for command execution.
-- Disable network access by default.
-- Use structured logs and transcripts so agent behavior can be reviewed after the run.
-- Keep hidden reasoning hidden. Bubo records summaries, observations, commands, and tool decisions, not private chain-of-thought.
+## What Bubo Does
 
-## Non-Goals
+Bubo is built for coding-agent workflows:
 
-- Bubo is not a general desktop automation system.
-- Bubo is not a replacement for Docker security hardening or host isolation.
-- Bubo does not automatically push, open PRs, or publish packages by default.
-- Bubo does not mount host secrets by default.
-- Bubo does not claim local model quality is equivalent to hosted frontier models.
-- Bubo does not expose raw hidden chain-of-thought in output artifacts.
+- Read user instructions from `INPUT.md`.
+- Inspect and modify files inside one workspace.
+- Execute deterministic user-provided tool actions.
+- Ask a local or cloud inference provider for guarded tool actions when no deterministic action block is provided.
+- Retry inference-generated repair actions within configured loop limits.
+- Run build, test, Git, and command tools through bounded runtime APIs.
+- Write `OUTPUT.md`, `agent-debug.jsonl`, and `agent-transcript.md`.
+- Keep command execution inside a Docker sandbox.
 
-## Feature Overview
+Bubo treats model output as untrusted. The model proposes actions; the runtime validates and executes them.
 
-| Feature | Status | Notes |
-| --- | --- | --- |
-| .NET 8 solution and project layout | Available | Core projects are present under `src/` and tests under `tests/`. |
-| CLI `run` command | Available | Reads `INPUT.md` and writes output artifacts. |
-| File contract | Available | `INPUT.md`, `OUTPUT.md`, `agent-debug.jsonl`, `agent-transcript.md`. |
-| Workspace guard | Available | Canonicalizes paths and rejects traversal outside the workspace. |
-| Agent contracts | Available | Interfaces for inference, tools, sandboxing, model profiles, and transcripts. |
-| No-op runner | Available | Proves the file contract without editing source files. |
-| Docker sandbox runner | Available | Builds deterministic `docker run` invocations and exposes `bubo sandbox test`. |
-| llama.cpp native wrapper | Scaffolded | Native library probing, safe handles, pinned upstream metadata, and RID asset layout are present. |
-| Local inference provider | Scaffolded | Uses the shared inference abstraction and reports native runtime availability. |
-| codex-cli provider | Scaffolded | Builds non-interactive `codex exec` invocations through the shared inference abstraction. |
-| Inference-generated action loop | Available | If `INPUT.md` has no deterministic action fence, the configured provider can propose fenced `bubo-actions` JSON and retry after guarded tool failures within `MaxIterations`. |
-| Config loading | Available | `bubo run` loads safe workspace defaults from `bubo.config.json`; explicit `--config` is required for trusted sandbox policy. |
-| Guarded file/search/Git tools | Available | Deterministic action execution routes through workspace-guarded tools. |
-| Deterministic tool fixtures | Available | `bubo-actions` fixtures validate file writes and command execution without a model. |
-| Package workflows | Available | CI and package metadata cover managed, native, and CLI package outputs. |
-
-## Architecture At A Glance
+## How A Run Works
 
 ```text
 INPUT.md
@@ -115,121 +83,41 @@ LocalAgent.Cli
    v
 LocalAgent.Runtime
    |
-   +--> Planner/coder orchestration
-   +--> Context and transcript management
-   +--> Tool dispatch
+   +--> deterministic bubo-actions, when present
    |
-   +--> LocalAgent.Inference.LlamaCpp
-   |       |
-   |       v
-   |     LlamaCppSharp -> LlamaCppSharp.Native -> llama.cpp shared library
+   +--> local or cloud inference provider, when no action fence is present
    |
-   +--> LocalAgent.Inference.CodexCli
-   |       |
-   |       v
-   |     codex-cli child process
+   +--> guarded tools
    |
-   +--> LocalAgent.Sandbox.Docker
-           |
-           v
-         Docker container with /workspace, /input, /output, /models, /cache
+   +--> Docker sandbox for command execution
+   |
+   v
+OUTPUT.md
+agent-debug.jsonl
+agent-transcript.md
 ```
 
-The runtime is intentionally layered:
+Run behavior:
 
-- `LocalAgent.Abstractions` defines contracts.
-- `LocalAgent.Runtime` coordinates the agent loop and artifacts.
-- Inference providers implement model backends.
-- Sandbox providers implement safe command execution.
-- Tools expose bounded capabilities to the agent.
-
-## Repository Layout
-
-```text
-src/
-  LlamaCppSharp.Native/
-    Native llama.cpp package metadata and native asset layout.
-
-  LlamaCppSharp/
-    Managed llama.cpp wrapper surface.
-
-  LocalAgent.Abstractions/
-    Shared contracts for agents, inference, tools, sandboxing, config, and transcripts.
-
-  LocalAgent.Runtime/
-    Agent orchestration, workspace guarding, output generation, and future tool dispatch.
-
-  LocalAgent.Inference.LlamaCpp/
-    Local inference provider using the managed llama.cpp wrapper.
-
-  LocalAgent.Inference.CodexCli/
-    Cloud inference provider using codex-cli.
-
-  LocalAgent.Sandbox.Docker/
-    Docker sandbox runtime.
-
-  LocalAgent.Cli/
-    Command-line entrypoint.
-
-tests/
-  Unit and smoke tests for contracts, CLI behavior, runtime behavior, native wrapper behavior, and sandbox command construction.
-```
-
-Additional guides:
-
-- [Configuration](docs/configuration.md)
-- [Security Model](docs/security.md)
-- [Packaging](docs/packaging.md)
-- [Examples](examples/README.md)
-
-## Core Concepts
-
-### Workspace
-
-The workspace is the only writable repository area Bubo is allowed to mutate. Every file tool must resolve paths through a workspace guard before reading or writing.
-
-### Input
-
-`INPUT.md` is the task instruction file. It is deliberately plain Markdown so users can review, edit, and archive tasks without special tooling.
-
-### Output
-
-`OUTPUT.md` is the final user-facing report. It should be safe to read, attach to an issue, or include in a PR summary.
-
-### Debug Log
-
-`agent-debug.jsonl` is structured event output. It is intended for debugging, not polished user communication.
-
-### Transcript
-
-`agent-transcript.md` is a readable log of observable events. It explicitly does not include hidden chain-of-thought.
-
-### Mode
-
-Bubo supports two conceptual modes:
-
-- `local`: use local GGUF models through llama.cpp interop.
-- `cloud`: use `codex-cli` as the inference backend.
-
-The CLI accepts both mode names. Runs first execute deterministic `bubo-actions` when the input provides them. If no action fence exists, the configured local or cloud inference provider gets a bounded generated-action loop asking for fenced `bubo-actions` JSON. If guarded tool execution fails, Bubo feeds concise observable results into a retry prompt until success or `MaxIterations` is reached. Separate planner/coder orchestration remains roadmap work.
+1. Load CLI options and optional configuration.
+2. Validate workspace, input, and output paths.
+3. Read `INPUT.md`.
+4. Execute a deterministic `bubo-actions` block when present.
+5. Otherwise ask the configured inference provider for fenced `bubo-actions` JSON.
+6. Execute generated actions through the model-safe tool registry.
+7. Feed concise tool observations into retries after retryable tool failures.
+8. Stop on success, no actions, invalid action JSON, unknown tools, non-retryable safety failures, provider failure, or loop limits.
+9. Write the output report, transcript, and debug log.
 
 ## Input And Output Contract
 
-### Input File
+Input:
 
 ```text
 INPUT.md
 ```
 
-Example:
-
-```markdown
-# Task
-
-Update the README to explain how Bubo works.
-```
-
-### Output Files
+Output:
 
 ```text
 OUTPUT.md
@@ -237,9 +125,7 @@ agent-debug.jsonl
 agent-transcript.md
 ```
 
-### OUTPUT.md Shape
-
-Bubo writes a stable report skeleton:
+`OUTPUT.md` uses this stable shape:
 
 ```markdown
 # Result
@@ -261,19 +147,27 @@ Bubo writes a stable report skeleton:
 ## Next Steps
 ```
 
-The runner fills these sections with no-op validation details or deterministic tool and command results.
+`agent-transcript.md` records observable runtime events. It does not expose hidden chain-of-thought.
 
-## CLI Overview
+`agent-debug.jsonl` records structured events for debugging and audit.
 
-Current available command:
+## CLI Usage
+
+Main command:
 
 ```bash
-dotnet run --project src/LocalAgent.Cli -- run \
-  --workspace <path> \
-  --input <path-to-INPUT.md> \
-  --output <path-to-OUTPUT.md> \
-  --mode <local|cloud> \
-  --config <path-to-bubo.config.json>
+bubo run \
+  --workspace ./repo \
+  --input ./repo/INPUT.md \
+  --output ./repo/OUTPUT.md \
+  --mode local \
+  --config ./bubo.config.json
+```
+
+When running from source:
+
+```bash
+dotnet run --project src/LocalAgent.Cli/LocalAgent.Cli.csproj -- run --workspace ./repo
 ```
 
 Defaults:
@@ -286,107 +180,44 @@ Defaults:
 --config <workspace>/bubo.config.json when present
 ```
 
-Configuration precedence is defaults, then workspace `bubo.config.json`, then explicit `--config`, then explicit CLI flags. Today `--mode` is the CLI override: if config says `cloud` and the command says `--mode local`, Bubo runs local.
-
-The workspace-default config is treated as repository content and cannot set sandbox policy such as network, GPU, Docker image, host mounts, or hardening switches. Pass a config file with `--config` when you deliberately trust those sandbox settings.
-
-Relative `--config` paths resolve from the current shell directory.
-
 Utility commands:
 
 ```bash
 bubo doctor
 bubo models list
-bubo sandbox test --workspace <path>
+bubo sandbox test --workspace ./repo
 bubo native test
 ```
 
-These utility commands are intended to validate host prerequisites, model profiles, Docker availability, and native llama.cpp loading.
+From source:
 
-## Guided Example 1: Run The File Contract
-
-This example works with the no-action path of the current runtime.
-
-1. Create a temporary workspace:
-
-```powershell
-$workspace = Join-Path $env:TEMP "bubo-readme-demo"
-New-Item -ItemType Directory -Force -Path $workspace | Out-Null
+```bash
+dotnet run --project src/LocalAgent.Cli/LocalAgent.Cli.csproj -- doctor
+dotnet run --project src/LocalAgent.Cli/LocalAgent.Cli.csproj -- models list
+dotnet run --project src/LocalAgent.Cli/LocalAgent.Cli.csproj -- sandbox test --workspace .
+dotnet run --project src/LocalAgent.Cli/LocalAgent.Cli.csproj -- native test
 ```
 
-2. Create `INPUT.md`:
+## Configuration
 
-```powershell
-@'
-# Task
+Configuration precedence:
 
-Say hello from Bubo and prove the output contract works.
-'@ | Set-Content -Path (Join-Path $workspace "INPUT.md") -Encoding UTF8
+1. Built-in defaults.
+2. Workspace `bubo.config.json`.
+3. Explicit `--config`.
+4. Explicit CLI flags.
+
+`--mode` is a CLI override. If config says `cloud` and the command says `--mode local`, Bubo runs local.
+
+Workspace-default config is treated as repository content. It can configure mode, model profiles, and safe runtime limits. It cannot set trusted sandbox policy such as network mode, GPU mode, Docker image, host model mounts, or hardening switches.
+
+Use explicit `--config` when you deliberately trust sandbox settings:
+
+```bash
+bubo run --workspace ./repo --config ./bubo.trusted.config.json
 ```
 
-3. Run Bubo:
-
-```powershell
-dotnet run --project .\src\LocalAgent.Cli -- run --workspace $workspace --mode local
-```
-
-4. Inspect the generated files:
-
-```powershell
-Get-ChildItem $workspace
-Get-Content (Join-Path $workspace "OUTPUT.md")
-Get-Content (Join-Path $workspace "agent-transcript.md")
-Get-Content (Join-Path $workspace "agent-debug.jsonl")
-```
-
-Expected behavior:
-
-- `OUTPUT.md` exists.
-- `agent-debug.jsonl` exists.
-- `agent-transcript.md` exists.
-- No repository files are modified by the no-action runner.
-
-## Guided Example 2: Read The Audit Artifacts
-
-After a run, read the artifacts in this order:
-
-1. `OUTPUT.md`: start here for the human result.
-2. `agent-transcript.md`: inspect observable runtime events.
-3. `agent-debug.jsonl`: inspect structured event data.
-
-Example `agent-transcript.md` excerpt:
-
-```markdown
-# Agent Transcript
-
-This transcript records observable events and does not include hidden chain-of-thought.
-
-## run.started
-
-Bubo run started.
-
-## input.read
-
-Read task input.
-
-## run.completed
-
-Bubo run completed successfully.
-```
-
-Example `agent-debug.jsonl` event:
-
-```json
-{"timestamp":"2026-05-16T00:00:00+00:00","type":"input.read","message":"Read task input.","data":{"path":"INPUT.md","characters":"71"}}
-```
-
-Use the Markdown report for communication and the JSONL stream for diagnostics.
-
-## Guided Example 3: Local Model Configuration
-
-Local mode is designed for GGUF models that fit the target machine. The starting target is 16 GB GPU memory.
-
-Create a workspace-default `bubo.config.json` for model profiles and runtime limits:
+Example:
 
 ```json
 {
@@ -414,6 +245,7 @@ Create a workspace-default `bubo.config.json` for model profiles and runtime lim
     }
   },
   "limits": {
+    "maxIterations": 3,
     "maxToolCalls": 40,
     "maxCommandSeconds": 300,
     "maxPatchBytes": 131072,
@@ -422,98 +254,7 @@ Create a workspace-default `bubo.config.json` for model profiles and runtime lim
 }
 ```
 
-Run it with default discovery:
-
-```bash
-bubo run --workspace ./repo
-```
-
-Recommended planner profile:
-
-```json
-{
-  "role": "planner",
-  "family": "Qwen3 14B Instruct or equivalent",
-  "path": "/models/planner.gguf",
-  "contextSize": 32768,
-  "temperature": 0.2,
-  "topP": 0.9,
-  "repeatPenalty": 1.05,
-  "maxTokens": 4096,
-  "gpuLayers": "auto",
-  "threads": 0
-}
-```
-
-Recommended coder profile:
-
-```json
-{
-  "role": "coder",
-  "family": "Qwen2.5-Coder 14B Instruct, Qwen3-Coder mid-size, or equivalent",
-  "path": "/models/coder.gguf",
-  "contextSize": 32768,
-  "temperature": 0.1,
-  "topP": 0.95,
-  "repeatPenalty": 1.05,
-  "maxTokens": 8192,
-  "gpuLayers": "auto",
-  "threads": 0
-}
-```
-
-Guidance:
-
-- Use `Q4_K_M` for broad compatibility.
-- Use `Q5_K_M` when VRAM headroom allows.
-- Start with `contextSize` 16384 if 32768 is unstable.
-- Use deterministic seeds for repeatable debugging.
-- Keep model mounts read-only inside Docker.
-
-## Guided Example 4: Docker Sandbox Shape
-
-Bubo's command execution boundary is Docker. The intended container layout is:
-
-```text
-/workspace  writable mounted repository or task workspace
-/input      read-only task input area
-/output     writable output area
-/models     read-only model mount
-/cache      writable cache area
-```
-
-Default security posture:
-
-```text
---network none
---cap-drop ALL
---security-opt no-new-privileges
---read-only where practical
---pids-limit <configured>
---memory <configured>
---cpus <configured>
-```
-
-NVIDIA GPU mode adds:
-
-```text
---gpus all
-```
-
-Host prerequisites for GPU mode:
-
-- Docker Engine or Docker Desktop.
-- NVIDIA GPU driver.
-- NVIDIA Container Toolkit.
-- A llama.cpp native build with the right GPU backend enabled.
-
-CPU fallback should remain available when GPU support is missing.
-
-Sandbox policy is trusted configuration. Use an explicit `--config` path when you want to enable GPU, model mounts, or a network mode:
-
-```bash
-bubo run --workspace ./repo --config ./bubo.trusted.config.json
-```
+Trusted sandbox policy example:
 
 ```json
 {
@@ -526,57 +267,45 @@ bubo run --workspace ./repo --config ./bubo.trusted.config.json
 }
 ```
 
-## Guided Example 5: Cloud Mode Through codex-cli
+## Guided Examples
 
-Cloud mode uses `codex-cli` as a child process rather than changing the rest of the agent runtime.
+### Example 1: No-Action File Contract
 
-Conceptual command:
+Create a demo workspace:
 
-```bash
-bubo run \
-  --workspace ./repo \
-  --input ./repo/INPUT.md \
-  --output ./repo/OUTPUT.md \
-  --mode cloud
+```powershell
+$workspace = Join-Path $env:TEMP "bubo-readme-demo"
+New-Item -ItemType Directory -Force -Path $workspace | Out-Null
+@'
+# Task
+
+Say hello from Bubo and prove the output contract works.
+'@ | Set-Content -Path (Join-Path $workspace "INPUT.md") -Encoding UTF8
 ```
 
-Or set cloud mode in config:
+Run:
 
-```json
-{
-  "mode": "cloud"
-}
+```powershell
+dotnet run --project .\src\LocalAgent.Cli -- run --workspace $workspace --mode local
 ```
 
-Then run:
+Inspect:
 
-```bash
-bubo run --workspace ./repo
+```powershell
+Get-ChildItem $workspace
+Get-Content (Join-Path $workspace "OUTPUT.md")
+Get-Content (Join-Path $workspace "agent-transcript.md")
+Get-Content (Join-Path $workspace "agent-debug.jsonl")
 ```
 
-Provider responsibilities:
+### Example 2: Deterministic Tool Actions
 
-- Detect `codex` on `PATH`.
-- Build a non-interactive prompt from the same runtime context.
-- Capture stdout and stderr.
-- Normalize the result into the same `OUTPUT.md` contract.
-- Avoid passing secrets unless explicitly configured.
-- Keep the same planner/coder abstraction used by local mode.
-
-Important implementation note:
-
-`codex-cli` flags can drift. Bubo should keep a spike or doctor check that confirms stable non-interactive invocation before relying on a new CLI version.
-
-## Guided Example 6: Deterministic Tool Fixture
-
-The runtime includes deterministic fixtures to validate tool execution without a model. A fixture is an `INPUT.md` with an explicit tool block.
-
-Example:
+Use deterministic actions when you want a fixture, smoke test, or controlled automation without model inference.
 
 ````markdown
 # Task
 
-Write a generated note and verify the .NET SDK version.
+Write and patch a generated note.
 
 ```bubo-actions
 [
@@ -594,7 +323,36 @@ Write a generated note and verify the .NET SDK version.
       "old": "Hello from Bubo.",
       "new": "Patched by Bubo."
     }
-  },
+  }
+]
+```
+````
+
+Run:
+
+```bash
+bubo run --workspace ./repo
+```
+
+The deterministic action fence executes once. It does not invoke inference.
+
+### Example 3: Docker-Backed Command Fixture
+
+Build the sandbox image:
+
+```bash
+docker build --pull -f docker/bubo-sandbox/Dockerfile -t bubo-sandbox:local docker/bubo-sandbox
+```
+
+Use an action block that asks for a guarded command:
+
+````markdown
+# Task
+
+Check the .NET SDK version.
+
+```bubo-actions
+[
   {
     "tool": "run_command",
     "arguments": {
@@ -606,198 +364,40 @@ Write a generated note and verify the .NET SDK version.
 ```
 ````
 
-Guardrails:
+`run_command` is routed through the Docker sandbox and avoids shell expansion.
 
-- `write_file` can only write inside the workspace.
-- `patch_file` applies one exact old/new text replacement and fails if the old text is absent or ambiguous.
-- `run_command` avoids shell expansion.
-- `run_command`, `git_status`, `git_diff`, and `git_apply_patch` execute through the Docker sandbox runner.
-- Executables are allowlisted.
-- Results are recorded in `OUTPUT.md`, `agent-debug.jsonl`, and `agent-transcript.md`.
+### Example 4: Cloud Mode
 
-This fixture format is for validation and controlled automation. It is not a replacement for the planner/coder model loop.
-When the fixture fence is absent, CLI runs may ask the selected inference provider to propose the same fenced JSON shape. Model output is still treated as untrusted: prose is ignored, invalid action JSON fails safely, and unknown or unsafe tools are rejected before execution.
-
-Command fixtures require the Docker sandbox image:
+Cloud mode uses `codex-cli` behind the same inference abstraction:
 
 ```bash
-docker build -t bubo-sandbox:local docker/bubo-sandbox
+bubo run --workspace ./repo --mode cloud
 ```
 
-## Guided Example 7: Native llama.cpp Asset Packaging
-
-Bubo owns its llama.cpp native dependency through RID assets.
-
-Expected package layout:
-
-```text
-runtimes/
-  win-x64/native/llama.dll
-  linux-x64/native/libllama.so
-  osx-arm64/native/libllama.dylib
-```
-
-Pinned upstream source:
-
-```text
-Repository: https://github.com/ggml-org/llama.cpp
-Release: b9189
-Commit: 64b38b561b987679c4e1c6231f93860d3eec2638
-```
-
-Validation flow:
-
-```bash
-dotnet pack src/LlamaCppSharp.Native/LlamaCppSharp.Native.csproj --configuration Release
-dotnet test tests/LlamaCppSharp.Native.Tests/LlamaCppSharp.Native.Tests.csproj --configuration Release
-```
-
-Publishing rule:
-
-Do not claim support for a RID until the native asset exists, loads successfully, and passes a smoke test on that platform.
-
-## Inference Modes
-
-### Local Mode
-
-Local mode routes inference through:
-
-```text
-LocalAgent.Inference.LlamaCpp
-  -> LlamaCppSharp
-  -> LlamaCppSharp.Native
-  -> llama.cpp shared library
-```
-
-Local mode is intended for:
-
-- private repositories,
-- offline work,
-- reproducible model profiles,
-- local model experimentation,
-- environments where cloud inference is not allowed.
-
-### Cloud Mode
-
-Cloud mode routes inference through:
-
-```text
-LocalAgent.Inference.CodexCli
-  -> codex-cli child process
-```
-
-Cloud mode is intended for:
-
-- stronger hosted model reasoning,
-- cases where local hardware is insufficient,
-- workflows already approved for cloud inference.
-
-Both modes should feed the same runtime contracts and write the same output artifacts.
-
-## Model Profiles
-
-Model profiles make defaults replaceable without code changes.
-
-Workspace-default config:
+Or:
 
 ```json
 {
-  "mode": "local",
-  "models": {
-    "planner": {
-      "path": "/models/planner.gguf",
-      "contextSize": 32768,
-      "temperature": 0.2,
-      "topP": 0.9,
-      "repeatPenalty": 1.05,
-      "maxTokens": 4096,
-      "gpuLayers": "auto"
-    },
-    "coder": {
-      "path": "/models/coder.gguf",
-      "contextSize": 32768,
-      "temperature": 0.1,
-      "topP": 0.95,
-      "repeatPenalty": 1.05,
-      "maxTokens": 8192,
-      "gpuLayers": "auto"
-    }
-  }
+  "mode": "cloud"
 }
 ```
 
-`threads: 0` means `Environment.ProcessorCount`. Configured runtime limits may lower built-in safety ceilings but cannot raise them.
+Cloud mode should only receive secrets when they are explicitly mounted or configured. No host secrets are passed by default.
 
-Planner responsibilities:
+### Example 5: Local Model Profiles
 
-- Understand the user task.
-- Inspect repository summaries.
-- Decide which files and tools are relevant.
-- Produce an execution plan.
-- Avoid unnecessary edits.
-- Produce concise reasoning summaries rather than hidden chain-of-thought.
+Local mode is designed for GGUF models. A good starting point for 16 GB GPU memory is:
 
-Coder responsibilities:
+- Planner: Qwen3 14B Instruct or similar, `Q4_K_M` or `Q5_K_M`.
+- Coder: Qwen2.5-Coder 14B Instruct, Qwen3-Coder mid-size, or similar, `Q4_K_M` or `Q5_K_M`.
+- Context: `32768` if stable, otherwise `16384`.
+- GPU layers: `auto` or as many as fit.
 
-- Generate patches.
-- Explain edits.
-- Run build and test commands through guarded tools.
-- Fix compile or test errors within loop limits.
-- Keep output and writes inside the workspace.
-
-## Tool System
-
-All agent actions should flow through tools.
-
-Conceptual tool interface:
-
-```csharp
-public interface IAgentTool
-{
-    string Name { get; }
-    string Description { get; }
-    Task<ToolResult> InvokeAsync(ToolRequest request, CancellationToken cancellationToken);
-}
-```
-
-Current default registry:
-
-| Tool | Purpose |
-| --- | --- |
-| `read_file` | Read a UTF-8 file inside the workspace. |
-| `write_file` | Write a UTF-8 file inside the workspace. |
-| `patch_file` | Apply a bounded old/new text replacement inside the workspace. |
-| `list_files` | Enumerate files under the workspace. |
-| `search_text` | Search text under the workspace. |
-| `run_command` | Run allowlisted commands without shell expansion. |
-| `git_status` | Inspect Git status. |
-| `git_diff` | Inspect Git diffs. |
-| `git_apply_patch` | Apply guarded unified diffs through Docker-backed `git apply`. |
-
-Inference-generated actions use a smaller model-safe registry. It excludes generic `run_command`; build and test command execution remains available to deterministic/user-authored `bubo-actions` and future approval-gated loops, but not to model-generated repair retries.
-
-Planned next tools:
-
-| Tool | Purpose |
-| --- | --- |
-| `git_commit_optional` | Commit only when explicitly configured. |
-
-Tool safety rules:
-
-- Resolve every path against the workspace root.
-- Reject path traversal, `.git` metadata edits, and symlink/reparse escape paths.
-- Bound file sizes, patch sizes, file counts, tool-call counts, and command runtime.
-- Enforce configured limits in the runtime instead of trusting action-supplied limit values.
-- Avoid shell string composition.
-- Capture stdout, stderr, and exit code.
-- Redact secrets before model-visible output when practical.
-- Stop when loop limits are reached.
+Keep model mounts read-only inside Docker.
 
 ## Docker Sandbox
 
-The sandbox is the boundary for build and test command execution.
-
-Required image capabilities:
+The sandbox image includes:
 
 - .NET SDK.
 - `git`.
@@ -807,199 +407,294 @@ Required image capabilities:
 - `curl`.
 - `jq`.
 
-Default mounts:
-
-| Host path | Container path | Access |
-| --- | --- | --- |
-| workspace | `/workspace` | writable |
-| input | `/input` | read-only |
-| output | `/output` | writable |
-| models | `/models` | read-only |
-| cache | `/cache` | writable |
-
-Security flags:
+Container layout:
 
 ```text
---cap-drop ALL
---security-opt no-new-privileges
---network none
---read-only where practical
---pids-limit <limit>
---memory <limit>
---cpus <limit>
+/workspace  writable workspace
+/input      read-only task input
+/output     writable output
+/models     read-only model mount
+/cache      writable cache
 ```
 
-GPU tradeoff:
+Default posture:
 
-GPU access is useful for local inference, but exposing GPU devices to containers increases the attack surface. Keep GPU mode explicit.
+```text
+--network none
+--cap-drop ALL
+--security-opt no-new-privileges
+--read-only where practical
+--pids-limit <configured>
+--memory <configured>
+--cpus <configured>
+```
 
-## Network Policy
+Network modes:
 
-Bubo uses explicit network modes:
-
-| Mode | Description |
+| Mode | Use |
 | --- | --- |
-| `none` | No network access. Default. |
-| `package-restore` | Temporary network access for dependency restore workflows. |
-| `research` | Controlled research or download workflows. |
-| `full` | Full network access only when explicitly requested. |
+| `none` | Normal coding runs. |
+| `package-restore` | Dependency restore windows. |
+| `research` | Controlled research or downloads. |
+| `full` | Explicitly approved unrestricted access. |
 
-Recommended practice:
+GPU mode is explicit. NVIDIA mode uses `--gpus all` and requires host GPU drivers plus NVIDIA Container Toolkit.
 
-- Keep normal coding runs on `none`.
-- Use `package-restore` only around package manager commands.
-- Prefer host-mediated research over arbitrary sandbox network access.
-- Never mount secrets by default.
+## Inference Modes
 
-## Git And GitHub Support
+Local mode:
 
-Bubo is designed to support Git workflows without surprising remote mutations.
+```text
+LocalAgent.Inference.LlamaCpp
+  -> LlamaCppSharp
+  -> LlamaCppSharp.Native
+  -> llama.cpp shared library
+```
 
-Supported operations and guarded defaults:
+Cloud mode:
 
-- Read current branch.
-- Read `git status`.
-- Inspect diffs.
-- Create a working branch when configured.
-- Apply patches.
-- Run tests.
-- Optionally commit changes.
-- Optionally use `gh` for PR creation only when explicitly configured.
+```text
+LocalAgent.Inference.CodexCli
+  -> codex-cli child process
+```
 
-Default rule:
+Both modes feed the same runtime contracts and write the same output artifacts.
 
-Bubo must not push, create PRs, or merge changes unless the user or configuration explicitly asks for that behavior.
+Native llama.cpp assets use the standard RID layout:
 
-## Security Model
+```text
+runtimes/
+  win-x64/native/llama.dll
+  linux-x64/native/libllama.so
+  osx-arm64/native/libllama.dylib
+```
 
-Bubo assumes model output is untrusted.
+Pinned upstream reference:
 
-Threats addressed by the design:
+```text
+Repository: https://github.com/ggml-org/llama.cpp
+Release: b9189
+Commit: 64b38b561b987679c4e1c6231f93860d3eec2638
+```
+
+## Tools
+
+Default deterministic tools:
+
+| Tool | Purpose |
+| --- | --- |
+| `read_file` | Read a UTF-8 file inside the workspace. |
+| `write_file` | Write a UTF-8 file inside the workspace. |
+| `patch_file` | Apply a bounded exact old/new replacement. |
+| `list_files` | Enumerate workspace files. |
+| `search_text` | Search workspace text. |
+| `run_command` | Run allowlisted commands through Docker without shell expansion. |
+| `git_status` | Inspect Git status. |
+| `git_diff` | Inspect Git diffs. |
+| `git_apply_patch` | Apply guarded unified diffs through Docker-backed `git apply`. |
+
+Inference-generated actions use a smaller model-safe registry. Generic `run_command` is excluded from model-generated repair retries.
+
+Tool safety rules:
+
+- Resolve paths against the workspace root.
+- Reject path traversal and workspace escapes.
+- Bound tool-call count, file count, patch size, and command duration.
+- Treat model output as data, not authority.
+- Capture stdout, stderr, exit code, files changed, and issues.
+- Stop at configured loop limits.
+
+## Security Rules
+
+Bubo assumes repository content and model output may be hostile.
+
+Default rules:
+
+- No host secrets mounted by default.
+- Network disabled by default.
+- Input and model mounts are read-only.
+- All writable paths stay inside the workspace or configured output/cache mounts.
+- Command execution goes through Docker.
+- Tool arguments are validated before execution.
+- Git hooks and remote mutations are not trusted by default.
+- Bubo does not push, open PRs, merge, or publish unless explicitly configured or requested.
+- Output artifacts include summaries, tool observations, and decisions, not hidden chain-of-thought.
+
+Threats the design accounts for:
 
 - Path traversal.
-- Prompt injection from repository files.
+- Prompt injection.
 - Command injection.
 - Secret exfiltration.
 - Network exfiltration.
 - Docker escape risk.
 - GPU device exposure.
 - Malicious package install scripts.
-- Unsafe Git hooks.
 - Accidental edits outside the workspace.
 
-Mitigations:
+## Developer Onboarding
 
-- Workspace-root canonicalization for file operations.
-- Docker sandbox for command execution.
-- Network disabled by default.
-- No host secret mounts by default.
-- Read-only model and input mounts.
-- Command allowlist or approval mode.
-- One-shot inference uses a model-safe registry that excludes generic command execution.
-- Resource limits.
-- Structured logs.
-- Dry-run support where practical.
-- Explicit approval gates for destructive operations.
-- No auto-push in v1.
+Repository layout:
 
-## Auditing And Logs
+```text
+src/
+  LlamaCppSharp.Native/          Native package metadata and RID asset layout.
+  LlamaCppSharp/                 Managed llama.cpp wrapper.
+  LocalAgent.Abstractions/       Shared contracts.
+  LocalAgent.Runtime/            Agent loop, tools, workspace guard, output artifacts.
+  LocalAgent.Inference.LlamaCpp/ Local inference provider.
+  LocalAgent.Inference.CodexCli/ Cloud inference provider.
+  LocalAgent.Sandbox.Docker/     Docker command runner.
+  LocalAgent.Cli/                CLI entrypoint.
 
-Bubo creates three main artifact types:
+tests/
+  Unit and smoke tests for contracts, runtime behavior, CLI behavior, native probing, and Docker command construction.
+```
 
-| Artifact | Audience | Purpose |
-| --- | --- | --- |
-| `OUTPUT.md` | User/reviewer | Final result and summary. |
-| `agent-transcript.md` | Developer/reviewer | Human-readable observable event transcript. |
-| `agent-debug.jsonl` | Developer/debugging | Structured event records. |
-
-The transcript may include:
-
-- tool decisions,
-- commands run,
-- observations,
-- summaries,
-- errors,
-- file paths,
-- exit codes.
-
-The transcript must not claim to expose hidden chain-of-thought.
-
-## Build, Test, And Package
-
-Restore:
+Common commands:
 
 ```bash
 dotnet restore Bubo.sln
-```
-
-Build:
-
-```bash
-dotnet build Bubo.sln --no-restore
-```
-
-Test:
-
-```bash
-dotnet test Bubo.sln --no-build
-```
-
-Release build:
-
-```bash
 dotnet build Bubo.sln --configuration Release --no-restore
 dotnet test Bubo.sln --configuration Release --no-build
+dotnet format Bubo.sln --verify-no-changes --no-restore
+git diff --check
 ```
 
-Package examples:
+Package checks:
 
 ```bash
-dotnet pack src/LlamaCppSharp.Native/LlamaCppSharp.Native.csproj --configuration Release
-dotnet pack src/LlamaCppSharp/LlamaCppSharp.csproj --configuration Release
-dotnet pack src/LocalAgent.Cli/LocalAgent.Cli.csproj --configuration Release
+dotnet pack src/LlamaCppSharp.Native/LlamaCppSharp.Native.csproj --configuration Release --no-build --output artifacts/packages
+dotnet pack src/LlamaCppSharp/LlamaCppSharp.csproj --configuration Release --no-build --output artifacts/packages
+dotnet pack src/LocalAgent.Cli/LocalAgent.Cli.csproj --configuration Release --no-build --output artifacts/packages
 ```
+
+Docker checks:
+
+```bash
+docker build --pull -f docker/bubo-sandbox/Dockerfile -t bubo-sandbox:local docker/bubo-sandbox
+dotnet run --no-build --configuration Release --project src/LocalAgent.Cli/LocalAgent.Cli.csproj -- sandbox test --workspace .
+```
+
+When adding a tool:
+
+1. Implement `IAgentTool`.
+2. Resolve all paths through `WorkspaceGuard`.
+3. Add bounded input validation.
+4. Record useful `ToolResult` output and errors.
+5. Decide whether the tool belongs in the deterministic registry, the model-safe registry, or both.
+6. Add tests for success, failure, traversal rejection, and limit enforcement.
+
+When changing inference behavior:
+
+1. Keep deterministic `bubo-actions` single-pass.
+2. Keep model-generated actions behind fenced JSON parsing.
+3. Treat observations fed back to the model as untrusted text.
+4. Preserve side effects and failed-attempt evidence in output artifacts.
+5. Cover retry success, retry exhaustion, invalid output, unknown tool, and limit exhaustion.
+
+## Agent Onboarding
+
+Use this section when Bubo itself, Codex, or another coding agent is working in this repository.
+
+Before editing:
+
+- Read `AGENTS.md`.
+- Read `.codex/AGENTS.md` when present.
+- Check `git status --short --branch`.
+- Prefer the existing project style and tests.
+- Keep unrelated local changes intact.
+
+Good task prompts for Bubo:
+
+```markdown
+# Task
+
+Make the smallest safe change that updates the CLI help text for sandbox test.
+
+## Validation
+
+- Run the CLI tests.
+- Run `dotnet format`.
+- Summarize files changed.
+```
+
+Good deterministic fixture prompts:
+
+````markdown
+# Task
+
+Create a generated note.
+
+```bubo-actions
+[
+  {
+    "tool": "write_file",
+    "arguments": {
+      "path": "generated/note.txt",
+      "content": "Generated by Bubo.\n"
+    }
+  }
+]
+```
+````
+
+Agent expectations:
+
+- Do not assume network access.
+- Do not assume secrets are mounted.
+- Do not write outside the workspace.
+- Do not run destructive Git operations without explicit approval.
+- Prefer small patches and focused tests.
+- Report commands run and validation results in `OUTPUT.md`.
+- Keep hidden chain-of-thought out of artifacts.
 
 ## Troubleshooting
 
 ### `INPUT.md` Is Missing
 
-Error shape:
-
-```text
-Input file does not exist.
-```
-
-Fix:
+Create one:
 
 ```bash
 echo "# Task" > INPUT.md
-dotnet run --project src/LocalAgent.Cli -- run --workspace .
+bubo run --workspace .
 ```
 
-### Output Was Written Somewhere Unexpected
+### Docker Is Not On PATH
 
-Use explicit paths:
-
-```bash
-dotnet run --project src/LocalAgent.Cli -- run \
-  --workspace ./my-workspace \
-  --input ./my-workspace/INPUT.md \
-  --output ./my-workspace/OUTPUT.md
-```
-
-### Docker Is Not Available
-
-Check Docker:
+Check:
 
 ```bash
 docker version
 ```
 
-If Docker is unavailable, local command execution through the sandbox cannot run. The file contract can still be validated.
+On Windows with Docker Desktop, the CLI is commonly installed at:
+
+```text
+C:\Program Files\Docker\Docker\resources\bin\docker.exe
+```
+
+Add that directory to `PATH` or call it by full path.
+
+### Sandbox Test Fails
+
+Rebuild the image:
+
+```bash
+docker build --pull -f docker/bubo-sandbox/Dockerfile -t bubo-sandbox:local docker/bubo-sandbox
+```
+
+Then rerun:
+
+```bash
+bubo sandbox test --workspace .
+```
+
+Expected output includes versions for `git`, `gh`, and .NET.
 
 ### llama.cpp Native Library Is Missing
 
-Expected native names:
+Expected names:
 
 ```text
 Windows: llama.dll
@@ -1007,13 +702,13 @@ Linux:   libllama.so
 macOS:   libllama.dylib
 ```
 
-Fix:
+Place the asset under `runtimes/<rid>/native/`, then run:
 
-- Build or install the matching RID asset.
-- Place it under `runtimes/<rid>/native/`.
-- Re-run the native smoke test when available.
+```bash
+bubo native test
+```
 
-### codex-cli Is Not Found
+### `codex` Is Not Found
 
 Check:
 
@@ -1021,52 +716,12 @@ Check:
 codex --version
 ```
 
-Fix:
+Then make sure `codex` is on `PATH` before running cloud mode.
 
-- Install or expose `codex` on `PATH`.
-- Re-run the cloud provider doctor/spike command when available.
+## Further Reading
 
-## Roadmap
-
-Short-term:
-
-- Populate and smoke-test llama.cpp native assets for supported RIDs.
-- Expand P/Invoke bindings for tokenization, decode, logits, sampling, and streaming generation.
-- Add optional guarded commit tooling.
-- Expand bounded generated-action repair into separate planner/coder orchestration over inference providers and guarded tools.
-- Expand config loading with provider-specific cloud options and richer approval policy.
-- Harden command approval policy and secret redaction.
-- Keep `codex-cli` non-interactive invocation checks current as CLI flags evolve.
-
-Medium-term:
-
-- Add native smoke tests per RID.
-- Add model metadata inspection.
-- Add embeddings support if practical.
-- Add package restore network windows.
-- Add command approval policy.
-- Add structured redaction for secrets.
-- Add richer prompt templates and context management.
-
-Long-term:
-
-- Add AMD/ROCm or Vulkan support if hardware and llama.cpp support justify it.
-- Add richer language images for non-.NET repositories.
-- Add policy-driven PR creation.
-- Add multi-repository workflows.
-- Add model benchmarking and profile recommendations.
-
-## Glossary
-
-| Term | Meaning |
-| --- | --- |
-| Agent | Runtime component that reads a task, inspects context, chooses tools, and produces output. |
-| GGUF | Model file format commonly used by llama.cpp. |
-| llama.cpp | Native inference engine used by Bubo local mode. |
-| Planner | Model role responsible for understanding the task and selecting work. |
-| Coder | Model role responsible for generating and refining edits. |
-| Sandbox | Docker execution boundary for commands and tools. |
-| Workspace | The mounted repository or task directory Bubo can read and write. |
-| Transcript | Auditable record of observable events, not hidden reasoning. |
-| Tool | A bounded runtime capability exposed to the agent. |
-| RID | .NET runtime identifier such as `win-x64`, `linux-x64`, or `osx-arm64`. |
+- [Architecture](ARCHITECTURE.md)
+- [Configuration](docs/configuration.md)
+- [Security Model](docs/security.md)
+- [Packaging](docs/packaging.md)
+- [Examples](examples/README.md)
