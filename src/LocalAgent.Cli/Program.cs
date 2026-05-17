@@ -46,6 +46,7 @@ public static class Program
                 ? parseResult.Options.Mode
                 : configLoad.Config.Mode;
             var effectiveConfig = configLoad.Config with { Mode = mode };
+            effectiveConfig = ApplyCliOpenCawOverrides(effectiveConfig, parseResult.Options);
             var runner = CreateAgentRunner(
                 mode,
                 parseResult.Options.WorkspacePath,
@@ -204,6 +205,32 @@ public static class Program
                     WorkingDirectory = Path.GetFullPath(workspacePath)
                 }),
             _ => new LlamaCppInferenceProvider()
+        };
+    }
+
+    private static AgentRunConfig ApplyCliOpenCawOverrides(
+        AgentRunConfig config,
+        CommandLineOptions options)
+    {
+        if (options.OpenCawEnabled is null &&
+            options.OpenCawPath is null &&
+            options.OpenCawRef is null &&
+            options.OpenCawUpdateOnRun is null &&
+            options.OpenCawExecuteBootstrap is null)
+        {
+            return config;
+        }
+
+        return config with
+        {
+            OpenCaw = config.OpenCaw with
+            {
+                Enabled = options.OpenCawEnabled ?? config.OpenCaw.Enabled,
+                Path = options.OpenCawPath ?? config.OpenCaw.Path,
+                Ref = options.OpenCawRef ?? config.OpenCaw.Ref,
+                UpdateOnRun = options.OpenCawUpdateOnRun ?? config.OpenCaw.UpdateOnRun,
+                ExecuteBootstrap = options.OpenCawExecuteBootstrap ?? config.OpenCaw.ExecuteBootstrap
+            }
         };
     }
 

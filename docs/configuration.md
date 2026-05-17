@@ -11,11 +11,11 @@ Bubo loads JSON configuration for `bubo run` without requiring code changes.
 3. `--config <path>` when supplied. Relative paths resolve from the current shell directory.
 4. Explicit CLI flags. Today `--mode` overrides config mode.
 
-No-config behavior preserves the previous CLI posture: Docker is used when available, network is `none`, GPU is not requested, and no host model directory is mounted by default.
+No-config behavior uses Docker when available, keeps network at `none`, avoids GPU and host model mounts by default, and enables OpenCaw bootstrap from the workspace `.opencaw` submodule.
 
 ## Trust Boundary
 
-Workspace `bubo.config.json` is repository content, so Bubo treats it as untrusted. It can configure mode, model profiles, and runtime limits. It cannot configure sandbox policy.
+Workspace `bubo.config.json` is repository content, so Bubo treats it as untrusted. It can configure mode, model profiles, and runtime limits. It cannot configure sandbox policy or OpenCaw bootstrap policy.
 
 Sandbox policy requires an explicit `--config` path. That explicit flag is the user trust signal for settings such as:
 
@@ -26,6 +26,8 @@ Sandbox policy requires an explicit `--config` path. That explicit flag is the u
 - Memory, CPU, and PID limits.
 
 Bubo never accepts config overrides for workspace, input, output, cache, or container working-directory host paths. Those are derived from the guarded workspace.
+
+OpenCaw policy also requires an explicit `--config` trust signal because it controls host-side submodule update and bootstrap script execution. Workspace-default config cannot redirect the OpenCaw path, repository URL, ref, update mode, or bootstrap execution.
 
 ## Workspace Default Example
 
@@ -102,6 +104,44 @@ bubo run --workspace ./repo --config ./bubo.trusted.config.json
 Security hardening booleans cannot be disabled through config, and `sandbox.useDocker` cannot be set to `false`.
 
 `sandbox.gpu` accepts `nvidia` or `none`. NVIDIA mode only exposes Docker GPU devices; model offload still also requires a CUDA-enabled native llama.cpp backend and model `gpuLayers` configuration.
+
+## OpenCaw Example
+
+CLI defaults:
+
+```text
+openCaw.enabled true
+openCaw.repositoryUrl https://github.com/TimothyMeadows/OpenCaw
+openCaw.path .opencaw
+openCaw.ref main
+openCaw.updateOnRun true
+openCaw.executeBootstrap true
+```
+
+Common one-off flags:
+
+```bash
+bubo run --workspace ./repo --no-opencaw
+bubo run --workspace ./repo --no-opencaw-update
+bubo run --workspace ./repo --no-opencaw-bootstrap
+```
+
+Trusted config can override OpenCaw policy:
+
+```json
+{
+  "openCaw": {
+    "enabled": true,
+    "repositoryUrl": "https://github.com/TimothyMeadows/OpenCaw",
+    "path": ".opencaw",
+    "ref": "main",
+    "updateOnRun": true,
+    "executeBootstrap": true
+  }
+}
+```
+
+Bubo verifies the OpenCaw checkout is a Git checkout and that `origin` matches the configured repository before loading baseline instructions or running the scaffold script.
 
 ## Cloud Mode Example
 

@@ -29,10 +29,12 @@ public sealed class CodexCliInferenceProvider : IInferenceProvider
             $"bubo-codex-{Guid.NewGuid():N}.md");
         var arguments = CodexCliCommandBuilder.BuildExecArguments(_options, outputFile);
 
+        var prompt = CodexCliPromptBuilder.Compose(request.SystemPrompt, request.Prompt);
+
         var result = await CodexCliProcess.RunAsync(
             _options.Executable,
             arguments,
-            request.Prompt,
+            prompt,
             _options.WorkingDirectory,
             cancellationToken);
 

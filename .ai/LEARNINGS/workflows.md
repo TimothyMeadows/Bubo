@@ -19,7 +19,7 @@ When a goal-flow stack is merged:
 
 ## Goal-Flow PR Readiness On Windows
 
-- Run `./.codex/commands/pr-readiness-check.sh --goal` for the durable gate, but verify the actual commit scope with native `git status --short --branch` when WSL reports many unrelated line-ending changes.
+- Run `./.opencaw/commands/pr-readiness-check.sh --goal` for the durable gate, but verify the actual commit scope with native `git status --short --branch` when WSL reports many unrelated line-ending changes.
 - For Bubo tool hardening, include both unit validation and CLI fixture validation before opening the PR: Release build, Release tests, scripted E2E fixture, live Docker-backed `git_apply_patch` fixture, `dotnet format --verify-no-changes`, and `git diff --check`.
 
 ## RTX 50xx CUDA Native Validation

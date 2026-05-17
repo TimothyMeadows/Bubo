@@ -18,6 +18,10 @@
 
 - Do not expose generic `run_command` to one-shot model-proposed actions. Keep command execution behind deterministic/user-authored fixtures or a future explicit approval-gated loop.
 
+## OpenCaw Bootstrap On Windows
+
+- Invoke OpenCaw shell scripts from the `.opencaw` working directory using relative POSIX-style paths such as `./commands/create-host-ai-scaffold.sh`; Windows absolute paths passed to `bash` can fail under Git Bash path translation.
+
 ## Windows CUDA Native Builds
 
 - Visual Studio developer shells may set `Platform=x64`; clear it for managed `dotnet` verification or output probing can look under `bin/x64/Release` instead of the default SDK project output path.

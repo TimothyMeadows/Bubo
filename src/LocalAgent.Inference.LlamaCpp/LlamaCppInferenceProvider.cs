@@ -12,6 +12,7 @@ public sealed class LlamaCppInferenceProvider : IInferenceProvider
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
+        _ = request.SystemPrompt;
 
         var probe = LlamaRuntimeAvailability.Probe();
         if (!probe.Success)

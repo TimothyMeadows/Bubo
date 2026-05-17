@@ -11,3 +11,4 @@
 - Keep agent execution capabilities behind contracts and guarded tools rather than direct model-controlled file or process access.
 - File and command tools must enforce workspace-root boundaries before reading, writing, patching, or running commands.
 - Do not add dependencies on host-installed llama.cpp executables; local inference should flow through managed interop and packaged native assets.
+- OpenCaw startup belongs before `INPUT.md` processing. Preserve host `.ai` memory/learnings and keep OpenCaw baseline changes inside the `.opencaw` submodule unless explicitly asked to modify the baseline.

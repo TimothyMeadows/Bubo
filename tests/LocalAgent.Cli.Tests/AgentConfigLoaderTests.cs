@@ -18,6 +18,10 @@ public sealed class AgentConfigLoaderTests
         Assert.Null(result.Config.Sandbox.Gpu);
         Assert.Null(result.Config.Sandbox.ModelsPath);
         Assert.Equal(NetworkPolicy.None, result.Config.Sandbox.Network);
+        Assert.True(result.Config.OpenCaw.Enabled);
+        Assert.True(result.Config.OpenCaw.UpdateOnRun);
+        Assert.True(result.Config.OpenCaw.ExecuteBootstrap);
+        Assert.Equal(".opencaw", result.Config.OpenCaw.Path);
     }
 
     [Fact]
@@ -145,6 +149,57 @@ public sealed class AgentConfigLoaderTests
             () => AgentConfigLoader.Load(workspace));
 
         Assert.Contains("Workspace-default bubo.config.json cannot set sandbox policy", exception.Message);
+    }
+
+    [Fact]
+    public async Task LoadRejectsWorkspaceDefaultOpenCawPolicy()
+    {
+        var workspace = CreateWorkspace();
+        var configPath = Path.Combine(workspace, "bubo.config.json");
+        await File.WriteAllTextAsync(
+            configPath,
+            """
+            {
+              "openCaw": {
+                "path": ".cursor"
+              }
+            }
+            """);
+
+        var exception = Assert.Throws<ArgumentException>(
+            () => AgentConfigLoader.Load(workspace));
+
+        Assert.Contains("Workspace-default bubo.config.json cannot set OpenCaw policy", exception.Message);
+    }
+
+    [Fact]
+    public async Task LoadAppliesExplicitOpenCawConfig()
+    {
+        var workspace = CreateWorkspace();
+        var configPath = Path.Combine(workspace, "trusted.bubo.json");
+        await File.WriteAllTextAsync(
+            configPath,
+            """
+            {
+              "openCaw": {
+                "enabled": false,
+                "repositoryUrl": "https://github.com/TimothyMeadows/OpenCaw",
+                "path": ".cursor",
+                "ref": "release/test",
+                "updateOnRun": false,
+                "executeBootstrap": false
+              }
+            }
+            """);
+
+        var result = AgentConfigLoader.Load(workspace, configPath);
+
+        Assert.False(result.Config.OpenCaw.Enabled);
+        Assert.Equal("https://github.com/TimothyMeadows/OpenCaw", result.Config.OpenCaw.RepositoryUrl);
+        Assert.Equal(".cursor", result.Config.OpenCaw.Path);
+        Assert.Equal("release/test", result.Config.OpenCaw.Ref);
+        Assert.False(result.Config.OpenCaw.UpdateOnRun);
+        Assert.False(result.Config.OpenCaw.ExecuteBootstrap);
     }
 
     [Fact]

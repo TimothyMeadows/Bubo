@@ -56,11 +56,13 @@ Check the sandbox:
 dotnet run --no-build --configuration Release --project src/LocalAgent.Cli/LocalAgent.Cli.csproj -- sandbox test --workspace .
 ```
 
-Run Bubo against a workspace:
+Run Bubo against an OpenCaw-enabled workspace:
 
 ```powershell
 dotnet run --project src/LocalAgent.Cli/LocalAgent.Cli.csproj -- run --workspace ./repo
 ```
+
+For an isolated throwaway fixture that does not have a `.opencaw` submodule, add `--no-opencaw`.
 
 ## What Bubo Does
 
@@ -70,6 +72,7 @@ Bubo is built for coding-agent workflows:
 - Inspect and modify files inside one workspace.
 - Execute deterministic user-provided tool actions.
 - Ask a local or cloud inference provider for guarded tool actions when no deterministic action block is provided.
+- Initialize an OpenCaw session from the workspace `.opencaw` submodule before reading `INPUT.md`.
 - Retry inference-generated repair actions within configured loop limits.
 - Run build, test, Git, and command tools through bounded runtime APIs.
 - Write `OUTPUT.md`, `agent-debug.jsonl`, and `agent-transcript.md`.
@@ -106,13 +109,16 @@ Run behavior:
 
 1. Load CLI options and optional configuration.
 2. Validate workspace, input, and output paths.
-3. Read `INPUT.md`.
-4. Execute a deterministic `bubo-actions` block when present.
-5. Otherwise ask the configured inference provider for fenced `bubo-actions` JSON.
-6. Execute generated actions through the model-safe tool registry.
-7. Feed concise tool observations into retries after retryable tool failures.
-8. Stop on success, no actions, invalid action JSON, unknown tools, non-retryable safety failures, provider failure, or loop limits.
-9. Write the output report, transcript, and debug log.
+3. Update and verify the OpenCaw submodule when enabled.
+4. Run the OpenCaw host scaffold bootstrap when required, preserving existing `.ai` memory, fragments, learnings, and task files.
+5. Load OpenCaw baseline instructions plus host repository context into the inference system prompt.
+6. Read `INPUT.md`.
+7. Execute a deterministic `bubo-actions` block when present.
+8. Otherwise ask the configured inference provider for fenced `bubo-actions` JSON.
+9. Execute generated actions through the model-safe tool registry.
+10. Feed concise tool observations into retries after retryable tool failures.
+11. Stop on success, no actions, invalid action JSON, unknown tools, non-retryable safety failures, provider failure, or loop limits.
+12. Write the output report, transcript, and debug log.
 
 ## Input And Output Contract
 
@@ -183,6 +189,9 @@ Defaults:
 --output <workspace>/OUTPUT.md
 --mode local
 --config <workspace>/bubo.config.json when present
+--opencaw enabled
+--opencaw-update true
+--opencaw-bootstrap true
 ```
 
 Utility commands:
@@ -259,6 +268,17 @@ Example:
 }
 ```
 
+OpenCaw bootstrap is enabled by default in the CLI. It expects `.opencaw` to be the OpenCaw submodule, verifies the checkout origin, updates it when configured, runs the scaffold script when required, and preserves project-local `.ai` state. Use these flags for explicit control:
+
+```bash
+bubo run --workspace ./repo --no-opencaw
+bubo run --workspace ./repo --no-opencaw-update
+bubo run --workspace ./repo --no-opencaw-bootstrap
+bubo run --workspace ./repo --opencaw-path .opencaw --opencaw-ref main
+```
+
+OpenCaw path/ref/bootstrap policy in JSON config requires explicit `--config`; workspace-default `bubo.config.json` cannot silently redirect bootstrap code execution.
+
 Trusted sandbox policy example:
 
 ```json
@@ -291,7 +311,7 @@ Say hello from Bubo and prove the output contract works.
 Run:
 
 ```powershell
-dotnet run --project .\src\LocalAgent.Cli -- run --workspace $workspace --mode local
+dotnet run --project .\src\LocalAgent.Cli -- run --workspace $workspace --mode local --no-opencaw
 ```
 
 Inspect:
@@ -379,6 +399,8 @@ Cloud mode uses `codex-cli` behind the same inference abstraction:
 bubo run --workspace ./repo --mode cloud
 ```
 
+When OpenCaw is enabled, the Codex prompt receives OpenCaw baseline instructions and host `.ai` context as system context before the user task.
+
 Or:
 
 ```json
@@ -463,7 +485,7 @@ LocalAgent.Inference.LlamaCpp
 Cloud mode:
 
 ```text
-LocalAgent.Inference.CodexCli
+LocalAgent.Inference.opencawCli
   -> codex-cli child process
 ```
 
@@ -575,6 +597,7 @@ Default rules:
 - Tool arguments are validated before execution.
 - Git hooks and remote mutations are not trusted by default.
 - Bubo does not push, open PRs, merge, or publish unless explicitly configured or requested.
+- OpenCaw bootstrap only runs from the verified workspace `.opencaw` checkout and records observable bootstrap/update events.
 - Output artifacts include summaries, tool observations, and decisions, not hidden chain-of-thought.
 
 Threats the design accounts for:
@@ -600,7 +623,7 @@ src/
   LocalAgent.Abstractions/       Shared contracts.
   LocalAgent.Runtime/            Agent loop, tools, workspace guard, output artifacts.
   LocalAgent.Inference.LlamaCpp/ Local inference provider.
-  LocalAgent.Inference.CodexCli/ Cloud inference provider.
+  LocalAgent.Inference.opencawCli/ Cloud inference provider.
   LocalAgent.Sandbox.Docker/     Docker command runner.
   LocalAgent.Cli/                CLI entrypoint.
 
@@ -666,7 +689,8 @@ Use this section when Bubo itself, Codex, or another coding agent is working in 
 Before editing:
 
 - Read `AGENTS.md`.
-- Read `.codex/AGENTS.md` when present.
+- Read `.opencaw/AGENTS.md` when present.
+- Treat `.opencaw` as the OpenCaw submodule and `.ai` as the host project memory layer.
 - Check `git status --short --branch`.
 - Prefer the existing project style and tests.
 - Keep unrelated local changes intact.

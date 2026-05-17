@@ -1096,6 +1096,101 @@ public sealed class AgentRunnerTests
         Assert.Contains("Changed `notes.txt`.", result.ChangesMade);
     }
 
+    [Fact]
+    public async Task RunAsyncPassesOpenCawSystemPromptToInferenceProvider()
+    {
+        var workspace = CreateWorkspace();
+        var inputPath = Path.Combine(workspace, "INPUT.md");
+        var outputPath = Path.Combine(workspace, "OUTPUT.md");
+        await File.WriteAllTextAsync(inputPath, "# Task\n\nUse the project baseline.");
+        var provider = new FakeInferenceProvider(
+            """
+            ```bubo-actions
+            []
+            ```
+            """);
+        var bootstrapper = new FakeOpenCawBootstrapper(
+            new OpenCawBootstrapResult
+            {
+                SystemPrompt = "OpenCaw baseline plus host .ai memory.",
+                Events = new[]
+                {
+                    new TranscriptEvent
+                    {
+                        Type = "opencaw.context_loaded",
+                        Message = "Loaded fake OpenCaw context."
+                    }
+                }
+            });
+
+        var runner = new AgentRunner(
+            new FakeSandboxRunner(),
+            inferenceProvider: provider,
+            config: new AgentRunConfig
+            {
+                OpenCaw = new OpenCawOptions { Enabled = true }
+            },
+            openCawBootstrapper: bootstrapper);
+        var result = await runner.RunAsync(
+            new AgentRunRequest
+            {
+                WorkspacePath = workspace,
+                InputPath = inputPath,
+                OutputPath = outputPath,
+                Mode = AgentMode.Local
+            },
+            CancellationToken.None);
+
+        Assert.True(result.Success);
+        Assert.True(bootstrapper.WasCalled);
+        Assert.Equal("OpenCaw baseline plus host .ai memory.", provider.LastRequest.SystemPrompt);
+        Assert.Contains("Use the project baseline.", provider.LastPrompt);
+        Assert.Contains("opencaw.context_loaded", await File.ReadAllTextAsync(Path.Combine(workspace, "agent-transcript.md")));
+    }
+
+    [Fact]
+    public async Task RunAsyncStopsOnOpenCawFailureBeforeReadingInput()
+    {
+        var workspace = CreateWorkspace();
+        var inputPath = Path.Combine(workspace, "INPUT.md");
+        var outputPath = Path.Combine(workspace, "OUTPUT.md");
+        var bootstrapper = new FakeOpenCawBootstrapper(
+            new OpenCawBootstrapResult
+            {
+                Success = false,
+                Error = "OpenCaw checkout is unavailable.",
+                Events = new[]
+                {
+                    new TranscriptEvent
+                    {
+                        Type = "opencaw.failed",
+                        Message = "OpenCaw checkout is unavailable."
+                    }
+                }
+            });
+
+        var runner = new AgentRunner(
+            config: new AgentRunConfig
+            {
+                OpenCaw = new OpenCawOptions { Enabled = true }
+            },
+            openCawBootstrapper: bootstrapper);
+        var result = await runner.RunAsync(
+            new AgentRunRequest
+            {
+                WorkspacePath = workspace,
+                InputPath = inputPath,
+                OutputPath = outputPath,
+                Mode = AgentMode.Local
+            },
+            CancellationToken.None);
+
+        Assert.False(result.Success);
+        Assert.True(File.Exists(outputPath));
+        Assert.Contains("could not initialize the OpenCaw session", await File.ReadAllTextAsync(outputPath));
+        Assert.Contains("OpenCaw checkout is unavailable.", await File.ReadAllTextAsync(Path.Combine(workspace, "agent-debug.jsonl")));
+    }
+
     private static string CreateWorkspace()
     {
         var workspace = Path.Combine(
@@ -1133,6 +1228,33 @@ public sealed class AgentRunnerTests
         {
             await Task.Delay(TimeSpan.FromMinutes(5), cancellationToken);
             return new ToolResult { Success = true };
+        }
+    }
+
+    private sealed class FakeOpenCawBootstrapper : IOpenCawBootstrapper
+    {
+        private readonly OpenCawBootstrapResult _result;
+
+        public FakeOpenCawBootstrapper(OpenCawBootstrapResult result)
+        {
+            _result = result;
+        }
+
+        public bool WasCalled { get; private set; }
+
+        public WorkspaceGuard? LastGuard { get; private set; }
+
+        public OpenCawOptions? LastOptions { get; private set; }
+
+        public Task<OpenCawBootstrapResult> BootstrapAsync(
+            WorkspaceGuard guard,
+            OpenCawOptions options,
+            CancellationToken cancellationToken)
+        {
+            WasCalled = true;
+            LastGuard = guard;
+            LastOptions = options;
+            return Task.FromResult(_result);
         }
     }
 

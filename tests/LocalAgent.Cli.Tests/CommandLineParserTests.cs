@@ -51,6 +51,53 @@ public sealed class CommandLineParserTests
     }
 
     [Fact]
+    public void ParseRunCommandAcceptsOpenCawOptions()
+    {
+        var result = CommandLineParser.Parse(new[]
+        {
+            "run",
+            "--workspace",
+            "repo",
+            "--opencaw",
+            "disabled",
+            "--opencaw-path",
+            ".cursor",
+            "--opencaw-ref",
+            "release/test",
+            "--opencaw-update",
+            "false",
+            "--opencaw-bootstrap",
+            "false"
+        });
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Options);
+        Assert.False(result.Options.OpenCawEnabled);
+        Assert.Equal(".cursor", result.Options.OpenCawPath);
+        Assert.Equal("release/test", result.Options.OpenCawRef);
+        Assert.False(result.Options.OpenCawUpdateOnRun);
+        Assert.False(result.Options.OpenCawExecuteBootstrap);
+    }
+
+    [Fact]
+    public void ParseRunCommandAcceptsOpenCawDisableShortFlags()
+    {
+        var result = CommandLineParser.Parse(new[]
+        {
+            "run",
+            "--no-opencaw",
+            "--no-opencaw-update",
+            "--no-opencaw-bootstrap"
+        });
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Options);
+        Assert.False(result.Options.OpenCawEnabled);
+        Assert.False(result.Options.OpenCawUpdateOnRun);
+        Assert.False(result.Options.OpenCawExecuteBootstrap);
+    }
+
+    [Fact]
     public void ParseRunCommandRejectsUnknownMode()
     {
         var result = CommandLineParser.Parse(new[]
