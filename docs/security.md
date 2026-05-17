@@ -15,6 +15,7 @@ Bubo treats repository content, model output, and generated tool requests as unt
 - Inference output is not executed directly. Bubo only parses fenced `bubo-actions` JSON arrays, rejects invalid or oversized action plans, rejects unknown tools, and routes accepted actions through a model-safe guarded tool registry.
 - One-shot inference excludes generic `run_command`; deterministic/user-authored action fixtures can still use it for guarded validation commands.
 - Runtime config limits override action-supplied patch and file-count limits, so model output cannot raise its own safety ceilings.
+- Workspace-default `bubo.config.json` is treated as repository content and cannot set sandbox policy. Explicit `--config` is required before Bubo accepts network, GPU, Docker image, or model mount settings from config.
 - Sandboxed command execution is bounded by `MaxCommandSeconds`; timed-out child process trees are killed.
 - `gh` and Git operations are available but Bubo does not auto-push or auto-create PRs unless the surrounding goal-flow explicitly asks for it.
 

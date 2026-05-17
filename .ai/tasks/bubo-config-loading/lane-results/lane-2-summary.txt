@@ -1,0 +1,13 @@
+Backend architecture review completed.
+
+Findings:
+- Keep config loading CLI-local and pass one effective AgentRunConfig into AgentRunner.
+- Use precedence: CLI-safe defaults, workspace bubo.config.json, explicit --config, explicit CLI flags.
+- Keep --mode override aligned with AgentRunConfig.Mode before constructing the runner.
+- Do not honor configured workspace/input/output/cache/container working directory host paths.
+
+Implementation impact:
+- Program now passes an effective config with Mode set to the effective CLI/config mode.
+- AgentConfigLoader rejects unsupported host mount path overrides.
+
+Files changed by lane: None.

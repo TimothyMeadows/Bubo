@@ -39,10 +39,11 @@ Implement Bubo as a .NET 8 LTS coding-agent runtime with a Docker sandbox, local
 6. [x] Integrate Bubo goal stack onto main (`../.ai/tasks/bubo-main-stack-integration/TASK.md`)
 7. [x] Harden Bubo workspace tools and patch flow (`../.ai/tasks/bubo-tool-hardening/TASK.md`)
 8. [x] Add Bubo inference-driven action loop (`../.ai/tasks/bubo-inference-action-loop/TASK.md`)
+9. [ ] Add Bubo configuration loading (`../.ai/tasks/bubo-config-loading/TASK.md`)
 
 ## Current Task
 
-All planned goal tasks complete; awaiting human PR review/merge.
+Continuing goal execution after PR #18 merged. Current task: add Bubo configuration loading.
 
 ## Branch Chain
 - base-structure | base: `main` | head: `chore/opencaw-base-structure` | PR: https://github.com/TimothyMeadows/Bubo/pull/1 | depends on: none | status: merged
@@ -54,6 +55,7 @@ All planned goal tasks complete; awaiting human PR review/merge.
 - bubo-main-stack-integration | base: `main` | head: `feature/bubo-main-stack-integration` | PR: https://github.com/TimothyMeadows/Bubo/pull/14 | depends on: bubo-e2e-hardening-packaging | status: post_pr_qa_passed
 - bubo-tool-hardening | base: `main` | head: `feature/bubo-tool-hardening` | PR: https://github.com/TimothyMeadows/Bubo/pull/16 | depends on: bubo-main-stack-integration | status: post_pr_qa_passed
 - bubo-inference-action-loop | base: `main` | head: `feature/bubo-inference-action-loop` | PR: https://github.com/TimothyMeadows/Bubo/pull/18 | depends on: bubo-tool-hardening | status: post_pr_qa_passed
+- bubo-config-loading | base: `main` | head: `feature/bubo-config-loading` | PR: pending | depends on: bubo-inference-action-loop | status: in_progress
 
 ## Automation Rules
 - Complete one task at a time unless the project-manager lane plan explicitly marks safe parallel work.
@@ -108,4 +110,5 @@ All planned goal tasks complete; awaiting human PR review/merge.
 - PRs #7 through #11 are closed and merged. Issues #2 through #6 are closed as completed.
 - PRs #8 through #11 were merged into their stacked base branches, and PR #14 integrates the completed stack back onto `main`.
 - Task #15 hardens workspace/patch tools after PR #14 merged; issue #15 is linked to PR #16 and should close on merge.
-- Task #17 connects inference providers to guarded action generation after PR #16 merged.
+- Task #17 connects inference providers to guarded action generation after PR #16 merged; PR #18 merged and issue #17 is closed as completed.
+- Task #19 adds external configuration loading after PR #18 merged.

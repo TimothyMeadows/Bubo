@@ -124,6 +124,7 @@ public sealed class AgentRunnerTests
 
         Assert.True(result.Success);
         Assert.True(provider.WasCalled);
+        Assert.Equal("coder", provider.LastRequest.Role);
         Assert.Contains("generated/inferred.txt", result.FilesChanged);
         Assert.Contains("write_file", provider.LastPrompt);
         Assert.Equal(
@@ -133,6 +134,48 @@ public sealed class AgentRunnerTests
         var transcript = await File.ReadAllTextAsync(Path.Combine(workspace, "agent-transcript.md"));
         Assert.Contains("inference.started", transcript);
         Assert.Contains("inference.completed", transcript);
+    }
+
+    [Fact]
+    public async Task RunAsyncPassesConfiguredCoderProfileToInferenceProvider()
+    {
+        var workspace = CreateWorkspace();
+        var inputPath = Path.Combine(workspace, "INPUT.md");
+        var outputPath = Path.Combine(workspace, "OUTPUT.md");
+        await File.WriteAllTextAsync(inputPath, "# Task\n\nWrite a generated note.");
+        var provider = new FakeInferenceProvider(
+            """
+            ```bubo-actions
+            []
+            ```
+            """);
+        var runner = new AgentRunner(
+            new FakeSandboxRunner(),
+            inferenceProvider: provider,
+            config: new AgentRunConfig
+            {
+                Coder = new ModelProfile
+                {
+                    Role = "custom-coder",
+                    Path = "/models/custom-coder.gguf",
+                    MaxTokens = 1234
+                }
+            });
+
+        await runner.RunAsync(
+            new AgentRunRequest
+            {
+                WorkspacePath = workspace,
+                InputPath = inputPath,
+                OutputPath = outputPath,
+                Mode = AgentMode.Local
+            },
+            CancellationToken.None);
+
+        Assert.True(provider.WasCalled);
+        Assert.Equal("custom-coder", provider.LastRequest.Role);
+        Assert.Equal("/models/custom-coder.gguf", provider.LastRequest.ModelProfile.Path);
+        Assert.Equal(1_234, provider.LastRequest.ModelProfile.MaxTokens);
     }
 
     [Fact]
@@ -698,12 +741,20 @@ public sealed class AgentRunnerTests
 
         public string LastPrompt { get; private set; } = string.Empty;
 
+        public InferenceRequest LastRequest { get; private set; } = new()
+        {
+            Role = string.Empty,
+            Prompt = string.Empty,
+            ModelProfile = new ModelProfile()
+        };
+
         public Task<InferenceResponse> GenerateAsync(
             InferenceRequest request,
             CancellationToken cancellationToken)
         {
             WasCalled = true;
             LastPrompt = request.Prompt;
+            LastRequest = request;
             return Task.FromResult(new InferenceResponse
             {
                 Success = _success,

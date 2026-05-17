@@ -1,0 +1,13 @@
+Technical writing review completed.
+
+Findings:
+- Docs needed explicit config discovery, precedence, safe workspace config behavior, trusted sandbox examples, and cloud mode examples.
+- Avoid claiming codex-cli provider-specific model config until implemented.
+- Keep network names in lower-case or kebab-case.
+
+Implementation impact:
+- README, docs/configuration.md, docs/security.md, examples/README.md, and CLI package README now document config loading and the trust boundary.
+- examples/bubo.config.json is workspace-safe.
+- examples/bubo.trusted.config.json shows explicit trusted sandbox policy.
+
+Files changed by lane: None.

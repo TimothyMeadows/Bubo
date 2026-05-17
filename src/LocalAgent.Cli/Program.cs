@@ -39,16 +39,24 @@ public static class Program
                     return await RunSandboxTestAsync(parseResult.Options);
             }
 
+            var configLoad = AgentConfigLoader.Load(
+                parseResult.Options.WorkspacePath,
+                parseResult.Options.ConfigPath);
+            var mode = parseResult.Options.ModeWasSpecified
+                ? parseResult.Options.Mode
+                : configLoad.Config.Mode;
+            var effectiveConfig = configLoad.Config with { Mode = mode };
             var runner = CreateAgentRunner(
-                parseResult.Options.Mode,
-                parseResult.Options.WorkspacePath);
+                mode,
+                parseResult.Options.WorkspacePath,
+                effectiveConfig);
             var result = await runner.RunAsync(
                 new AgentRunRequest
                 {
                     WorkspacePath = parseResult.Options.WorkspacePath,
                     InputPath = parseResult.Options.InputPath,
                     OutputPath = parseResult.Options.OutputPath,
-                    Mode = parseResult.Options.Mode
+                    Mode = mode
                 },
                 CancellationToken.None);
 
@@ -151,23 +159,25 @@ public static class Program
         Console.WriteLine($"  threads: {profile.Threads}");
     }
 
-    private static AgentRunner CreateAgentRunner(AgentMode mode, string workspacePath)
+    private static AgentRunner CreateAgentRunner(
+        AgentMode mode,
+        string workspacePath,
+        AgentRunConfig config)
     {
         var inferenceProvider = CreateInferenceProvider(mode, workspacePath);
-        var sandboxOptions = new SandboxOptions
-        {
-            Gpu = null,
-            ModelsPath = null
-        };
+        var sandboxOptions = config.Sandbox;
 
-        return DockerAvailability.TryResolveDockerExecutable("docker", out var dockerExecutable)
+        return sandboxOptions.UseDocker &&
+               DockerAvailability.TryResolveDockerExecutable("docker", out var dockerExecutable)
             ? new AgentRunner(
                 new DockerSandboxRunner(dockerExecutable),
                 sandboxOptions,
-                inferenceProvider)
+                inferenceProvider,
+                config)
             : new AgentRunner(
                 sandboxOptions: sandboxOptions,
-                inferenceProvider: inferenceProvider);
+                inferenceProvider: inferenceProvider,
+                config: config);
     }
 
     private static IInferenceProvider CreateInferenceProvider(AgentMode mode, string workspacePath)

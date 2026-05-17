@@ -22,9 +22,12 @@
       "gpuLayers": "auto"
     }
   },
-  "sandbox": {
-    "network": "none",
-    "gpu": "nvidia",
-    "image": "bubo-sandbox:latest"
+  "limits": {
+    "maxIterations": 8,
+    "maxToolCalls": 40,
+    "maxCommandSeconds": 300,
+    "maxPatchBytes": 131072,
+    "maxFilesChanged": 15,
+    "maxTokensPerStep": 8192
   }
 }

@@ -1,0 +1,14 @@
+Security review completed.
+
+Findings:
+- Repo-local workspace config must be treated as untrusted repository content.
+- Workspace-default config should not be able to enable network, GPU, arbitrary images, host model mounts, or disabled Docker hardening.
+- Configured runtime limits should not raise built-in safety ceilings or disable command timeouts.
+- Config paths and host paths should reject symlink or reparse-point traversal risks.
+
+Implementation impact:
+- Workspace-default bubo.config.json can configure mode, model profiles, and limits, but not sandbox policy.
+- Explicit --config is required for trusted sandbox policy.
+- Limits are bounded, maxCommandSeconds must be positive, Docker hardening cannot be disabled, and config path reparse points are rejected.
+
+Files changed by lane: None.

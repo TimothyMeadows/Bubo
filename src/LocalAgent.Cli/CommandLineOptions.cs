@@ -13,4 +13,8 @@ public sealed record CommandLineOptions
     public required string OutputPath { get; init; }
 
     public AgentMode Mode { get; init; } = AgentMode.Local;
+
+    public bool ModeWasSpecified { get; init; }
+
+    public string? ConfigPath { get; init; }
 }

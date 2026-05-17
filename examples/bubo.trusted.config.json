@@ -1,0 +1,12 @@
+{
+  "mode": "local",
+  "sandbox": {
+    "image": "bubo-sandbox:local",
+    "network": "package-restore",
+    "gpu": "nvidia",
+    "modelsPath": "C:/Models/Bubo",
+    "memory": "16g",
+    "cpus": 4,
+    "pidsLimit": 256
+  }
+}
