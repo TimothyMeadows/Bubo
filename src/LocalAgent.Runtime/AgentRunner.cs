@@ -37,8 +37,9 @@ public sealed class AgentRunner
         var paths = AgentRunPathResolver.ResolveWorkspaceAndOutput(request);
         var guard = new WorkspaceGuard(paths.WorkspaceRoot);
         var outputPath = paths.OutputPath;
+        var artifactDirectory = Path.GetDirectoryName(outputPath) ?? guard.WorkspaceRoot;
 
-        Directory.CreateDirectory(Path.GetDirectoryName(outputPath) ?? guard.WorkspaceRoot);
+        Directory.CreateDirectory(artifactDirectory);
         var events = new List<TranscriptEvent>
         {
             new()
@@ -50,7 +51,7 @@ public sealed class AgentRunner
                     ["mode"] = request.Mode.ToString(),
                     ["workspace"] = guard.WorkspaceRoot,
                     ["input"] = AgentRunPathResolver.DescribeInput(request.InputPath, guard),
-                    ["output"] = DisplayPath(guard, outputPath)
+                    ["artifacts"] = DisplayPath(guard, artifactDirectory)
                 }
             }
         };
@@ -104,7 +105,8 @@ public sealed class AgentRunner
                 }
             };
 
-            await WriteRunArtifactsAsync(outputPath, guard.WorkspaceRoot, failure, events, cancellationToken);
+            failure = AttachReportMarkdown(failure);
+            await WriteRunArtifactsAsync(artifactDirectory, events, cancellationToken);
             return failure;
         }
 
@@ -140,7 +142,8 @@ public sealed class AgentRunner
                     : "Bubo run completed with failures."
         });
 
-        await WriteRunArtifactsAsync(outputPath, guard.WorkspaceRoot, result, events, cancellationToken);
+        result = AttachReportMarkdown(result);
+        await WriteRunArtifactsAsync(artifactDirectory, events, cancellationToken);
 
         return result;
     }
@@ -159,19 +162,16 @@ public sealed class AgentRunner
             : DisplayPath(guard, input.Source);
     }
 
+    private static AgentRunResult AttachReportMarkdown(AgentRunResult result)
+    {
+        return result with { ReportMarkdown = BuildOutputMarkdown(result) };
+    }
+
     private static async Task WriteRunArtifactsAsync(
-        string outputPath,
-        string workspaceRoot,
-        AgentRunResult result,
+        string outputDirectory,
         IEnumerable<TranscriptEvent> events,
         CancellationToken cancellationToken)
     {
-        await File.WriteAllTextAsync(
-            outputPath,
-            BuildOutputMarkdown(result),
-            cancellationToken);
-
-        var outputDirectory = Path.GetDirectoryName(outputPath) ?? workspaceRoot;
         await WriteDebugLogAsync(
             Path.Combine(outputDirectory, "agent-debug.jsonl"),
             events,
@@ -810,7 +810,7 @@ public sealed class AgentRunner
             {
                 "Read INPUT.md.",
                 $"Execute the {actionSource} with guarded tools.",
-                "Write auditable OUTPUT.md, agent-debug.jsonl, and agent-transcript.md under .ai/artifacts."
+                "Return the Markdown report to stdout and write agent-debug.jsonl plus agent-transcript.md under .ai/artifacts."
             },
             ChangesMade = changesMade.Count == 0
                 ? new[] { "No file changes were made." }
@@ -825,7 +825,7 @@ public sealed class AgentRunner
                 : issues,
             NextSteps = new[]
             {
-                "Review OUTPUT.md and git diff before committing generated workspace changes."
+                "Review stdout, agent-debug.jsonl, agent-transcript.md, and git diff before committing generated workspace changes."
             }
         };
         var stopReason = success

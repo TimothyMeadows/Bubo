@@ -13,7 +13,7 @@ Bubo loads JSON configuration for `bubo run` without requiring code changes.
 
 No-config behavior uses Docker when available, keeps network at `none`, avoids GPU and host model mounts by default, and enables OpenCaw bootstrap from the folder `.opencaw` submodule.
 
-`--folder` is the shared code and artifact folder Bubo may inspect and modify. `--input` may be either a Markdown file path outside that folder or an inline Markdown prompt string. `--output` must stay under `<folder>/.ai/artifacts`. File tools, Git operations, OpenCaw context, and sandboxed commands still operate on their requested paths inside `--folder`.
+`--folder` is the shared code and artifact folder Bubo may inspect and modify. `--input` may be either a Markdown file path outside that folder or an inline Markdown prompt string. The Markdown run report is written to stdout. `--output` is a legacy artifact anchor that must stay under `<folder>/.ai/artifacts`; Bubo uses its directory for `agent-debug.jsonl` and `agent-transcript.md`. File tools, Git operations, OpenCaw context, and sandboxed commands still operate on their requested paths inside `--folder`.
 
 ## Trust Boundary
 
@@ -27,7 +27,7 @@ Sandbox policy requires an explicit `--config` path. That explicit flag is the u
 - Read-only model mount.
 - Memory, CPU, and PID limits.
 
-Bubo never accepts config overrides for workspace, input, output, cache, or container working-directory host paths. Tool and command mounts are derived from the guarded folder, and report artifacts are written by the host runtime under `<folder>/.ai/artifacts`.
+Bubo never accepts config overrides for workspace, input, output, cache, or container working-directory host paths. Tool and command mounts are derived from the guarded folder. The host runtime writes review sidecars under `<folder>/.ai/artifacts` and sends the Markdown report to stdout.
 
 OpenCaw policy also requires an explicit `--config` trust signal because it controls host-side submodule update and bootstrap script execution. Folder-default config cannot redirect the OpenCaw path, repository URL, or ref. OpenCaw loading and bootstrap execution cannot be disabled.
 

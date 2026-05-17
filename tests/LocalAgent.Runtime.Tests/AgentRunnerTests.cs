@@ -6,7 +6,7 @@ namespace Bubo.LocalAgent.Runtime.Tests;
 public sealed class AgentRunnerTests
 {
     [Fact]
-    public async Task RunAsyncWritesOutputDebugAndTranscriptFiles()
+    public async Task RunAsyncReturnsReportAndWritesDebugAndTranscriptFiles()
     {
         var workspace = CreateWorkspace();
         var inputPath = Path.Combine(workspace, "INPUT.md");
@@ -25,11 +25,11 @@ public sealed class AgentRunnerTests
             CancellationToken.None);
 
         Assert.True(result.Success);
-        Assert.True(File.Exists(outputPath));
+        Assert.False(File.Exists(outputPath));
         Assert.True(File.Exists(CreateDebugLogPath(workspace)));
         Assert.True(File.Exists(CreateTranscriptPath(workspace)));
 
-        var output = await File.ReadAllTextAsync(outputPath);
+        var output = result.ReportMarkdown;
         Assert.Contains("# Result", output);
         Assert.Contains("## Summary", output);
         Assert.Contains("## Next Steps", output);
@@ -45,7 +45,7 @@ public sealed class AgentRunnerTests
         Directory.CreateDirectory(inputDirectory);
 
         var inputPath = Path.Combine(inputDirectory, "INPUT.md");
-        var outputPath = CreateOutputPath(workspace, "reports", "OUTPUT.md");
+        var outputPath = CreateOutputPath(workspace, "reports", "run.md");
         await File.WriteAllTextAsync(
             inputPath,
             """
@@ -79,7 +79,7 @@ public sealed class AgentRunnerTests
         Assert.Equal(
             "folder bounded\n",
             await File.ReadAllTextAsync(Path.Combine(workspace, "generated", "result.txt")));
-        Assert.True(File.Exists(outputPath));
+        Assert.False(File.Exists(outputPath));
         Assert.True(File.Exists(CreateDebugLogPath(workspace, "reports")));
         Assert.True(File.Exists(CreateTranscriptPath(workspace, "reports")));
         Assert.False(File.Exists(CreateOutputPath(workspace)));
@@ -176,8 +176,8 @@ public sealed class AgentRunnerTests
         var workspace = Path.Combine(root, "code");
         Directory.CreateDirectory(workspace);
         var inputPath = Path.Combine(root, "INPUT.md");
-        var outputPath = "nested/reports/OUTPUT.md";
-        var resolvedOutputPath = CreateOutputPath(workspace, "nested", "reports", "OUTPUT.md");
+        var outputPath = "nested/reports/run.md";
+        var resolvedOutputPath = CreateOutputPath(workspace, "nested", "reports", "run.md");
         await File.WriteAllTextAsync(inputPath, "# Task\n\nNo actions.");
 
         var runner = CreateRunner(new FakeSandboxRunner());
@@ -192,7 +192,7 @@ public sealed class AgentRunnerTests
             CancellationToken.None);
 
         Assert.True(result.Success);
-        Assert.True(File.Exists(resolvedOutputPath));
+        Assert.False(File.Exists(resolvedOutputPath));
         Assert.True(File.Exists(Path.Combine(Path.GetDirectoryName(resolvedOutputPath)!, "agent-debug.jsonl")));
         Assert.True(File.Exists(Path.Combine(Path.GetDirectoryName(resolvedOutputPath)!, "agent-transcript.md")));
     }
@@ -206,7 +206,7 @@ public sealed class AgentRunnerTests
         Directory.CreateDirectory(workspace);
         Directory.CreateDirectory(reports);
         var inputPath = Path.Combine(root, "INPUT.md");
-        var outputPath = Path.Combine(reports, "OUTPUT.md");
+        var outputPath = Path.Combine(reports, "run.md");
         await File.WriteAllTextAsync(inputPath, "# Task\n\nNo actions.");
 
         var runner = CreateRunner(new FakeSandboxRunner());
@@ -228,7 +228,7 @@ public sealed class AgentRunnerTests
     {
         var workspace = CreateWorkspace();
         var inputPath = Path.Combine(workspace, "INPUT.md");
-        var outputPath = Path.Combine(workspace, "OUTPUT.md");
+        var outputPath = Path.Combine(workspace, "run.md");
         await File.WriteAllTextAsync(inputPath, "# Task\n\nNo actions.");
 
         var runner = CreateRunner(new FakeSandboxRunner());
@@ -252,7 +252,7 @@ public sealed class AgentRunnerTests
         var workspace = Path.Combine(root, "code");
         Directory.CreateDirectory(workspace);
         var inputPath = Path.Combine(root, "INPUT.md");
-        var outputPath = "reports/OUTPUT.md";
+        var outputPath = "reports/run.md";
         await File.WriteAllTextAsync(
             inputPath,
             """
@@ -296,7 +296,7 @@ public sealed class AgentRunnerTests
     {
         var workspace = CreateWorkspace();
         var inputPath = Path.Combine(workspace, "INPUT.md");
-        var outputPath = Path.Combine(workspace, ".git", "OUTPUT.md");
+        var outputPath = Path.Combine(workspace, ".git", "run.md");
         Directory.CreateDirectory(Path.Combine(workspace, ".git"));
         await File.WriteAllTextAsync(inputPath, "# Task\n\nNo actions.");
 
@@ -379,7 +379,7 @@ public sealed class AgentRunnerTests
                 {
                     WorkspacePath = workspace,
                     InputPath = inputPath,
-                    OutputPath = Path.Combine(linkReports, "OUTPUT.md"),
+                    OutputPath = Path.Combine(linkReports, "run.md"),
                     Mode = AgentMode.Local
                 },
                 CancellationToken.None));
@@ -392,7 +392,7 @@ public sealed class AgentRunnerTests
         var workspace = Path.Combine(root, "code");
         Directory.CreateDirectory(workspace);
         var inputPath = Path.Combine(root, "INPUT.md");
-        var outputPath = CreateOutputPath(workspace, "reports", "OUTPUT.md");
+        var outputPath = CreateOutputPath(workspace, "reports", "run.md");
         await File.WriteAllTextAsync(inputPath, "# Task\n\nNo actions.");
         var bootstrapper = new FakeOpenCawBootstrapper(new OpenCawBootstrapResult());
 
@@ -417,7 +417,7 @@ public sealed class AgentRunnerTests
         Assert.True(result.Success);
         Assert.True(bootstrapper.WasCalled);
         Assert.Equal(workspace, bootstrapper.LastGuard?.WorkspaceRoot);
-        Assert.True(File.Exists(outputPath));
+        Assert.False(File.Exists(outputPath));
     }
 
     [Fact]
@@ -467,7 +467,7 @@ public sealed class AgentRunnerTests
         Assert.Contains("dotnet --version", result.CommandsRun);
         Assert.Equal("Hello from Bubo\n", await File.ReadAllTextAsync(Path.Combine(workspace, "notes", "result.txt")));
 
-        var output = await File.ReadAllTextAsync(outputPath);
+        var output = result.ReportMarkdown;
         Assert.Contains("Bubo executed 2 action", output);
         Assert.Contains("dotnet --version", output);
     }
@@ -639,7 +639,7 @@ public sealed class AgentRunnerTests
         Assert.DoesNotContain(result.ChangesMade, change => change.Contains("Wrote", StringComparison.OrdinalIgnoreCase));
         Assert.Equal(1, provider.CallCount);
 
-        var output = await File.ReadAllTextAsync(outputPath);
+        var output = result.ReportMarkdown;
         Assert.Contains("could not parse model-proposed actions", output);
         Assert.Contains("bubo-actions fence must contain a JSON array", output);
     }
@@ -722,7 +722,7 @@ public sealed class AgentRunnerTests
         Assert.False(result.Success);
         Assert.Empty(result.FilesChanged);
 
-        var output = await File.ReadAllTextAsync(outputPath);
+        var output = result.ReportMarkdown;
         Assert.Contains("could not get model-proposed actions", output);
         Assert.Contains("inference provider `fake-inference` failed", output, StringComparison.OrdinalIgnoreCase);
     }
@@ -864,7 +864,7 @@ public sealed class AgentRunnerTests
         Assert.Equal(2, provider.CallCount);
         Assert.Equal("hello", await File.ReadAllTextAsync(targetPath));
 
-        var output = await File.ReadAllTextAsync(outputPath);
+        var output = result.ReportMarkdown;
         Assert.Contains("failed inference-generated action iteration", output);
         Assert.Contains("Reached maxIterations (2)", output);
 
@@ -945,7 +945,7 @@ public sealed class AgentRunnerTests
         Assert.Contains(result.IssuesOrRisks, issue => issue.Contains("Earlier inference iteration issue", StringComparison.Ordinal));
         Assert.Contains(result.IssuesOrRisks, issue => issue.Contains("Reached maxIterations (2)", StringComparison.Ordinal));
 
-        var output = await File.ReadAllTextAsync(outputPath);
+        var output = result.ReportMarkdown;
         Assert.Contains("notes.txt", output);
         Assert.Contains("Wrote `notes.txt`", output);
         Assert.Contains("Reached maxIterations (2)", output);
@@ -1002,7 +1002,7 @@ public sealed class AgentRunnerTests
         Assert.Equal(2, provider.CallCount);
         Assert.Equal("hello", await File.ReadAllTextAsync(targetPath));
 
-        var output = await File.ReadAllTextAsync(outputPath);
+        var output = result.ReportMarkdown;
         Assert.Contains("returned no actions following a failed iteration", output);
         Assert.Contains("Earlier inference iteration issue", output);
     }
@@ -1029,9 +1029,9 @@ public sealed class AgentRunnerTests
             CancellationToken.None);
 
         Assert.False(result.Success);
-        Assert.True(File.Exists(outputPath));
+        Assert.False(File.Exists(outputPath));
         Assert.True(File.Exists(CreateDebugLogPath(workspace)));
-        Assert.Contains("provider exploded", await File.ReadAllTextAsync(outputPath));
+        Assert.Contains("provider exploded", result.ReportMarkdown);
     }
 
     [Fact]
@@ -1111,7 +1111,7 @@ public sealed class AgentRunnerTests
         Assert.False(result.Success);
         Assert.Equal(1, provider.CallCount);
         Assert.False(File.Exists(Path.Combine(workspace, "one.txt")));
-        Assert.Contains("exceeds maxToolCalls", await File.ReadAllTextAsync(outputPath));
+        Assert.Contains("exceeds maxToolCalls", result.ReportMarkdown);
     }
 
     [Fact]
@@ -1148,7 +1148,7 @@ public sealed class AgentRunnerTests
 
         Assert.False(result.Success);
         Assert.Equal(1, provider.CallCount);
-        Assert.Contains("inference-generated bubo-actions block", await File.ReadAllTextAsync(outputPath));
+        Assert.Contains("inference-generated bubo-actions block", result.ReportMarkdown);
     }
 
     [Fact]
@@ -1189,7 +1189,7 @@ public sealed class AgentRunnerTests
         Assert.False(result.Success);
         Assert.Equal(1, provider.CallCount);
 
-        var output = await File.ReadAllTextAsync(outputPath);
+        var output = result.ReportMarkdown;
         Assert.Contains("Unknown tool requested by inference-generated bubo-actions block: run_command", output);
     }
 
@@ -1264,7 +1264,7 @@ public sealed class AgentRunnerTests
         Assert.False(File.Exists(Path.Combine(workspace, "one.txt")));
         Assert.False(File.Exists(Path.Combine(workspace, "two.txt")));
 
-        var output = await File.ReadAllTextAsync(outputPath);
+        var output = result.ReportMarkdown;
         Assert.Contains("cumulative action count 3 exceeds maxToolCalls (2)", output);
     }
 
@@ -1314,7 +1314,7 @@ public sealed class AgentRunnerTests
         Assert.False(result.Success);
         Assert.Equal("abcdef", await File.ReadAllTextAsync(targetPath));
 
-        var output = await File.ReadAllTextAsync(outputPath);
+        var output = result.ReportMarkdown;
         Assert.Contains("maxPatchBytes (4)", output);
     }
 
@@ -1349,7 +1349,7 @@ public sealed class AgentRunnerTests
             CancellationToken.None);
 
         Assert.False(result.Success);
-        Assert.Contains("at most one bubo-actions fence", await File.ReadAllTextAsync(outputPath));
+        Assert.Contains("at most one bubo-actions fence", result.ReportMarkdown);
     }
 
     [Fact]
@@ -1393,7 +1393,7 @@ public sealed class AgentRunnerTests
             CancellationToken.None);
 
         Assert.False(result.Success);
-        Assert.Contains("timed out after 1 second", await File.ReadAllTextAsync(outputPath));
+        Assert.Contains("timed out after 1 second", result.ReportMarkdown);
     }
 
     [Fact]
@@ -1434,7 +1434,7 @@ public sealed class AgentRunnerTests
         Assert.False(result.Success);
         Assert.False(File.Exists(Path.Combine(Directory.GetParent(workspace)!.FullName, "escape.txt")));
 
-        var output = await File.ReadAllTextAsync(outputPath);
+        var output = result.ReportMarkdown;
         Assert.Contains("Bubo stopped", output);
         Assert.Contains("write_file failed", output);
     }
@@ -1571,8 +1571,8 @@ public sealed class AgentRunnerTests
             CancellationToken.None);
 
         Assert.False(result.Success);
-        Assert.True(File.Exists(outputPath));
-        Assert.Contains("could not initialize the OpenCaw session", await File.ReadAllTextAsync(outputPath));
+        Assert.False(File.Exists(outputPath));
+        Assert.Contains("could not initialize the OpenCaw session", result.ReportMarkdown);
         Assert.Contains("OpenCaw checkout is unavailable.", await File.ReadAllTextAsync(CreateDebugLogPath(workspace)));
     }
 
@@ -1590,7 +1590,7 @@ public sealed class AgentRunnerTests
     {
         return CreateArtifactPath(
             workspace,
-            relativeSegments.Length == 0 ? new[] { "OUTPUT.md" } : relativeSegments);
+            relativeSegments.Length == 0 ? new[] { "run.md" } : relativeSegments);
     }
 
     private static string CreateDebugLogPath(string workspace, params string[] relativeDirectorySegments)

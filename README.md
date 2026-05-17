@@ -36,54 +36,42 @@ The name comes from Bubo, the mythical robotic owl created by Hephaestus.
 Prerequisites:
 
 - .NET 8 SDK.
+- Git, for the required OpenCaw checkout.
 - Docker Desktop or Docker Engine for sandboxed command execution.
 - Optional: `codex-cli` for cloud mode.
 - Optional: GGUF models and native llama.cpp assets for local model inference.
 
-Build and test:
+From the repository root, create a temporary Git workspace for Bubo to use:
 
 ```powershell
-dotnet restore Bubo.sln
-dotnet build Bubo.sln --configuration Release --no-restore
-dotnet test Bubo.sln --configuration Release --no-build
+$workspace = Join-Path $env:TEMP "bubo-quickstart"; Remove-Item $workspace -Recurse -Force -ErrorAction SilentlyContinue; New-Item -ItemType Directory -Force -Path $workspace | Out-Null; git -C $workspace init
 ```
 
-Build the sandbox image:
+Run one inline Markdown prompt with CPU/local mode:
 
 ```powershell
-docker build --pull -f docker/bubo-sandbox/Dockerfile -t bubo-sandbox:local docker/bubo-sandbox
+dotnet run --project src/LocalAgent.Cli/LocalAgent.Cli.csproj -- run --folder $workspace --input "# Hello World`n`nThis is an inline Markdown prompt." --mode local
 ```
 
-CPU example:
+Run the same prompt with NVIDIA GPU sandbox settings:
 
 ```powershell
-dotnet run --no-build --configuration Release --project src/LocalAgent.Cli/LocalAgent.Cli.csproj -- sandbox test --workspace . --gpu none
-pwsh ./scripts/test-native-package.ps1 -Backend cpu -BuildNative
+dotnet run --project src/LocalAgent.Cli/LocalAgent.Cli.csproj -- run --folder $workspace --input "# Hello World`n`nThis is an inline Markdown prompt." --mode local --config examples/bubo.trusted.config.json
 ```
 
-NVIDIA GPU example:
+Run the same prompt with cloud mode:
 
 ```powershell
-dotnet run --no-build --configuration Release --project src/LocalAgent.Cli/LocalAgent.Cli.csproj -- sandbox test --workspace . --gpu nvidia
-pwsh ./scripts/test-native-package.ps1 -Rid win-x64 -Backend cuda -CudaArchitectures "120" -CudaToolkitRoot "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.2" -Generator Ninja -BuildNative
+dotnet run --project src/LocalAgent.Cli/LocalAgent.Cli.csproj -- run --folder $workspace --input "# Hello World`n`nThis is an inline Markdown prompt." --mode cloud
 ```
 
-For RTX 50xx / Blackwell GPUs, use CUDA architecture `120` and CUDA Toolkit 12.8 or newer. Adjust `-Rid` and `-CudaToolkitRoot` for your platform.
-
-Run Bubo locally against an OpenCaw-enabled code folder:
+Inspect a sidecar artifact:
 
 ```powershell
-dotnet run --project src/LocalAgent.Cli/LocalAgent.Cli.csproj -- run --folder ./repo
+Get-Content (Join-Path $workspace ".ai/artifacts/agent-transcript.md")
 ```
 
-Cloud mode example with `codex-cli`:
-
-```powershell
-codex --version
-dotnet run --project src/LocalAgent.Cli/LocalAgent.Cli.csproj -- run --folder ./repo --mode cloud
-```
-
-Bubo always initializes OpenCaw before reading input. The target folder must contain or be able to create a verified `.opencaw` checkout.
+Bubo always initializes OpenCaw before reading input. The target folder must contain or be able to create a verified `.opencaw` checkout. GPU mode expects NVIDIA drivers, NVIDIA Container Toolkit, and trusted sandbox configuration. Cloud mode expects `codex-cli`.
 
 ## What Bubo Does
 
@@ -96,7 +84,7 @@ Bubo is built for coding-agent workflows:
 - Initialize an OpenCaw session from the code folder `.opencaw` submodule before reading `INPUT.md`.
 - Retry inference-generated repair actions within configured loop limits.
 - Run build, test, Git, and command tools through bounded runtime APIs.
-- Write `.ai/artifacts/OUTPUT.md`, `.ai/artifacts/agent-debug.jsonl`, and `.ai/artifacts/agent-transcript.md`.
+- Write the Markdown report to stdout and sidecar artifacts to `.ai/artifacts/agent-debug.jsonl` and `.ai/artifacts/agent-transcript.md`.
 - Keep command execution inside a Docker sandbox.
 
 Bubo treats model output as untrusted. The model proposes actions; the runtime validates and executes them.
@@ -120,8 +108,9 @@ LocalAgent.Runtime
    |
    +--> Docker sandbox for command execution
    |
+   +--> stdout Markdown report
+   |
    v
-.ai/artifacts/OUTPUT.md
 .ai/artifacts/agent-debug.jsonl
 .ai/artifacts/agent-transcript.md
 ```
@@ -139,7 +128,7 @@ Run behavior:
 9. Execute generated actions through the model-safe tool registry.
 10. Feed concise tool observations into retries after retryable tool failures.
 11. Stop on success, no actions, invalid action JSON, unknown tools, non-retryable safety failures, provider failure, or loop limits.
-12. Write the output report, transcript, and debug log under `.ai/artifacts`.
+12. Write the Markdown report to stdout, then write transcript and debug sidecars under `.ai/artifacts`.
 
 ## Input And Output Contract
 
@@ -151,18 +140,17 @@ INPUT.md
 
 The input file may live outside the code folder. If the `--input` value is not an existing Markdown file path and does not look like a missing path, Bubo treats the value itself as the Markdown prompt.
 
-Bubo-owned report artifacts:
+Bubo writes the run report Markdown to stdout. Bubo-owned review artifacts are still written under the code folder:
 
 ```text
-.ai/artifacts/OUTPUT.md
 .ai/artifacts/agent-debug.jsonl
 .ai/artifacts/agent-transcript.md
 ```
 
-The output report and sidecar artifacts are written under `.ai/artifacts` inside the code folder. `--output` may name a file or subpath under that artifact root, but paths outside `.ai/artifacts` are rejected.
+`--output` may name a legacy artifact anchor file or subpath under `.ai/artifacts`; Bubo uses its directory for `agent-debug.jsonl` and `agent-transcript.md`, but does not write the Markdown report to a file. Paths outside `.ai/artifacts` are rejected.
 Code edits, generic file tools, Git operations, OpenCaw context, and sandboxed commands still operate on the paths they are given inside `--folder`.
 
-`OUTPUT.md` uses this stable shape:
+The stdout report uses this stable shape:
 
 ```markdown
 # Result
@@ -196,7 +184,7 @@ Main command:
 bubo run \
   --folder ./repo \
   --input ./prompts/INPUT.md \
-  --output reports/OUTPUT.md \
+  --output reports/run.md \
   --mode local \
   --config ./bubo.config.json
 ```
@@ -213,7 +201,7 @@ Defaults:
 --folder current directory
 --workspace compatibility alias for --folder
 --input <folder>/INPUT.md, or inline Markdown when explicitly supplied
---output <folder>/.ai/artifacts/OUTPUT.md
+--output artifact sidecar anchor under <folder>/.ai/artifacts; report Markdown goes to stdout
 --mode local
 --config <folder>/bubo.config.json when present
 --opencaw-update true
@@ -317,7 +305,56 @@ Trusted sandbox policy example:
 
 ## Guided Examples
 
-### Example 1: No-Action File Contract
+### Example 1: Inline String Input
+
+Use inline Markdown when the task is short enough to pass directly on the command line.
+
+Create a demo workspace:
+
+```powershell
+$workspace = Join-Path $env:TEMP "bubo-inline-demo"
+Remove-Item $workspace -Recurse -Force -ErrorAction SilentlyContinue
+New-Item -ItemType Directory -Force -Path $workspace | Out-Null
+git -C $workspace init
+```
+
+Create a prompt string:
+
+```powershell
+$prompt = "# Hello World`n`nThis is an inline Markdown prompt."
+```
+
+Run with CPU/local mode:
+
+```powershell
+dotnet run --project src/LocalAgent.Cli/LocalAgent.Cli.csproj -- run --folder $workspace --input $prompt --mode local
+```
+
+Run with NVIDIA GPU sandbox settings:
+
+```powershell
+dotnet run --project src/LocalAgent.Cli/LocalAgent.Cli.csproj -- run --folder $workspace --input $prompt --mode local --config examples/bubo.trusted.config.json
+```
+
+The GPU command uses `examples/bubo.trusted.config.json` because GPU access is trusted sandbox policy. Edit that file's `modelsPath` for your machine before using real local model files.
+
+Run with cloud mode:
+
+```powershell
+codex --version
+dotnet run --project src/LocalAgent.Cli/LocalAgent.Cli.csproj -- run --folder $workspace --input $prompt --mode cloud
+```
+
+Inspect artifacts:
+
+```powershell
+Get-Content (Join-Path $workspace ".ai/artifacts/agent-transcript.md")
+Get-Content (Join-Path $workspace ".ai/artifacts/agent-debug.jsonl")
+```
+
+Inline input is treated as Markdown prompt text when the `--input` value does not resolve to an existing Markdown file and does not look like a missing path.
+
+### Example 2: No-Action File Contract
 
 Create a demo workspace:
 
@@ -343,12 +380,11 @@ Inspect:
 
 ```powershell
 Get-ChildItem $workspace
-Get-Content (Join-Path $workspace ".ai/artifacts/OUTPUT.md")
 Get-Content (Join-Path $workspace ".ai/artifacts/agent-transcript.md")
 Get-Content (Join-Path $workspace ".ai/artifacts/agent-debug.jsonl")
 ```
 
-### Example 2: Deterministic Tool Actions
+### Example 3: Deterministic Tool Actions
 
 Use deterministic actions when you want a fixture, smoke test, or controlled automation without model inference.
 
@@ -386,7 +422,7 @@ bubo run --folder ./repo
 
 The deterministic action fence executes once. It does not invoke inference.
 
-### Example 3: Docker-Backed Command Fixture
+### Example 4: Docker-Backed Command Fixture
 
 Build the sandbox image:
 
@@ -416,7 +452,7 @@ Check the .NET SDK version.
 
 `run_command` is routed through the Docker sandbox and avoids shell expansion.
 
-### Example 4: Cloud Mode
+### Example 5: Cloud Mode
 
 Cloud mode uses `codex-cli` behind the same inference abstraction:
 
@@ -436,7 +472,7 @@ Or:
 
 Cloud mode should only receive secrets when they are explicitly mounted or configured. No host secrets are passed by default.
 
-### Example 5: Local Model Profiles
+### Example 6: Local Model Profiles
 
 Local mode is designed for GGUF models. A good starting point for 16 GB GPU memory is:
 
@@ -514,7 +550,7 @@ LocalAgent.Inference.opencawCli
   -> codex-cli child process
 ```
 
-Both modes feed the same runtime contracts and write the same output artifacts.
+Both modes feed the same runtime contracts, print the same stdout report shape, and write the same review sidecars.
 
 Native llama.cpp assets use the standard RID layout:
 
@@ -617,7 +653,7 @@ Default rules:
 - No host secrets mounted by default.
 - Network disabled by default.
 - Input and model mounts are read-only.
-- Tool writes stay inside the code folder on their requested paths. Bubo-owned report artifacts stay under `.ai/artifacts`.
+- Tool writes stay inside the code folder on their requested paths. Bubo-owned review sidecars stay under `.ai/artifacts`.
 - Command execution goes through Docker.
 - Tool arguments are validated before execution.
 - Git hooks and remote mutations are not trusted by default.
@@ -646,7 +682,7 @@ src/
   LlamaCppSharp.Native/          Native package metadata and RID asset layout.
   LlamaCppSharp/                 Managed llama.cpp wrapper.
   LocalAgent.Abstractions/       Shared contracts.
-  LocalAgent.Runtime/            Agent loop, tools, workspace guard, output artifacts.
+  LocalAgent.Runtime/            Agent loop, tools, workspace guard, stdout report, and sidecar artifacts.
   LocalAgent.Inference.LlamaCpp/ Local inference provider.
   LocalAgent.Inference.opencawCli/ Cloud inference provider.
   LocalAgent.Sandbox.Docker/     Docker command runner.
@@ -704,7 +740,7 @@ When changing inference behavior:
 1. Keep deterministic `bubo-actions` single-pass.
 2. Keep model-generated actions behind fenced JSON parsing.
 3. Treat observations fed back to the model as untrusted text.
-4. Preserve side effects and failed-attempt evidence in output artifacts.
+4. Preserve side effects and failed-attempt evidence in stdout reports and sidecar artifacts.
 5. Cover retry success, retry exhaustion, invalid output, unknown tool, and limit exhaustion.
 
 ## Agent Onboarding
@@ -761,7 +797,7 @@ Agent expectations:
 - Do not write code changes outside the folder.
 - Do not run destructive Git operations without explicit approval.
 - Prefer small patches and focused tests.
-- Report commands run and validation results in `.ai/artifacts/OUTPUT.md`.
+- Report commands run and validation results in the stdout report.
 - Keep hidden chain-of-thought out of artifacts.
 
 ## Troubleshooting

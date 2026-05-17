@@ -3,7 +3,7 @@
 ## Bubo Documentation
 
 - Keep README feature claims aligned with the current checkout. Use explicit status language such as Available, Scaffolded, and Planned when stacked goal work has not landed on `main`.
-- Document Bubo's output contract as `INPUT.md` -> `OUTPUT.md`, `agent-debug.jsonl`, and `agent-transcript.md`.
+- Document Bubo's output contract as `INPUT.md` or inline Markdown -> stdout Markdown report, `agent-debug.jsonl`, and `agent-transcript.md`.
 - Do not claim transcripts expose hidden chain-of-thought; describe them as observable event logs and concise reasoning summaries only.
 
 ## Bubo Runtime

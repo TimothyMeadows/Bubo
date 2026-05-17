@@ -116,7 +116,7 @@ public static class CommandLineParser
         }
 
         input ??= Path.Combine(runFolder, "INPUT.md");
-        output ??= Path.Combine(runFolder, ".ai", "artifacts", "OUTPUT.md");
+        output ??= Path.Combine(runFolder, ".ai", "artifacts", "run.md");
 
         return ParseResult.Success(new CommandLineOptions
         {
@@ -137,7 +137,7 @@ public static class CommandLineParser
     {
         return """
                Usage:
-                 bubo run --folder <path> --input <INPUT.md|markdown> --output <artifact-output.md> --mode <local|cloud> --config <bubo.config.json>
+                 bubo run --folder <path> --input <INPUT.md|markdown> --output <artifact-anchor.md> --mode <local|cloud> --config <bubo.config.json>
                  bubo doctor
                  bubo models list
                  bubo sandbox test --workspace <path> --gpu <none|nvidia>
@@ -147,7 +147,7 @@ public static class CommandLineParser
                  --folder current directory
                  --workspace compatibility alias for --folder
                  --input <folder>/INPUT.md, or inline Markdown when provided explicitly
-                 --output <folder>/.ai/artifacts/OUTPUT.md
+                 --output artifact sidecar anchor under <folder>/.ai/artifacts; report Markdown is written to stdout
                  --mode local
                  --config <folder>/bubo.config.json when present
                  --opencaw-update true
@@ -238,7 +238,7 @@ public static class CommandLineParser
             Command = "sandbox-test",
             WorkspacePath = workspace,
             InputPath = Path.Combine(workspace, "INPUT.md"),
-            OutputPath = Path.Combine(workspace, ".ai", "artifacts", "OUTPUT.md"),
+            OutputPath = Path.Combine(workspace, ".ai", "artifacts", "run.md"),
             SandboxGpu = gpu
         });
     }
@@ -299,7 +299,7 @@ public static class CommandLineParser
             Command = "native-test",
             WorkspacePath = workspace,
             InputPath = Path.Combine(workspace, "INPUT.md"),
-            OutputPath = Path.Combine(workspace, ".ai", "artifacts", "OUTPUT.md"),
+            OutputPath = Path.Combine(workspace, ".ai", "artifacts", "run.md"),
             NativeBaseDirectory = baseDirectory,
             NativeStrict = strict,
             NativeBackend = backend
@@ -324,7 +324,7 @@ public static class CommandLineParser
             Command = command,
             WorkspacePath = workspace,
             InputPath = Path.Combine(workspace, "INPUT.md"),
-            OutputPath = Path.Combine(workspace, ".ai", "artifacts", "OUTPUT.md")
+            OutputPath = Path.Combine(workspace, ".ai", "artifacts", "run.md")
         });
     }
 
@@ -354,7 +354,7 @@ public static class CommandLineParser
             Command = command,
             WorkspacePath = workspace,
             InputPath = Path.Combine(workspace, "INPUT.md"),
-            OutputPath = Path.Combine(workspace, ".ai", "artifacts", "OUTPUT.md")
+            OutputPath = Path.Combine(workspace, ".ai", "artifacts", "run.md")
         });
     }
 
