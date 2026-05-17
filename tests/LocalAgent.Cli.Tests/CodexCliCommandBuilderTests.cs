@@ -27,4 +27,25 @@ public sealed class CodexCliCommandBuilderTests
         Assert.Contains("gpt-test", args);
         Assert.Equal("-", args[^1]);
     }
+
+    [Fact]
+    public void ComposePromptReturnsUserPromptWhenSystemPromptIsEmpty()
+    {
+        var prompt = CodexCliPromptBuilder.Compose(null, "user task");
+
+        Assert.Equal("user task", prompt);
+    }
+
+    [Fact]
+    public void ComposePromptWrapsOpenCawSystemPromptAndUserPrompt()
+    {
+        var prompt = CodexCliPromptBuilder.Compose("OpenCaw baseline", "user task");
+
+        Assert.Contains("<system>", prompt);
+        Assert.Contains("OpenCaw baseline", prompt);
+        Assert.Contains("</system>", prompt);
+        Assert.Contains("<user>", prompt);
+        Assert.Contains("user task", prompt);
+        Assert.Contains("</user>", prompt);
+    }
 }

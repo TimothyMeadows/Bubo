@@ -27,4 +27,6 @@ public sealed record AgentRunConfig
     public SandboxOptions Sandbox { get; init; } = new();
 
     public AgentLimits Limits { get; init; } = new();
+
+    public OpenCawOptions OpenCaw { get; init; } = new();
 }

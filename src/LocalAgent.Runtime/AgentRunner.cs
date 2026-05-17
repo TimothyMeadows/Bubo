@@ -11,17 +11,20 @@ public sealed class AgentRunner
     private readonly ISandboxRunner? _sandboxRunner;
     private readonly SandboxOptions _sandboxOptions;
     private readonly IInferenceProvider? _inferenceProvider;
+    private readonly IOpenCawBootstrapper _openCawBootstrapper;
     private readonly AgentRunConfig _config;
 
     public AgentRunner(
         ISandboxRunner? sandboxRunner = null,
         SandboxOptions? sandboxOptions = null,
         IInferenceProvider? inferenceProvider = null,
-        AgentRunConfig? config = null)
+        AgentRunConfig? config = null,
+        IOpenCawBootstrapper? openCawBootstrapper = null)
     {
         _sandboxRunner = sandboxRunner;
         _sandboxOptions = sandboxOptions ?? new SandboxOptions { Gpu = null, ModelsPath = null };
         _inferenceProvider = inferenceProvider;
+        _openCawBootstrapper = openCawBootstrapper ?? new OpenCawBootstrapper();
         _config = config ?? new AgentRunConfig();
     }
 
@@ -41,15 +44,7 @@ public sealed class AgentRunner
                 $"Workspace does not exist: {guard.WorkspaceRoot}");
         }
 
-        if (!File.Exists(inputPath))
-        {
-            throw new FileNotFoundException("Input file does not exist.", inputPath);
-        }
-
         Directory.CreateDirectory(Path.GetDirectoryName(outputPath) ?? guard.WorkspaceRoot);
-
-        var input = await File.ReadAllTextAsync(inputPath, cancellationToken);
-        var actions = AgentInputActionParser.Parse(input);
         var events = new List<TranscriptEvent>
         {
             new()
@@ -61,21 +56,82 @@ public sealed class AgentRunner
                     ["mode"] = request.Mode.ToString(),
                     ["workspace"] = guard.WorkspaceRoot
                 }
-            },
-            new()
-            {
-                Type = "input.read",
-                Message = "Read task input.",
-                Data = new Dictionary<string, string>(StringComparer.Ordinal)
-                {
-                    ["path"] = Path.GetRelativePath(guard.WorkspaceRoot, inputPath),
-                    ["characters"] = input.Length.ToString()
-                }
             }
         };
 
+        OpenCawBootstrapResult bootstrap;
+        try
+        {
+            bootstrap = await _openCawBootstrapper.BootstrapAsync(
+                guard,
+                _config.OpenCaw,
+                cancellationToken);
+        }
+        catch (Exception exception) when (exception is ArgumentException or IOException or UnauthorizedAccessException)
+        {
+            bootstrap = new OpenCawBootstrapResult
+            {
+                Success = false,
+                Error = exception.Message,
+                Events = new[]
+                {
+                    new TranscriptEvent
+                    {
+                        Type = "opencaw.failed",
+                        Message = exception.Message
+                    }
+                }
+            };
+        }
+
+        events.AddRange(bootstrap.Events);
+        if (!bootstrap.Success)
+        {
+            var failure = new AgentRunResult
+            {
+                Success = false,
+                Summary = "Bubo could not initialize the OpenCaw session.",
+                Plan = new[]
+                {
+                    "Validate workspace and output paths.",
+                    "Update and bootstrap OpenCaw before reading INPUT.md.",
+                    "Stop because OpenCaw bootstrap failed."
+                },
+                ChangesMade = new[] { "No task actions were run." },
+                FilesChanged = Array.Empty<string>(),
+                CommandsRun = Array.Empty<string>(),
+                TestResults = new[] { "No task commands were run." },
+                IssuesOrRisks = new[] { bootstrap.Error ?? "OpenCaw bootstrap failed." },
+                NextSteps = new[]
+                {
+                    "Inspect agent-debug.jsonl for OpenCaw bootstrap details and fix the submodule or bootstrap script configuration."
+                }
+            };
+
+            await WriteRunArtifactsAsync(outputPath, guard.WorkspaceRoot, failure, events, cancellationToken);
+            return failure;
+        }
+
+        if (!File.Exists(inputPath))
+        {
+            throw new FileNotFoundException("Input file does not exist.", inputPath);
+        }
+
+        var input = await File.ReadAllTextAsync(inputPath, cancellationToken);
+        var actions = AgentInputActionParser.Parse(input);
+        events.Add(new TranscriptEvent
+        {
+            Type = "input.read",
+            Message = "Read task input.",
+            Data = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["path"] = Path.GetRelativePath(guard.WorkspaceRoot, inputPath),
+                ["characters"] = input.Length.ToString()
+            }
+        });
+
         var result = actions.Count == 0
-            ? await PlanWithInferenceOrNoOpAsync(input, guard, events, cancellationToken)
+            ? await PlanWithInferenceOrNoOpAsync(input, bootstrap.SystemPrompt, guard, events, cancellationToken)
             : await ExecuteActionsAsync(
                 actions,
                 guard,
@@ -92,12 +148,24 @@ public sealed class AgentRunner
                     : "Bubo run completed with failures."
         });
 
+        await WriteRunArtifactsAsync(outputPath, guard.WorkspaceRoot, result, events, cancellationToken);
+
+        return result;
+    }
+
+    private static async Task WriteRunArtifactsAsync(
+        string outputPath,
+        string workspaceRoot,
+        AgentRunResult result,
+        IEnumerable<TranscriptEvent> events,
+        CancellationToken cancellationToken)
+    {
         await File.WriteAllTextAsync(
             outputPath,
             BuildOutputMarkdown(result),
             cancellationToken);
 
-        var outputDirectory = Path.GetDirectoryName(outputPath) ?? guard.WorkspaceRoot;
+        var outputDirectory = Path.GetDirectoryName(outputPath) ?? workspaceRoot;
         await WriteDebugLogAsync(
             Path.Combine(outputDirectory, "agent-debug.jsonl"),
             events,
@@ -106,8 +174,6 @@ public sealed class AgentRunner
             Path.Combine(outputDirectory, "agent-transcript.md"),
             BuildTranscriptMarkdown(events),
             cancellationToken);
-
-        return result;
     }
 
     private static AgentRunResult CreateNoOpResult(ICollection<TranscriptEvent> events)
@@ -144,6 +210,7 @@ public sealed class AgentRunner
 
     private async Task<AgentRunResult> PlanWithInferenceOrNoOpAsync(
         string input,
+        string systemPrompt,
         WorkspaceGuard guard,
         ICollection<TranscriptEvent> events,
         CancellationToken cancellationToken)
@@ -193,6 +260,7 @@ public sealed class AgentRunner
                     new InferenceRequest
                     {
                         Role = _config.Coder.Role,
+                        SystemPrompt = systemPrompt,
                         Prompt = prompt,
                         ModelProfile = _config.Coder
                     },

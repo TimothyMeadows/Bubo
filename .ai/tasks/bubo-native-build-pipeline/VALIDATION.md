@@ -23,7 +23,7 @@ This file records validation for issue #27.
 - `dotnet pack src/LlamaCppSharp/LlamaCppSharp.csproj --configuration Release --no-build --output artifacts/packages`
 - `dotnet pack src/LocalAgent.Cli/LocalAgent.Cli.csproj --configuration Release --no-build --output artifacts/packages`
 - `dotnet format Bubo.sln --verify-no-changes --no-restore`
-- `bash .codex/commands/clean-context.sh --dry-run`
+- `bash .opencaw/commands/clean-context.sh --dry-run`
 
 ## Notes
 

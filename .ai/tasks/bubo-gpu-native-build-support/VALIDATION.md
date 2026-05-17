@@ -28,7 +28,7 @@ This file records validation for issue #29.
   - `Bubo.LlamaCppSharp`
   - `Bubo.LocalAgent.Cli`
 - `dotnet format Bubo.sln --verify-no-changes --no-restore` passed.
-- `bash .codex/commands/clean-context.sh --dry-run` passed.
+- `bash .opencaw/commands/clean-context.sh --dry-run` passed.
 
 ## RTX 5080 Local CUDA Validation
 

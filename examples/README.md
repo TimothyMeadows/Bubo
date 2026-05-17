@@ -3,7 +3,7 @@
 Each example is a workspace-shaped folder with an `INPUT.md` file. Run one by pointing the CLI at the folder:
 
 ```bash
-dotnet run --project src/LocalAgent.Cli -- run --workspace examples/file-edit --mode local
+dotnet run --project src/LocalAgent.Cli -- run --workspace examples/file-edit --mode local --no-opencaw
 ```
 
 The examples use the deterministic `bubo-actions` block so they can run without a local model. When a run input omits `bubo-actions`, the CLI can ask the selected local/cloud inference provider for the same fenced JSON shape and retry after guarded tool failures within configured limits; keep examples deterministic unless you are intentionally testing provider behavior.

@@ -10,6 +10,7 @@
 - The runtime has deterministic patch tools: `patch_file` for exact old/new text replacement and Docker-backed `git_apply_patch` for guarded unified diffs.
 - Workspace tools treat model output as untrusted and reject path traversal, `.git` metadata targets, and symlink/reparse-point escape paths.
 - When `INPUT.md` has no deterministic `bubo-actions` fence, Bubo can do one-shot inference action proposal. The model-safe registry intentionally excludes generic `run_command`; accepted model actions still go through guarded tools.
+- CLI `bubo run` initializes OpenCaw from the workspace `.opencaw` submodule before reading `INPUT.md`; host project context stays in `.ai` and is fed to inference as system prompt context.
 
 ## Repository State Notes
 

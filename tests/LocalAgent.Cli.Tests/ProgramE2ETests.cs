@@ -31,6 +31,7 @@ public sealed class ProgramE2ETests
         var exitCode = await Program.Main(new[]
         {
             "run",
+            "--no-opencaw",
             "--workspace",
             workspace,
             "--input",
@@ -77,6 +78,7 @@ public sealed class ProgramE2ETests
         var exitCode = await Program.Main(new[]
         {
             "run",
+            "--no-opencaw",
             "--workspace",
             workspace,
             "--input",
@@ -138,6 +140,7 @@ public sealed class ProgramE2ETests
         var exitCode = await Program.Main(new[]
         {
             "run",
+            "--no-opencaw",
             "--workspace",
             workspace,
             "--input",
@@ -188,6 +191,7 @@ public sealed class ProgramE2ETests
         var exitCode = await Program.Main(new[]
         {
             "run",
+            "--no-opencaw",
             "--workspace",
             workspace,
             "--input",
@@ -238,6 +242,7 @@ public sealed class ProgramE2ETests
         var exitCode = await Program.Main(new[]
         {
             "run",
+            "--no-opencaw",
             "--workspace",
             workspace,
             "--input",
@@ -271,6 +276,7 @@ public sealed class ProgramE2ETests
         var exitCode = await Program.Main(new[]
         {
             "run",
+            "--no-opencaw",
             "--workspace",
             workspace,
             "--input",

@@ -42,6 +42,11 @@ public static class CommandLineParser
         string? configPath = null;
         var mode = AgentMode.Local;
         var modeWasSpecified = false;
+        bool? openCawEnabled = null;
+        string? openCawPath = null;
+        string? openCawRef = null;
+        bool? openCawUpdate = null;
+        bool? openCawBootstrap = null;
 
         for (var index = 1; index < args.Count; index++)
         {
@@ -49,6 +54,24 @@ public static class CommandLineParser
             if (IsHelp(current))
             {
                 return ParseResult.Help();
+            }
+
+            if (string.Equals(current, "--no-opencaw", StringComparison.OrdinalIgnoreCase))
+            {
+                openCawEnabled = false;
+                continue;
+            }
+
+            if (string.Equals(current, "--no-opencaw-update", StringComparison.OrdinalIgnoreCase))
+            {
+                openCawUpdate = false;
+                continue;
+            }
+
+            if (string.Equals(current, "--no-opencaw-bootstrap", StringComparison.OrdinalIgnoreCase))
+            {
+                openCawBootstrap = false;
+                continue;
             }
 
             if (index + 1 >= args.Count)
@@ -79,6 +102,35 @@ public static class CommandLineParser
                 case "--config":
                     configPath = value;
                     break;
+                case "--opencaw":
+                    if (!TryParseOpenCawMode(value, out openCawEnabled))
+                    {
+                        return ParseResult.Failure($"Unsupported OpenCaw mode: {value}");
+                    }
+
+                    break;
+                case "--opencaw-path":
+                    openCawPath = value;
+                    break;
+                case "--opencaw-ref":
+                    openCawRef = value;
+                    break;
+                case "--opencaw-update":
+                    if (!TryParseBoolean(value, out var parsedUpdate))
+                    {
+                        return ParseResult.Failure($"Unsupported OpenCaw update value: {value}");
+                    }
+
+                    openCawUpdate = parsedUpdate;
+                    break;
+                case "--opencaw-bootstrap":
+                    if (!TryParseBoolean(value, out var parsedBootstrap))
+                    {
+                        return ParseResult.Failure($"Unsupported OpenCaw bootstrap value: {value}");
+                    }
+
+                    openCawBootstrap = parsedBootstrap;
+                    break;
                 default:
                     return ParseResult.Failure($"Unknown option: {current}");
             }
@@ -95,7 +147,12 @@ public static class CommandLineParser
             OutputPath = output,
             Mode = mode,
             ModeWasSpecified = modeWasSpecified,
-            ConfigPath = configPath
+            ConfigPath = configPath,
+            OpenCawEnabled = openCawEnabled,
+            OpenCawPath = openCawPath,
+            OpenCawRef = openCawRef,
+            OpenCawUpdateOnRun = openCawUpdate,
+            OpenCawExecuteBootstrap = openCawBootstrap
         });
     }
 
@@ -103,7 +160,7 @@ public static class CommandLineParser
     {
         return """
                Usage:
-                 bubo run --workspace <path> --input <INPUT.md> --output <OUTPUT.md> --mode <local|cloud> --config <bubo.config.json>
+                 bubo run --workspace <path> --input <INPUT.md> --output <OUTPUT.md> --mode <local|cloud> --config <bubo.config.json> --opencaw <enabled|disabled>
                  bubo doctor
                  bubo models list
                  bubo sandbox test --workspace <path> --gpu <none|nvidia>
@@ -115,6 +172,9 @@ public static class CommandLineParser
                  --output <workspace>/OUTPUT.md
                  --mode local
                  --config <workspace>/bubo.config.json when present
+                 --opencaw enabled
+                 --opencaw-update true
+                 --opencaw-bootstrap true
                """;
     }
 
@@ -304,6 +364,46 @@ public static class CommandLineParser
         }
 
         mode = AgentMode.Local;
+        return false;
+    }
+
+    private static bool TryParseOpenCawMode(string value, out bool? enabled)
+    {
+        if (string.Equals(value, "enabled", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(value, "true", StringComparison.OrdinalIgnoreCase))
+        {
+            enabled = true;
+            return true;
+        }
+
+        if (string.Equals(value, "disabled", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(value, "false", StringComparison.OrdinalIgnoreCase))
+        {
+            enabled = false;
+            return true;
+        }
+
+        enabled = null;
+        return false;
+    }
+
+    private static bool TryParseBoolean(string value, out bool parsed)
+    {
+        if (string.Equals(value, "true", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(value, "yes", StringComparison.OrdinalIgnoreCase))
+        {
+            parsed = true;
+            return true;
+        }
+
+        if (string.Equals(value, "false", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(value, "no", StringComparison.OrdinalIgnoreCase))
+        {
+            parsed = false;
+            return true;
+        }
+
+        parsed = false;
         return false;
     }
 

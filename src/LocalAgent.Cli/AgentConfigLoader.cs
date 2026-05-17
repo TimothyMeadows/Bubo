@@ -73,6 +73,11 @@ public static class AgentConfigLoader
             {
                 Gpu = null,
                 ModelsPath = null
+            },
+            OpenCaw = new OpenCawOptions
+            {
+                Enabled = true,
+                UpdateOnRun = true
             }
         };
     }
@@ -97,7 +102,8 @@ public static class AgentConfigLoader
             Planner = ApplyModelProfile(defaults.Planner, fileConfig.Models?.Planner),
             Coder = ApplyModelProfile(defaults.Coder, fileConfig.Models?.Coder),
             Sandbox = ApplySandbox(defaults.Sandbox, fileConfig.Sandbox, allowTrustedSandboxPolicy),
-            Limits = ApplyLimits(defaults.Limits, fileConfig.Limits)
+            Limits = ApplyLimits(defaults.Limits, fileConfig.Limits),
+            OpenCaw = ApplyOpenCaw(defaults.OpenCaw, fileConfig.OpenCaw, allowTrustedSandboxPolicy)
         };
     }
 
@@ -243,6 +249,33 @@ public static class AgentConfigLoader
             MaxPatchBytes = GetBoundedNonNegative(config.MaxPatchBytes, defaults.MaxPatchBytes, defaults.MaxPatchBytes, "maxPatchBytes"),
             MaxFilesChanged = GetBoundedNonNegative(config.MaxFilesChanged, defaults.MaxFilesChanged, defaults.MaxFilesChanged, "maxFilesChanged"),
             MaxTokensPerStep = GetBoundedPositive(config.MaxTokensPerStep, defaults.MaxTokensPerStep, defaults.MaxTokensPerStep, "maxTokensPerStep")
+        };
+    }
+
+    private static OpenCawOptions ApplyOpenCaw(
+        OpenCawOptions defaults,
+        OpenCawOptionsConfig? config,
+        bool allowTrustedPolicy)
+    {
+        if (config is null)
+        {
+            return defaults;
+        }
+
+        if (!allowTrustedPolicy)
+        {
+            throw new ArgumentException(
+                "Workspace-default bubo.config.json cannot set OpenCaw policy. Pass the file with --config to explicitly trust OpenCaw settings.");
+        }
+
+        return defaults with
+        {
+            Enabled = config.Enabled ?? defaults.Enabled,
+            RepositoryUrl = config.RepositoryUrl ?? defaults.RepositoryUrl,
+            Path = config.Path ?? defaults.Path,
+            Ref = config.Ref ?? defaults.Ref,
+            UpdateOnRun = config.UpdateOnRun ?? defaults.UpdateOnRun,
+            ExecuteBootstrap = config.ExecuteBootstrap ?? defaults.ExecuteBootstrap
         };
     }
 
@@ -486,6 +519,8 @@ public static class AgentConfigLoader
         public SandboxOptionsConfig? Sandbox { get; init; }
 
         public AgentLimitsConfig? Limits { get; init; }
+
+        public OpenCawOptionsConfig? OpenCaw { get; init; }
     }
 
     private sealed record ModelProfilesConfig
@@ -568,5 +603,20 @@ public static class AgentConfigLoader
         public int? MaxFilesChanged { get; init; }
 
         public int? MaxTokensPerStep { get; init; }
+    }
+
+    private sealed record OpenCawOptionsConfig
+    {
+        public bool? Enabled { get; init; }
+
+        public string? RepositoryUrl { get; init; }
+
+        public string? Path { get; init; }
+
+        public string? Ref { get; init; }
+
+        public bool? UpdateOnRun { get; init; }
+
+        public bool? ExecuteBootstrap { get; init; }
     }
 }

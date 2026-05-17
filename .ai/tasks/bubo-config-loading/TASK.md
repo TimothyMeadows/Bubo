@@ -49,7 +49,7 @@ Add external configuration loading so Bubo can configure local/cloud mode, plann
 ## Notes
 
 - Issue #17 was closed after PR #18 merged; `.ai/tasks/OPEN_ISSUES.md` was synced to only track issue #19.
-- Role resolution was run from `.codex` because the role resolver expects the OpenCaw mount as its working directory.
+- Role resolution was run from `.opencaw` because the role resolver expects the OpenCaw mount as its working directory.
 - Security review concluded that workspace-default config must be treated as untrusted repository content. Bubo now requires explicit `--config` before accepting sandbox policy such as network, GPU, Docker image, or model mount settings.
 - Docker is not installed on this host, so live Docker sandbox smoke is blocked locally. Docker command behavior remains covered by unit tests.
 
