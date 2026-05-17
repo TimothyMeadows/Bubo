@@ -20,6 +20,19 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
+      - name: Validate PowerShell scripts
+        shell: pwsh
+        run: |
+          $scripts = Get-ChildItem -Path scripts -Filter '*.ps1' -File
+          foreach ($script in $scripts) {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($script.FullName, [ref]$tokens, [ref]$errors) | Out-Null
+            if ($errors.Count -gt 0) {
+              throw "$($script.FullName) has parse errors: $($errors[0].Message)"
+            }
+          }
+
       - name: Restore
         run: dotnet restore Bubo.sln
 

@@ -434,3 +434,10 @@ examples/**/OUTPUT.md
 examples/**/agent-debug.jsonl
 examples/**/agent-transcript.md
 examples/**/generated/
+
+# Staged native runtime outputs
+src/LlamaCppSharp.Native/runtimes/**/native/*.dll
+src/LlamaCppSharp.Native/runtimes/**/native/*.so
+src/LlamaCppSharp.Native/runtimes/**/native/*.so.*
+src/LlamaCppSharp.Native/runtimes/**/native/*.dylib
+!src/LlamaCppSharp.Native/runtimes/**/native/.gitkeep

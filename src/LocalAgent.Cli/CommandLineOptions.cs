@@ -17,4 +17,8 @@ public sealed record CommandLineOptions
     public bool ModeWasSpecified { get; init; }
 
     public string? ConfigPath { get; init; }
+
+    public string? NativeBaseDirectory { get; init; }
+
+    public bool NativeStrict { get; init; }
 }

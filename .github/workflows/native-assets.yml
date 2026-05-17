@@ -6,11 +6,11 @@ on:
       llama_ref:
         description: llama.cpp tag or commit to build
         required: true
-        default: b9189
+        default: 64b38b561b987679c4e1c6231f93860d3eec2638
 
 jobs:
   build-native:
-    name: Build ${{ matrix.rid }}
+    name: Build, smoke test, and pack ${{ matrix.rid }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -18,45 +18,34 @@ jobs:
         include:
           - os: ubuntu-latest
             rid: linux-x64
-            artifact: libllama.so
           - os: windows-latest
             rid: win-x64
-            artifact: llama.dll
           - os: macos-14
             rid: osx-arm64
-            artifact: libllama.dylib
 
     steps:
       - name: Checkout Bubo
         uses: actions/checkout@v4
 
-      - name: Checkout llama.cpp
-        uses: actions/checkout@v4
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
         with:
-          repository: ggml-org/llama.cpp
-          ref: ${{ inputs.llama_ref }}
-          path: llama.cpp
+          dotnet-version: 8.0.x
 
-      - name: Configure llama.cpp
-        run: cmake -S llama.cpp -B llama.cpp/build -DBUILD_SHARED_LIBS=ON -DGGML_NATIVE=OFF -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_EXAMPLES=OFF
-
-      - name: Build llama.cpp
-        run: cmake --build llama.cpp/build --config Release --parallel
-
-      - name: Stage native asset
+      - name: Build, smoke test, and pack native asset
         shell: pwsh
-        run: |
-          $destination = "artifacts/native/${{ matrix.rid }}"
-          New-Item -ItemType Directory -Force -Path $destination | Out-Null
-          $asset = Get-ChildItem -Path "llama.cpp/build" -Recurse -Filter "${{ matrix.artifact }}" | Select-Object -First 1
-          if (-not $asset) {
-            throw "Could not find ${{ matrix.artifact }} in llama.cpp/build"
-          }
-          Copy-Item -LiteralPath $asset.FullName -Destination $destination
+        run: ./scripts/test-native-package.ps1 -Rid '${{ matrix.rid }}' -Ref '${{ inputs.llama_ref }}' -Configuration Release -BuildNative
 
       - name: Upload native asset
         uses: actions/upload-artifact@v4
         with:
           name: llama-${{ matrix.rid }}
           path: artifacts/native/${{ matrix.rid }}
+          if-no-files-found: error
+
+      - name: Upload native package
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-${{ matrix.rid }}
+          path: artifacts/packages/*.nupkg
           if-no-files-found: error

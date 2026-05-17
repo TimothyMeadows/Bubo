@@ -48,4 +48,21 @@ public sealed class NativeAssetInfoTests
             Assert.Contains("Unable to load", result.Error);
         }
     }
+
+    [Fact]
+    public void StrictProbeDoesNotFallbackToAmbientLibraryName()
+    {
+        var baseDirectory = Path.Combine(
+            Path.GetTempPath(),
+            "bubo-native-test",
+            Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(baseDirectory);
+
+        var result = LlamaRuntimeAvailability.Probe(baseDirectory, allowFallbackByName: false);
+
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Contains(LlamaNativeLibrary.ExpectedRidAssetPath(baseDirectory), result.Error);
+        Assert.DoesNotContain("or by name", result.Error);
+    }
 }
