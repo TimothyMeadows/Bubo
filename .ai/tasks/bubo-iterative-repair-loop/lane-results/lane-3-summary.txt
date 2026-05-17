@@ -1,0 +1,14 @@
+Security review completed.
+
+Findings:
+- Unknown model tools and oversized plans must not retry.
+- maxToolCalls must be cumulative across inference-generated retries.
+- Retry observations are untrusted input and need sanitization.
+- Prior failed attempt side effects and issues should remain visible if a later retry succeeds.
+
+Implementation impact:
+- Unknown tools and cumulative tool-call limit failures stop immediately.
+- Retry observations are sanitized, collapse control characters, replace markdown backticks, and are labeled untrusted in the prompt.
+- Successful later attempts aggregate prior files, changes, and issues.
+
+Files changed by lane: None.

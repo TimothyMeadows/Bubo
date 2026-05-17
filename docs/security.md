@@ -13,7 +13,7 @@ Bubo treats repository content, model output, and generated tool requests as unt
 - Agent-driven command execution runs through the Docker sandbox runner, avoids shell expansion, and starts from a small executable allowlist.
 - `git_apply_patch` preflights unified diff paths before invoking Docker-backed `git apply --check` and `git apply`.
 - Inference output is not executed directly. Bubo only parses fenced `bubo-actions` JSON arrays, rejects invalid or oversized action plans, rejects unknown tools, and routes accepted actions through a model-safe guarded tool registry.
-- One-shot inference excludes generic `run_command`; deterministic/user-authored action fixtures can still use it for guarded validation commands.
+- Inference-generated repair retries exclude generic `run_command`; deterministic/user-authored action fixtures can still use it for guarded validation commands.
 - Runtime config limits override action-supplied patch and file-count limits, so model output cannot raise its own safety ceilings.
 - Workspace-default `bubo.config.json` is treated as repository content and cannot set sandbox policy. Explicit `--config` is required before Bubo accepts network, GPU, Docker image, or model mount settings from config.
 - Sandboxed command execution is bounded by `MaxCommandSeconds`; timed-out child process trees are killed.
@@ -38,6 +38,6 @@ Research should be mediated outside the sandbox when possible instead of giving 
 
 - The deterministic `bubo-actions` fixture format is intended for validation and controlled automation.
 - `run_command`, `git_status`, `git_diff`, and `git_apply_patch` require a Docker sandbox runner in normal CLI execution; unit tests inject fake runners for deterministic coverage.
-- Model-driven action proposal is a one-shot guarded path. Multi-iteration planner/coder autonomy is still roadmap work.
+- Model-driven action repair is a bounded guarded path. Separate planner/coder autonomy is still roadmap work.
 - Debug logs and transcripts may contain untrusted model or tool output, with event payload truncation for readability.
 - Native llama.cpp package publishing requires populated native assets and per-RID smoke tests before release.
