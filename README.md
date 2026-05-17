@@ -1,5 +1,9 @@
 # Bubo
 
+<p align="center">
+  <img src="logo.png" alt="Bubo robotic owl logo" width="220" />
+</p>
+
 Bubo is a local-first .NET 8 coding-agent runtime. It reads a task from `INPUT.md`, works inside a repository workspace, runs guarded tools, and writes auditable results to Markdown and JSONL artifacts.
 
 The name comes from Bubo, the mythical robotic owl created by Hephaestus.
