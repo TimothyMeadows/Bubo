@@ -32,6 +32,18 @@ internal static class AgentInputActionParser
         return actions;
     }
 
+    public static IReadOnlyList<AgentInputAction> ParseSingleFence(string input)
+    {
+        ArgumentNullException.ThrowIfNull(input);
+
+        if (CountActionFences(input) > 1)
+        {
+            throw new ArgumentException("Model output must contain at most one bubo-actions fence.");
+        }
+
+        return Parse(input);
+    }
+
     private static JsonDocument ParseActionJson(string actionJson)
     {
         try
@@ -72,6 +84,22 @@ internal static class AgentInputActionParser
         }
 
         return null;
+    }
+
+    private static int CountActionFences(string input)
+    {
+        using var reader = new StringReader(input);
+        var count = 0;
+        string? line;
+        while ((line = reader.ReadLine()) is not null)
+        {
+            if (line.Trim().Equals(ActionFence, StringComparison.OrdinalIgnoreCase))
+            {
+                count++;
+            }
+        }
+
+        return count;
     }
 
     private static AgentInputAction ParseAction(JsonElement element)

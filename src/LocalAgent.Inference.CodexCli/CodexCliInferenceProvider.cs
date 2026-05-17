@@ -42,6 +42,7 @@ public sealed class CodexCliInferenceProvider : IInferenceProvider
 
         return new InferenceResponse
         {
+            Success = result.Success,
             Text = finalText,
             Events = new[]
             {

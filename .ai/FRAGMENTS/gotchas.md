@@ -13,3 +13,7 @@
 ## Windows And WSL Git Status
 
 - The OpenCaw `pr-readiness-check.sh` script runs through WSL and may report broad false-positive modifications on this Windows checkout because of line-ending normalization. Cross-check PR scope with native PowerShell `git status --short --branch` before committing.
+
+## Model-Safe Tooling
+
+- Do not expose generic `run_command` to one-shot model-proposed actions. Keep command execution behind deterministic/user-authored fixtures or a future explicit approval-gated loop.

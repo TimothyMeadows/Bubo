@@ -50,6 +50,51 @@ public sealed class ProgramE2ETests
         Assert.Contains("generated/cli-result.txt", output);
     }
 
+    [Fact]
+    public async Task RunCommandReturnsFailureWhenRuntimeFails()
+    {
+        var workspace = CreateWorkspace();
+        var inputPath = Path.Combine(workspace, "INPUT.md");
+        var outputPath = Path.Combine(workspace, "OUTPUT.md");
+        await File.WriteAllTextAsync(
+            inputPath,
+            """
+            # CLI Failure Fixture
+
+            ```bubo-actions
+            [
+              {
+                "tool": "write_file",
+                "arguments": {
+                  "path": "../escape.txt",
+                  "content": "nope"
+                }
+              }
+            ]
+            ```
+            """);
+
+        var exitCode = await Program.Main(new[]
+        {
+            "run",
+            "--workspace",
+            workspace,
+            "--input",
+            inputPath,
+            "--output",
+            outputPath,
+            "--mode",
+            "local"
+        });
+
+        Assert.Equal(1, exitCode);
+        Assert.True(File.Exists(outputPath));
+
+        var output = await File.ReadAllTextAsync(outputPath);
+        Assert.Contains("Bubo stopped", output);
+        Assert.Contains("write_file failed", output);
+    }
+
     private static string CreateWorkspace()
     {
         var workspace = Path.Combine(

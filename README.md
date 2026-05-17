@@ -38,9 +38,9 @@ The name comes from Bubo, the mythical robotic owl created by Hephaestus.
 
 ## Project Status
 
-Bubo is being built in incremental goal-flow slices. This integration branch brings the completed v1 scaffold onto the documentation baseline: a .NET 8 solution, shared contracts, CLI commands, deterministic action execution, Docker sandbox command construction, direct llama.cpp native interop scaffolding, cloud inference through `codex-cli`, guarded tools, package scaffolding, and end-to-end fixtures.
+Bubo is being built in incremental goal-flow slices. This integration branch brings the completed v1 scaffold onto the documentation baseline: a .NET 8 solution, shared contracts, CLI commands, deterministic action execution, one-shot inference action proposal, Docker sandbox command construction, direct llama.cpp native interop scaffolding, cloud inference through `codex-cli`, guarded tools, package scaffolding, and end-to-end fixtures.
 
-The remaining limits are deliberate: full autonomous planner/coder model orchestration is still roadmap work, local llama.cpp generation requires populated native assets plus fuller decode/sampling bindings, and cloud mode depends on stable non-interactive `codex-cli` behavior.
+The remaining limits are deliberate: multi-iteration autonomous planner/coder model orchestration is still roadmap work, local llama.cpp generation requires populated native assets plus fuller decode/sampling bindings, and cloud mode depends on stable non-interactive `codex-cli` behavior.
 
 Status language used in this README:
 
@@ -98,6 +98,7 @@ Bubo treats model output as untrusted. File writes, command execution, Git opera
 | llama.cpp native wrapper | Scaffolded | Native library probing, safe handles, pinned upstream metadata, and RID asset layout are present. |
 | Local inference provider | Scaffolded | Uses the shared inference abstraction and reports native runtime availability. |
 | codex-cli provider | Scaffolded | Builds non-interactive `codex exec` invocations through the shared inference abstraction. |
+| Inference action proposal | Available | If `INPUT.md` has no deterministic action fence, the configured provider can propose a fenced `bubo-actions` JSON array. |
 | Guarded file/search/Git tools | Available | Deterministic action execution routes through workspace-guarded tools. |
 | Deterministic tool fixtures | Available | `bubo-actions` fixtures validate file writes and command execution without a model. |
 | Package workflows | Available | CI and package metadata cover managed, native, and CLI package outputs. |
@@ -209,7 +210,7 @@ Bubo supports two conceptual modes:
 - `local`: use local GGUF models through llama.cpp interop.
 - `cloud`: use `codex-cli` as the inference backend.
 
-The CLI accepts both mode names. Current runs execute the file contract and deterministic actions; full autonomous planner/coder model orchestration remains roadmap work.
+The CLI accepts both mode names. Runs first execute deterministic `bubo-actions` when the input provides them. If no action fence exists, the configured local or cloud inference provider gets a single prompt asking for a fenced `bubo-actions` JSON array, and any returned actions still execute through the guarded tool registry. Full multi-iteration planner/coder orchestration remains roadmap work.
 
 ## Input And Output Contract
 
@@ -533,6 +534,7 @@ Guardrails:
 - Results are recorded in `OUTPUT.md`, `agent-debug.jsonl`, and `agent-transcript.md`.
 
 This fixture format is for validation and controlled automation. It is not a replacement for the planner/coder model loop.
+When the fixture fence is absent, CLI runs may ask the selected inference provider to propose the same fenced JSON shape. Model output is still treated as untrusted: prose is ignored, invalid action JSON fails safely, and unknown or unsafe tools are rejected before execution.
 
 Command fixtures require the Docker sandbox image:
 
@@ -688,6 +690,8 @@ Current default registry:
 | `git_diff` | Inspect Git diffs. |
 | `git_apply_patch` | Apply guarded unified diffs through Docker-backed `git apply`. |
 
+Inference-proposed actions use a smaller model-safe registry. It excludes generic `run_command`; build and test command execution remains available to deterministic/user-authored `bubo-actions` and future approval-gated loops, but not to the first one-shot model proposal path.
+
 Planned next tools:
 
 | Tool | Purpose |
@@ -698,7 +702,8 @@ Tool safety rules:
 
 - Resolve every path against the workspace root.
 - Reject path traversal, `.git` metadata edits, and symlink/reparse escape paths.
-- Bound file sizes and patch sizes.
+- Bound file sizes, patch sizes, file counts, tool-call counts, and command runtime.
+- Enforce configured limits in the runtime instead of trusting action-supplied limit values.
 - Avoid shell string composition.
 - Capture stdout, stderr, and exit code.
 - Redact secrets before model-visible output when practical.
@@ -806,6 +811,7 @@ Mitigations:
 - No host secret mounts by default.
 - Read-only model and input mounts.
 - Command allowlist or approval mode.
+- One-shot inference uses a model-safe registry that excludes generic command execution.
 - Resource limits.
 - Structured logs.
 - Dry-run support where practical.
@@ -943,7 +949,7 @@ Short-term:
 - Populate and smoke-test llama.cpp native assets for supported RIDs.
 - Expand P/Invoke bindings for tokenization, decode, logits, sampling, and streaming generation.
 - Add optional guarded commit tooling.
-- Implement planner/coder orchestration over inference providers and guarded tools.
+- Expand one-shot inference action proposal into multi-iteration planner/coder orchestration over inference providers and guarded tools.
 - Add richer config loading for model profiles, sandbox policy, and loop limits.
 - Harden command approval policy and secret redaction.
 - Keep `codex-cli` non-interactive invocation checks current as CLI flags evolve.

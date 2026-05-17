@@ -38,6 +38,7 @@ Implement Bubo as a .NET 8 LTS coding-agent runtime with a Docker sandbox, local
 5. [x] Bubo end-to-end hardening and packaging (`../.ai/tasks/bubo-e2e-hardening-packaging/TASK.md`)
 6. [x] Integrate Bubo goal stack onto main (`../.ai/tasks/bubo-main-stack-integration/TASK.md`)
 7. [x] Harden Bubo workspace tools and patch flow (`../.ai/tasks/bubo-tool-hardening/TASK.md`)
+8. [x] Add Bubo inference-driven action loop (`../.ai/tasks/bubo-inference-action-loop/TASK.md`)
 
 ## Current Task
 
@@ -52,6 +53,7 @@ All planned goal tasks complete; awaiting human PR review/merge.
 - bubo-e2e-hardening-packaging | base: `feature/bubo-agent-runtime-inference` | head: `feature/bubo-e2e-hardening-packaging` | PR: https://github.com/TimothyMeadows/Bubo/pull/11 | depends on: bubo-agent-runtime-inference | status: merged
 - bubo-main-stack-integration | base: `main` | head: `feature/bubo-main-stack-integration` | PR: https://github.com/TimothyMeadows/Bubo/pull/14 | depends on: bubo-e2e-hardening-packaging | status: post_pr_qa_passed
 - bubo-tool-hardening | base: `main` | head: `feature/bubo-tool-hardening` | PR: https://github.com/TimothyMeadows/Bubo/pull/16 | depends on: bubo-main-stack-integration | status: post_pr_qa_passed
+- bubo-inference-action-loop | base: `main` | head: `feature/bubo-inference-action-loop` | PR: https://github.com/TimothyMeadows/Bubo/pull/18 | depends on: bubo-tool-hardening | status: post_pr_qa_passed
 
 ## Automation Rules
 - Complete one task at a time unless the project-manager lane plan explicitly marks safe parallel work.
@@ -74,6 +76,7 @@ All planned goal tasks complete; awaiting human PR review/merge.
 - Bubo end-to-end hardening and packaging: https://github.com/TimothyMeadows/Bubo/pull/11
 - Integrate Bubo goal stack onto main: https://github.com/TimothyMeadows/Bubo/pull/14
 - Harden Bubo workspace tools and patch flow: https://github.com/TimothyMeadows/Bubo/pull/16
+- Add Bubo inference-driven action loop: https://github.com/TimothyMeadows/Bubo/pull/18
 
 ## QA Evidence
 
@@ -92,6 +95,8 @@ All planned goal tasks complete; awaiting human PR review/merge.
 - bubo-main-stack-integration post-PR QA posted on PR #14.
 - bubo-tool-hardening local validation passed: `dotnet build Bubo.sln --configuration Release --no-restore`, `dotnet test Bubo.sln --configuration Release --no-build --verbosity normal` with 44 passing tests, scripted E2E fixture, live `git_apply_patch` fixture, `dotnet format Bubo.sln --verify-no-changes`, and `git diff --check`.
 - bubo-tool-hardening post-PR QA posted on PR #16; local QA passed and the latest GitHub Actions `dotnet` workflow passed.
+- bubo-inference-action-loop local validation passed: `dotnet build Bubo.sln --configuration Release --no-restore`, `dotnet test Bubo.sln --configuration Release --no-build --verbosity normal` with 60 passing tests, scripted E2E fixture, `dotnet format Bubo.sln --verify-no-changes`, and `git diff --check`.
+- bubo-inference-action-loop post-PR QA posted on PR #18; local QA passed and the GitHub Actions `dotnet` workflow passed.
 
 ## Goal Completion Report
 - Generated at `.ai/goals/bubo-local-cloud-agent/GOAL_REPORT.md`.
@@ -103,3 +108,4 @@ All planned goal tasks complete; awaiting human PR review/merge.
 - PRs #7 through #11 are closed and merged. Issues #2 through #6 are closed as completed.
 - PRs #8 through #11 were merged into their stacked base branches, and PR #14 integrates the completed stack back onto `main`.
 - Task #15 hardens workspace/patch tools after PR #14 merged; issue #15 is linked to PR #16 and should close on merge.
+- Task #17 connects inference providers to guarded action generation after PR #16 merged.

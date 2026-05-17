@@ -324,6 +324,79 @@ public sealed class ToolTests
     }
 
     [Fact]
+    public void ModelSafeToolRegistryExcludesGenericRunCommand()
+    {
+        var registry = ToolRegistry.CreateModelSafe(new RecordingSandboxRunner());
+
+        Assert.DoesNotContain("run_command", registry.ToolNames);
+        Assert.Contains("git_apply_patch", registry.ToolNames);
+    }
+
+    [Fact]
+    public async Task ListFilesSkipsNestedSymlinkDirectory()
+    {
+        var workspace = CreateWorkspace();
+        var outside = CreateWorkspace();
+        await File.WriteAllTextAsync(Path.Combine(outside, "secret.txt"), "secret");
+        var link = Path.Combine(workspace, "linked");
+
+        try
+        {
+            Directory.CreateSymbolicLink(link, outside);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or PlatformNotSupportedException)
+        {
+            return;
+        }
+
+        var result = await new ListFilesTool().InvokeAsync(
+            new ToolRequest
+            {
+                Name = "list_files",
+                WorkspaceRoot = workspace,
+                Arguments = new Dictionary<string, string> { ["path"] = "." }
+            },
+            CancellationToken.None);
+
+        Assert.True(result.Success);
+        Assert.DoesNotContain("secret.txt", result.Output);
+    }
+
+    [Fact]
+    public async Task SearchTextSkipsNestedSymlinkDirectory()
+    {
+        var workspace = CreateWorkspace();
+        var outside = CreateWorkspace();
+        await File.WriteAllTextAsync(Path.Combine(outside, "secret.txt"), "needle");
+        var link = Path.Combine(workspace, "linked");
+
+        try
+        {
+            Directory.CreateSymbolicLink(link, outside);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or PlatformNotSupportedException)
+        {
+            return;
+        }
+
+        var result = await new SearchTextTool().InvokeAsync(
+            new ToolRequest
+            {
+                Name = "search_text",
+                WorkspaceRoot = workspace,
+                Arguments = new Dictionary<string, string>
+                {
+                    ["path"] = ".",
+                    ["pattern"] = "needle"
+                }
+            },
+            CancellationToken.None);
+
+        Assert.True(result.Success);
+        Assert.DoesNotContain("needle", result.Output);
+    }
+
+    [Fact]
     public async Task GitToolsUseSandboxRunner()
     {
         var workspace = CreateWorkspace();
