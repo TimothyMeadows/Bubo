@@ -36,16 +36,6 @@ public sealed class OpenCawBootstrapper : IOpenCawBootstrapper
         ArgumentNullException.ThrowIfNull(options);
 
         var events = new List<TranscriptEvent>();
-        if (!options.Enabled)
-        {
-            events.Add(new TranscriptEvent
-            {
-                Type = "opencaw.disabled",
-                Message = "OpenCaw bootstrap is disabled."
-            });
-            return new OpenCawBootstrapResult { Events = events };
-        }
-
         ValidateOpenCawOptions(options);
         var openCawPath = ResolveOpenCawPath(guard, options.Path);
         if (options.UpdateOnRun)
@@ -96,30 +86,19 @@ public sealed class OpenCawBootstrapper : IOpenCawBootstrapper
             };
         }
 
-        if (options.ExecuteBootstrap)
+        var bootstrap = await RunBootstrapScriptsAsync(
+            guard.WorkspaceRoot,
+            openCawPath,
+            cancellationToken);
+        events.AddRange(bootstrap.Events);
+        if (!bootstrap.Success)
         {
-            var bootstrap = await RunBootstrapScriptsAsync(
-                guard.WorkspaceRoot,
-                openCawPath,
-                cancellationToken);
-            events.AddRange(bootstrap.Events);
-            if (!bootstrap.Success)
+            return new OpenCawBootstrapResult
             {
-                return new OpenCawBootstrapResult
-                {
-                    Success = false,
-                    Error = bootstrap.Error,
-                    Events = events
-                };
-            }
-        }
-        else
-        {
-            events.Add(new TranscriptEvent
-            {
-                Type = "opencaw.bootstrap_skipped",
-                Message = "OpenCaw bootstrap script execution is disabled."
-            });
+                Success = false,
+                Error = bootstrap.Error,
+                Events = events
+            };
         }
 
         var context = await BuildSystemPromptAsync(

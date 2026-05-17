@@ -7,15 +7,17 @@ Bubo loads JSON configuration for `bubo run` without requiring code changes.
 `bubo run` uses this precedence order:
 
 1. CLI-safe defaults.
-2. `<workspace>/bubo.config.json` when the file exists.
+2. `<folder>/bubo.config.json` when the file exists.
 3. `--config <path>` when supplied. Relative paths resolve from the current shell directory.
 4. Explicit CLI flags. Today `--mode` overrides config mode.
 
-No-config behavior uses Docker when available, keeps network at `none`, avoids GPU and host model mounts by default, and enables OpenCaw bootstrap from the workspace `.opencaw` submodule.
+No-config behavior uses Docker when available, keeps network at `none`, avoids GPU and host model mounts by default, and enables OpenCaw bootstrap from the folder `.opencaw` submodule.
+
+`--folder` is the shared code and artifact folder Bubo may inspect and modify. `--input` may be either a Markdown file path outside that folder or an inline Markdown prompt string. `--output` must stay under `<folder>/.ai/artifacts`. File tools, Git operations, OpenCaw context, and sandboxed commands still operate on their requested paths inside `--folder`.
 
 ## Trust Boundary
 
-Workspace `bubo.config.json` is repository content, so Bubo treats it as untrusted. It can configure mode, model profiles, and runtime limits. It cannot configure sandbox policy or OpenCaw bootstrap policy.
+Folder `bubo.config.json` is repository content, so Bubo treats it as untrusted. It can configure mode, model profiles, and runtime limits. It cannot configure sandbox policy or OpenCaw bootstrap policy.
 
 Sandbox policy requires an explicit `--config` path. That explicit flag is the user trust signal for settings such as:
 
@@ -25,11 +27,11 @@ Sandbox policy requires an explicit `--config` path. That explicit flag is the u
 - Read-only model mount.
 - Memory, CPU, and PID limits.
 
-Bubo never accepts config overrides for workspace, input, output, cache, or container working-directory host paths. Those are derived from the guarded workspace.
+Bubo never accepts config overrides for workspace, input, output, cache, or container working-directory host paths. Tool and command mounts are derived from the guarded folder, and report artifacts are written by the host runtime under `<folder>/.ai/artifacts`.
 
-OpenCaw policy also requires an explicit `--config` trust signal because it controls host-side submodule update and bootstrap script execution. Workspace-default config cannot redirect the OpenCaw path, repository URL, ref, update mode, or bootstrap execution.
+OpenCaw policy also requires an explicit `--config` trust signal because it controls host-side submodule update and bootstrap script execution. Folder-default config cannot redirect the OpenCaw path, repository URL, or ref. OpenCaw loading and bootstrap execution cannot be disabled.
 
-## Workspace Default Example
+## Folder Default Example
 
 ```json
 {
@@ -72,7 +74,7 @@ OpenCaw policy also requires an explicit `--config` trust signal because it cont
 Run with default discovery:
 
 ```bash
-bubo run --workspace ./repo
+bubo run --folder ./repo
 ```
 
 `threads: 0` means the runtime uses `Environment.ProcessorCount`.
@@ -84,7 +86,7 @@ Runtime limits are safety ceilings. Config may lower the built-in defaults but c
 Pass trusted sandbox policy explicitly:
 
 ```bash
-bubo run --workspace ./repo --config ./bubo.trusted.config.json
+bubo run --folder ./repo --config ./bubo.trusted.config.json
 ```
 
 ```json
@@ -110,20 +112,17 @@ Security hardening booleans cannot be disabled through config, and `sandbox.useD
 CLI defaults:
 
 ```text
-openCaw.enabled true
 openCaw.repositoryUrl https://github.com/TimothyMeadows/OpenCaw
 openCaw.path .opencaw
 openCaw.ref main
 openCaw.updateOnRun true
-openCaw.executeBootstrap true
 ```
 
 Common one-off flags:
 
 ```bash
-bubo run --workspace ./repo --no-opencaw
-bubo run --workspace ./repo --no-opencaw-update
-bubo run --workspace ./repo --no-opencaw-bootstrap
+bubo run --folder ./repo --opencaw-update false
+bubo run --folder ./repo --opencaw-path .opencaw --opencaw-ref main
 ```
 
 Trusted config can override OpenCaw policy:
@@ -131,17 +130,15 @@ Trusted config can override OpenCaw policy:
 ```json
 {
   "openCaw": {
-    "enabled": true,
     "repositoryUrl": "https://github.com/TimothyMeadows/OpenCaw",
     "path": ".opencaw",
     "ref": "main",
-    "updateOnRun": true,
-    "executeBootstrap": true
+    "updateOnRun": true
   }
 }
 ```
 
-Bubo verifies the OpenCaw checkout is a Git checkout and that `origin` matches the configured repository before loading baseline instructions or running the scaffold script.
+Bubo verifies the OpenCaw checkout is a Git checkout and that `origin` matches the configured repository before loading baseline instructions or running the scaffold script. There is no `openCaw.enabled` or `openCaw.executeBootstrap` setting because OpenCaw loading and bootstrap execution are always active.
 
 ## Cloud Mode Example
 
@@ -156,7 +153,7 @@ Cloud mode delegates inference to `codex-cli`. Keep `codex` on `PATH`; provider-
 An explicit CLI mode wins:
 
 ```bash
-bubo run --workspace ./repo --mode local
+bubo run --folder ./repo --mode local
 ```
 
 If `bubo.config.json` says `cloud`, the command above still runs local.

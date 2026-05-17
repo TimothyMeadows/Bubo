@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Bubo.LocalAgent.Cli;
 
 namespace Bubo.LocalAgent.Cli.Tests;
@@ -7,9 +8,9 @@ public sealed class ProgramE2ETests
     [Fact]
     public async Task RunCommandExecutesFileFixtureActions()
     {
-        var workspace = CreateWorkspace();
+        var workspace = await CreateWorkspaceWithOpenCawAsync();
         var inputPath = Path.Combine(workspace, "INPUT.md");
-        var outputPath = Path.Combine(workspace, "OUTPUT.md");
+        var outputPath = CreateOutputPath(workspace);
         await File.WriteAllTextAsync(
             inputPath,
             """
@@ -31,7 +32,8 @@ public sealed class ProgramE2ETests
         var exitCode = await Program.Main(new[]
         {
             "run",
-            "--no-opencaw",
+            "--opencaw-update",
+            "false",
             "--workspace",
             workspace,
             "--input",
@@ -52,11 +54,113 @@ public sealed class ProgramE2ETests
     }
 
     [Fact]
+    public async Task RunCommandSupportsFolderWithExternalInputAndWorkspaceOutput()
+    {
+        var root = CreateWorkspace();
+        var folder = Path.Combine(root, "code");
+        var prompts = Path.Combine(root, "prompts");
+        Directory.CreateDirectory(folder);
+        Directory.CreateDirectory(prompts);
+        await CreateOpenCawFixtureAsync(folder);
+        await WriteHostScaffoldAsync(folder);
+        var inputPath = Path.Combine(prompts, "INPUT.md");
+        var outputPath = CreateOutputPath(folder, "reports", "OUTPUT.md");
+        await File.WriteAllTextAsync(
+            inputPath,
+            """
+            # CLI Folder Fixture
+
+            ```bubo-actions
+            [
+              {
+                "tool": "write_file",
+                "arguments": {
+                  "path": "generated/folder-result.txt",
+                  "content": "folder fixture completed.\n"
+                }
+              }
+            ]
+            ```
+            """);
+
+        var exitCode = await Program.Main(new[]
+        {
+            "run",
+            "--opencaw-update",
+            "false",
+            "--folder",
+            folder,
+            "--input",
+            inputPath,
+            "--output",
+            outputPath,
+            "--mode",
+            "local"
+        });
+
+        Assert.Equal(0, exitCode);
+        Assert.True(File.Exists(Path.Combine(folder, "generated", "folder-result.txt")));
+        Assert.True(File.Exists(outputPath));
+        Assert.True(File.Exists(CreateDebugLogPath(folder, "reports")));
+        Assert.True(File.Exists(CreateTranscriptPath(folder, "reports")));
+        Assert.False(File.Exists(Path.Combine(folder, "OUTPUT.md")));
+
+        var output = await File.ReadAllTextAsync(outputPath);
+        Assert.Contains("Bubo executed 1 action", output);
+        Assert.Contains("generated/folder-result.txt", output);
+    }
+
+    [Fact]
+    public async Task RunCommandSupportsInlineMarkdownInput()
+    {
+        var folder = await CreateWorkspaceWithOpenCawAsync();
+        var outputPath = CreateOutputPath(folder, "reports", "OUTPUT.md");
+        var input =
+            """
+            # CLI Inline Fixture
+
+            ```bubo-actions
+            [
+              {
+                "tool": "write_file",
+                "arguments": {
+                  "path": "generated/inline-cli-result.txt",
+                  "content": "inline CLI fixture completed.\n"
+                }
+              }
+            ]
+            ```
+            """;
+
+        var exitCode = await Program.Main(new[]
+        {
+            "run",
+            "--opencaw-update",
+            "false",
+            "--folder",
+            folder,
+            "--input",
+            input,
+            "--output",
+            outputPath,
+            "--mode",
+            "local"
+        });
+
+        Assert.Equal(0, exitCode);
+        Assert.True(File.Exists(Path.Combine(folder, "generated", "inline-cli-result.txt")));
+        Assert.True(File.Exists(outputPath));
+
+        var debugLog = await File.ReadAllTextAsync(CreateDebugLogPath(folder, "reports"));
+        Assert.Contains("inline markdown", debugLog);
+    }
+
+    [Fact]
     public async Task RunCommandReturnsFailureWhenRuntimeFails()
     {
-        var workspace = CreateWorkspace();
+        var workspace = await CreateWorkspaceWithOpenCawAsync();
         var inputPath = Path.Combine(workspace, "INPUT.md");
-        var outputPath = Path.Combine(workspace, "OUTPUT.md");
+        var outputPath = CreateOutputPath(workspace);
         await File.WriteAllTextAsync(
             inputPath,
             """
@@ -78,7 +182,8 @@ public sealed class ProgramE2ETests
         var exitCode = await Program.Main(new[]
         {
             "run",
-            "--no-opencaw",
+            "--opencaw-update",
+            "false",
             "--workspace",
             workspace,
             "--input",
@@ -100,9 +205,9 @@ public sealed class ProgramE2ETests
     [Fact]
     public async Task RunCommandLoadsWorkspaceConfigByDefault()
     {
-        var workspace = CreateWorkspace();
+        var workspace = await CreateWorkspaceWithOpenCawAsync();
         var inputPath = Path.Combine(workspace, "INPUT.md");
-        var outputPath = Path.Combine(workspace, "OUTPUT.md");
+        var outputPath = CreateOutputPath(workspace);
         await File.WriteAllTextAsync(
             Path.Combine(workspace, "bubo.config.json"),
             """
@@ -140,7 +245,8 @@ public sealed class ProgramE2ETests
         var exitCode = await Program.Main(new[]
         {
             "run",
-            "--no-opencaw",
+            "--opencaw-update",
+            "false",
             "--workspace",
             workspace,
             "--input",
@@ -160,9 +266,9 @@ public sealed class ProgramE2ETests
     [Fact]
     public async Task RunCommandLetsExplicitModeOverrideConfigMode()
     {
-        var workspace = CreateWorkspace();
+        var workspace = await CreateWorkspaceWithOpenCawAsync();
         var inputPath = Path.Combine(workspace, "INPUT.md");
-        var outputPath = Path.Combine(workspace, "OUTPUT.md");
+        var outputPath = CreateOutputPath(workspace);
         await File.WriteAllTextAsync(
             Path.Combine(workspace, "bubo.config.json"),
             """
@@ -191,7 +297,8 @@ public sealed class ProgramE2ETests
         var exitCode = await Program.Main(new[]
         {
             "run",
-            "--no-opencaw",
+            "--opencaw-update",
+            "false",
             "--workspace",
             workspace,
             "--input",
@@ -204,16 +311,16 @@ public sealed class ProgramE2ETests
 
         Assert.Equal(0, exitCode);
 
-        var debugLog = await File.ReadAllTextAsync(Path.Combine(workspace, "agent-debug.jsonl"));
+        var debugLog = await File.ReadAllTextAsync(CreateDebugLogPath(workspace));
         Assert.Contains("\"mode\":\"Local\"", debugLog);
     }
 
     [Fact]
     public async Task RunCommandUsesConfigModeWhenModeIsOmitted()
     {
-        var workspace = CreateWorkspace();
+        var workspace = await CreateWorkspaceWithOpenCawAsync();
         var inputPath = Path.Combine(workspace, "INPUT.md");
-        var outputPath = Path.Combine(workspace, "OUTPUT.md");
+        var outputPath = CreateOutputPath(workspace);
         await File.WriteAllTextAsync(
             Path.Combine(workspace, "bubo.config.json"),
             """
@@ -242,7 +349,8 @@ public sealed class ProgramE2ETests
         var exitCode = await Program.Main(new[]
         {
             "run",
-            "--no-opencaw",
+            "--opencaw-update",
+            "false",
             "--workspace",
             workspace,
             "--input",
@@ -254,7 +362,7 @@ public sealed class ProgramE2ETests
         Assert.Equal(0, exitCode);
         Assert.True(File.Exists(Path.Combine(workspace, "mode.txt")));
 
-        var debugLog = await File.ReadAllTextAsync(Path.Combine(workspace, "agent-debug.jsonl"));
+        var debugLog = await File.ReadAllTextAsync(CreateDebugLogPath(workspace));
         Assert.Contains("\"mode\":\"Cloud\"", debugLog);
     }
 
@@ -263,7 +371,7 @@ public sealed class ProgramE2ETests
     {
         var workspace = CreateWorkspace();
         var inputPath = Path.Combine(workspace, "INPUT.md");
-        var outputPath = Path.Combine(workspace, "OUTPUT.md");
+        var outputPath = CreateOutputPath(workspace);
         await File.WriteAllTextAsync(inputPath, "# Invalid Config Fixture");
         await File.WriteAllTextAsync(
             Path.Combine(workspace, "bubo.config.json"),
@@ -276,7 +384,6 @@ public sealed class ProgramE2ETests
         var exitCode = await Program.Main(new[]
         {
             "run",
-            "--no-opencaw",
             "--workspace",
             workspace,
             "--input",
@@ -332,5 +439,98 @@ public sealed class ProgramE2ETests
             Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(workspace);
         return Path.GetFullPath(workspace);
+    }
+
+    private static async Task<string> CreateWorkspaceWithOpenCawAsync()
+    {
+        var workspace = CreateWorkspace();
+        await CreateOpenCawFixtureAsync(workspace);
+        await WriteHostScaffoldAsync(workspace);
+        return workspace;
+    }
+
+    private static async Task CreateOpenCawFixtureAsync(string workspace)
+    {
+        var openCawPath = Path.Combine(workspace, ".opencaw");
+        Directory.CreateDirectory(openCawPath);
+        await File.WriteAllTextAsync(
+            Path.Combine(openCawPath, "AGENTS.md"),
+            "OpenCaw baseline fixture for CLI tests.");
+
+        await RunGitAsync(openCawPath, "init");
+        await RunGitAsync(openCawPath, "config", "user.email", "tests@example.invalid");
+        await RunGitAsync(openCawPath, "config", "user.name", "Bubo Tests");
+        await RunGitAsync(openCawPath, "remote", "add", "origin", "https://github.com/TimothyMeadows/OpenCaw");
+        await RunGitAsync(openCawPath, "add", ".");
+        await RunGitAsync(openCawPath, "commit", "-m", "fixture");
+    }
+
+    private static async Task WriteHostScaffoldAsync(string workspace)
+    {
+        Directory.CreateDirectory(Path.Combine(workspace, ".ai", "tasks"));
+        Directory.CreateDirectory(Path.Combine(workspace, ".ai", "FRAGMENTS"));
+        Directory.CreateDirectory(Path.Combine(workspace, ".ai", "LEARNINGS"));
+        await File.WriteAllTextAsync(Path.Combine(workspace, "AGENTS.md"), "# Host agents fixture.");
+        await File.WriteAllTextAsync(Path.Combine(workspace, ".ai", "MEMORY.md"), "Host memory fixture.");
+        await File.WriteAllTextAsync(Path.Combine(workspace, ".ai", "RULES.md"), "Host rules fixture.");
+        await File.WriteAllTextAsync(Path.Combine(workspace, ".ai", "DEBUG.md"), "Host debug fixture.");
+        await File.WriteAllTextAsync(Path.Combine(workspace, ".ai", "tasks", "TODO.md"), "# TODO");
+        await File.WriteAllTextAsync(Path.Combine(workspace, ".ai", "tasks", "OPEN_ISSUES.md"), string.Empty);
+    }
+
+    private static async Task RunGitAsync(string workingDirectory, params string[] arguments)
+    {
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = "git",
+            WorkingDirectory = workingDirectory,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false
+        };
+        foreach (var argument in arguments)
+        {
+            startInfo.ArgumentList.Add(argument);
+        }
+
+        using var process = Process.Start(startInfo) ?? throw new InvalidOperationException("Could not start git.");
+        var outputTask = process.StandardOutput.ReadToEndAsync();
+        var errorTask = process.StandardError.ReadToEndAsync();
+        await process.WaitForExitAsync();
+        var output = await outputTask;
+        var error = await errorTask;
+        if (process.ExitCode != 0)
+        {
+            throw new InvalidOperationException($"git {string.Join(" ", arguments)} failed: {output}{error}");
+        }
+    }
+
+    private static string CreateOutputPath(string workspace, params string[] relativeSegments)
+    {
+        return CreateArtifactPath(
+            workspace,
+            relativeSegments.Length == 0 ? new[] { "OUTPUT.md" } : relativeSegments);
+    }
+
+    private static string CreateDebugLogPath(string workspace, params string[] relativeDirectorySegments)
+    {
+        return CreateArtifactPath(
+            workspace,
+            relativeDirectorySegments.Concat(new[] { "agent-debug.jsonl" }).ToArray());
+    }
+
+    private static string CreateTranscriptPath(string workspace, params string[] relativeDirectorySegments)
+    {
+        return CreateArtifactPath(
+            workspace,
+            relativeDirectorySegments.Concat(new[] { "agent-transcript.md" }).ToArray());
+    }
+
+    private static string CreateArtifactPath(string workspace, params string[] relativeSegments)
+    {
+        return Path.Combine(
+            new[] { workspace, ".ai", "artifacts" }
+                .Concat(relativeSegments)
+                .ToArray());
     }
 }

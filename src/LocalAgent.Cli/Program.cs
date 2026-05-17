@@ -212,11 +212,9 @@ public static class Program
         AgentRunConfig config,
         CommandLineOptions options)
     {
-        if (options.OpenCawEnabled is null &&
-            options.OpenCawPath is null &&
+        if (options.OpenCawPath is null &&
             options.OpenCawRef is null &&
-            options.OpenCawUpdateOnRun is null &&
-            options.OpenCawExecuteBootstrap is null)
+            options.OpenCawUpdateOnRun is null)
         {
             return config;
         }
@@ -225,11 +223,9 @@ public static class Program
         {
             OpenCaw = config.OpenCaw with
             {
-                Enabled = options.OpenCawEnabled ?? config.OpenCaw.Enabled,
                 Path = options.OpenCawPath ?? config.OpenCaw.Path,
                 Ref = options.OpenCawRef ?? config.OpenCaw.Ref,
-                UpdateOnRun = options.OpenCawUpdateOnRun ?? config.OpenCaw.UpdateOnRun,
-                ExecuteBootstrap = options.OpenCawExecuteBootstrap ?? config.OpenCaw.ExecuteBootstrap
+                UpdateOnRun = options.OpenCawUpdateOnRun ?? config.OpenCaw.UpdateOnRun
             }
         };
     }

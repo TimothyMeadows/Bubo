@@ -76,7 +76,6 @@ public static class AgentConfigLoader
             },
             OpenCaw = new OpenCawOptions
             {
-                Enabled = true,
                 UpdateOnRun = true
             }
         };
@@ -270,12 +269,10 @@ public static class AgentConfigLoader
 
         return defaults with
         {
-            Enabled = config.Enabled ?? defaults.Enabled,
             RepositoryUrl = config.RepositoryUrl ?? defaults.RepositoryUrl,
             Path = config.Path ?? defaults.Path,
             Ref = config.Ref ?? defaults.Ref,
-            UpdateOnRun = config.UpdateOnRun ?? defaults.UpdateOnRun,
-            ExecuteBootstrap = config.ExecuteBootstrap ?? defaults.ExecuteBootstrap
+            UpdateOnRun = config.UpdateOnRun ?? defaults.UpdateOnRun
         };
     }
 
@@ -607,8 +604,6 @@ public static class AgentConfigLoader
 
     private sealed record OpenCawOptionsConfig
     {
-        public bool? Enabled { get; init; }
-
         public string? RepositoryUrl { get; init; }
 
         public string? Path { get; init; }
@@ -616,7 +611,5 @@ public static class AgentConfigLoader
         public string? Ref { get; init; }
 
         public bool? UpdateOnRun { get; init; }
-
-        public bool? ExecuteBootstrap { get; init; }
     }
 }

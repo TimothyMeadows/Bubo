@@ -10,10 +10,10 @@ public sealed class AgentRunnerTests
     {
         var workspace = CreateWorkspace();
         var inputPath = Path.Combine(workspace, "INPUT.md");
-        var outputPath = Path.Combine(workspace, "OUTPUT.md");
+        var outputPath = CreateOutputPath(workspace);
         await File.WriteAllTextAsync(inputPath, "# Task\n\nSay hello.");
 
-        var runner = new AgentRunner(new FakeSandboxRunner());
+        var runner = CreateRunner(new FakeSandboxRunner());
         var result = await runner.RunAsync(
             new AgentRunRequest
             {
@@ -26,8 +26,8 @@ public sealed class AgentRunnerTests
 
         Assert.True(result.Success);
         Assert.True(File.Exists(outputPath));
-        Assert.True(File.Exists(Path.Combine(workspace, "agent-debug.jsonl")));
-        Assert.True(File.Exists(Path.Combine(workspace, "agent-transcript.md")));
+        Assert.True(File.Exists(CreateDebugLogPath(workspace)));
+        Assert.True(File.Exists(CreateTranscriptPath(workspace)));
 
         var output = await File.ReadAllTextAsync(outputPath);
         Assert.Contains("# Result", output);
@@ -36,11 +36,396 @@ public sealed class AgentRunnerTests
     }
 
     [Fact]
-    public async Task RunAsyncExecutesBuboActions()
+    public async Task RunAsyncAllowsExternalInputAndWritesArtifactsInWorkspace()
+    {
+        var root = CreateWorkspace();
+        var workspace = Path.Combine(root, "code");
+        var inputDirectory = Path.Combine(root, "prompts");
+        Directory.CreateDirectory(workspace);
+        Directory.CreateDirectory(inputDirectory);
+
+        var inputPath = Path.Combine(inputDirectory, "INPUT.md");
+        var outputPath = CreateOutputPath(workspace, "reports", "OUTPUT.md");
+        await File.WriteAllTextAsync(
+            inputPath,
+            """
+            # External Prompt
+
+            ```bubo-actions
+            [
+              {
+                "tool": "write_file",
+                "arguments": {
+                  "path": "generated/result.txt",
+                  "content": "folder bounded\n"
+                }
+              }
+            ]
+            ```
+            """);
+
+        var runner = CreateRunner(new FakeSandboxRunner());
+        var result = await runner.RunAsync(
+            new AgentRunRequest
+            {
+                WorkspacePath = workspace,
+                InputPath = inputPath,
+                OutputPath = outputPath,
+                Mode = AgentMode.Local
+            },
+            CancellationToken.None);
+
+        Assert.True(result.Success);
+        Assert.Equal(
+            "folder bounded\n",
+            await File.ReadAllTextAsync(Path.Combine(workspace, "generated", "result.txt")));
+        Assert.True(File.Exists(outputPath));
+        Assert.True(File.Exists(CreateDebugLogPath(workspace, "reports")));
+        Assert.True(File.Exists(CreateTranscriptPath(workspace, "reports")));
+        Assert.False(File.Exists(CreateOutputPath(workspace)));
+        Assert.False(File.Exists(Path.Combine(inputDirectory, "generated", "result.txt")));
+    }
+
+    [Fact]
+    public async Task RunAsyncAcceptsInlineMarkdownInput()
+    {
+        var workspace = CreateWorkspace();
+        var outputPath = CreateOutputPath(workspace);
+        var inlineInput =
+            """
+            # Inline Prompt
+
+            ```bubo-actions
+            [
+              {
+                "tool": "write_file",
+                "arguments": {
+                  "path": "generated/inline.txt",
+                  "content": "inline prompt completed\n"
+                }
+              }
+            ]
+            ```
+            """;
+
+        var runner = CreateRunner(new FakeSandboxRunner());
+        var result = await runner.RunAsync(
+            new AgentRunRequest
+            {
+                WorkspacePath = workspace,
+                InputPath = inlineInput,
+                OutputPath = outputPath,
+                Mode = AgentMode.Local
+            },
+            CancellationToken.None);
+
+        Assert.True(result.Success);
+        Assert.Equal(
+            "inline prompt completed\n",
+            await File.ReadAllTextAsync(Path.Combine(workspace, "generated", "inline.txt")));
+        Assert.Contains("inline markdown", await File.ReadAllTextAsync(CreateDebugLogPath(workspace)));
+    }
+
+    [Fact]
+    public async Task RunAsyncTreatsMissingMarkdownInputPathAsMissingFile()
+    {
+        var workspace = CreateWorkspace();
+        var outputPath = CreateOutputPath(workspace);
+        var missingInputPath = Path.Combine(workspace, "missing.md");
+
+        var runner = CreateRunner(new FakeSandboxRunner());
+
+        await Assert.ThrowsAsync<FileNotFoundException>(
+            () => runner.RunAsync(
+                new AgentRunRequest
+                {
+                    WorkspacePath = workspace,
+                    InputPath = missingInputPath,
+                    OutputPath = outputPath,
+                    Mode = AgentMode.Local
+                },
+                CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task RunAsyncRejectsExistingNonMarkdownInputFile()
+    {
+        var workspace = CreateWorkspace();
+        var inputPath = Path.Combine(workspace, "INPUT.txt");
+        var outputPath = CreateOutputPath(workspace);
+        await File.WriteAllTextAsync(inputPath, "# Task");
+
+        var runner = CreateRunner(new FakeSandboxRunner());
+
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => runner.RunAsync(
+                new AgentRunRequest
+                {
+                    WorkspacePath = workspace,
+                    InputPath = inputPath,
+                    OutputPath = outputPath,
+                    Mode = AgentMode.Local
+                },
+                CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task RunAsyncCreatesWorkspaceOutputDirectory()
+    {
+        var root = CreateWorkspace();
+        var workspace = Path.Combine(root, "code");
+        Directory.CreateDirectory(workspace);
+        var inputPath = Path.Combine(root, "INPUT.md");
+        var outputPath = "nested/reports/OUTPUT.md";
+        var resolvedOutputPath = CreateOutputPath(workspace, "nested", "reports", "OUTPUT.md");
+        await File.WriteAllTextAsync(inputPath, "# Task\n\nNo actions.");
+
+        var runner = CreateRunner(new FakeSandboxRunner());
+        var result = await runner.RunAsync(
+            new AgentRunRequest
+            {
+                WorkspacePath = workspace,
+                InputPath = inputPath,
+                OutputPath = outputPath,
+                Mode = AgentMode.Local
+            },
+            CancellationToken.None);
+
+        Assert.True(result.Success);
+        Assert.True(File.Exists(resolvedOutputPath));
+        Assert.True(File.Exists(Path.Combine(Path.GetDirectoryName(resolvedOutputPath)!, "agent-debug.jsonl")));
+        Assert.True(File.Exists(Path.Combine(Path.GetDirectoryName(resolvedOutputPath)!, "agent-transcript.md")));
+    }
+
+    [Fact]
+    public async Task RunAsyncRejectsExternalOutput()
+    {
+        var root = CreateWorkspace();
+        var workspace = Path.Combine(root, "code");
+        var reports = Path.Combine(root, "reports");
+        Directory.CreateDirectory(workspace);
+        Directory.CreateDirectory(reports);
+        var inputPath = Path.Combine(root, "INPUT.md");
+        var outputPath = Path.Combine(reports, "OUTPUT.md");
+        await File.WriteAllTextAsync(inputPath, "# Task\n\nNo actions.");
+
+        var runner = CreateRunner(new FakeSandboxRunner());
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => runner.RunAsync(
+                new AgentRunRequest
+                {
+                    WorkspacePath = workspace,
+                    InputPath = inputPath,
+                    OutputPath = outputPath,
+                    Mode = AgentMode.Local
+                },
+                CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task RunAsyncRejectsWorkspaceOutputOutsideArtifacts()
     {
         var workspace = CreateWorkspace();
         var inputPath = Path.Combine(workspace, "INPUT.md");
         var outputPath = Path.Combine(workspace, "OUTPUT.md");
+        await File.WriteAllTextAsync(inputPath, "# Task\n\nNo actions.");
+
+        var runner = CreateRunner(new FakeSandboxRunner());
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => runner.RunAsync(
+                new AgentRunRequest
+                {
+                    WorkspacePath = workspace,
+                    InputPath = inputPath,
+                    OutputPath = outputPath,
+                    Mode = AgentMode.Local
+                },
+                CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task RunAsyncWorkspaceOutputDoesNotExpandSandboxCommandMounts()
+    {
+        var root = CreateWorkspace();
+        var workspace = Path.Combine(root, "code");
+        Directory.CreateDirectory(workspace);
+        var inputPath = Path.Combine(root, "INPUT.md");
+        var outputPath = "reports/OUTPUT.md";
+        await File.WriteAllTextAsync(
+            inputPath,
+            """
+            # Workspace Output Command
+
+            ```bubo-actions
+            [
+              {
+                "tool": "run_command",
+                "arguments": {
+                  "executable": "dotnet",
+                  "arguments": ["--version"]
+                }
+              }
+            ]
+            ```
+            """);
+
+        var sandboxRunner = new FakeSandboxRunner();
+        var runner = CreateRunner(sandboxRunner);
+        var result = await runner.RunAsync(
+            new AgentRunRequest
+            {
+                WorkspacePath = workspace,
+                InputPath = inputPath,
+                OutputPath = outputPath,
+                Mode = AgentMode.Local
+            },
+            CancellationToken.None);
+
+        Assert.True(result.Success);
+        var options = Assert.Single(sandboxRunner.Calls).Options;
+        Assert.Equal(workspace, options.WorkspacePath);
+        Assert.Equal(workspace, options.InputPath);
+        Assert.Equal(workspace, options.OutputPath);
+        Assert.Equal(workspace, options.CachePath);
+    }
+
+    [Fact]
+    public async Task RunAsyncRejectsOutputInsideWorkspaceGitMetadata()
+    {
+        var workspace = CreateWorkspace();
+        var inputPath = Path.Combine(workspace, "INPUT.md");
+        var outputPath = Path.Combine(workspace, ".git", "OUTPUT.md");
+        Directory.CreateDirectory(Path.Combine(workspace, ".git"));
+        await File.WriteAllTextAsync(inputPath, "# Task\n\nNo actions.");
+
+        var runner = CreateRunner(new FakeSandboxRunner());
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => runner.RunAsync(
+                new AgentRunRequest
+                {
+                    WorkspacePath = workspace,
+                    InputPath = inputPath,
+                    OutputPath = outputPath,
+                    Mode = AgentMode.Local
+                },
+                CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task RunAsyncRejectsExternalInputSymlink()
+    {
+        var root = CreateWorkspace();
+        var workspace = Path.Combine(root, "code");
+        Directory.CreateDirectory(workspace);
+        var target = Path.Combine(root, "target.md");
+        var link = Path.Combine(root, "INPUT.md");
+        var outputPath = CreateOutputPath(workspace);
+        await File.WriteAllTextAsync(target, "# Linked input");
+
+        try
+        {
+            File.CreateSymbolicLink(link, target);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or PlatformNotSupportedException)
+        {
+            return;
+        }
+
+        var runner = CreateRunner(new FakeSandboxRunner());
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => runner.RunAsync(
+                new AgentRunRequest
+                {
+                    WorkspacePath = workspace,
+                    InputPath = link,
+                    OutputPath = outputPath,
+                    Mode = AgentMode.Local
+                },
+                CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task RunAsyncRejectsWorkspaceOutputParentSymlink()
+    {
+        var root = CreateWorkspace();
+        var workspace = Path.Combine(root, "code");
+        var realReports = Path.Combine(root, "real-reports");
+        var artifactRoot = Path.Combine(workspace, ".ai", "artifacts");
+        var linkReports = Path.Combine(artifactRoot, "reports-link");
+        Directory.CreateDirectory(workspace);
+        Directory.CreateDirectory(artifactRoot);
+        Directory.CreateDirectory(realReports);
+        var inputPath = Path.Combine(root, "INPUT.md");
+        await File.WriteAllTextAsync(inputPath, "# Task\n\nNo actions.");
+
+        try
+        {
+            Directory.CreateSymbolicLink(linkReports, realReports);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or PlatformNotSupportedException)
+        {
+            return;
+        }
+
+        var runner = CreateRunner(new FakeSandboxRunner());
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => runner.RunAsync(
+                new AgentRunRequest
+                {
+                    WorkspacePath = workspace,
+                    InputPath = inputPath,
+                    OutputPath = Path.Combine(linkReports, "OUTPUT.md"),
+                    Mode = AgentMode.Local
+                },
+                CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task RunAsyncPassesCodeFolderToOpenCawWhenInputIsExternalAndOutputIsWorkspace()
+    {
+        var root = CreateWorkspace();
+        var workspace = Path.Combine(root, "code");
+        Directory.CreateDirectory(workspace);
+        var inputPath = Path.Combine(root, "INPUT.md");
+        var outputPath = CreateOutputPath(workspace, "reports", "OUTPUT.md");
+        await File.WriteAllTextAsync(inputPath, "# Task\n\nNo actions.");
+        var bootstrapper = new FakeOpenCawBootstrapper(new OpenCawBootstrapResult());
+
+        var runner = CreateRunner(
+            new FakeSandboxRunner(),
+            config: new AgentRunConfig
+            {
+                OpenCaw = new OpenCawOptions()
+            },
+            openCawBootstrapper: bootstrapper);
+
+        var result = await runner.RunAsync(
+            new AgentRunRequest
+            {
+                WorkspacePath = workspace,
+                InputPath = inputPath,
+                OutputPath = outputPath,
+                Mode = AgentMode.Local
+            },
+            CancellationToken.None);
+
+        Assert.True(result.Success);
+        Assert.True(bootstrapper.WasCalled);
+        Assert.Equal(workspace, bootstrapper.LastGuard?.WorkspaceRoot);
+        Assert.True(File.Exists(outputPath));
+    }
+
+    [Fact]
+    public async Task RunAsyncExecutesBuboActions()
+    {
+        var workspace = CreateWorkspace();
+        var inputPath = Path.Combine(workspace, "INPUT.md");
+        var outputPath = CreateOutputPath(workspace);
         await File.WriteAllTextAsync(
             inputPath,
             """
@@ -66,7 +451,7 @@ public sealed class AgentRunnerTests
             ```
             """);
 
-        var runner = new AgentRunner(new FakeSandboxRunner());
+        var runner = CreateRunner(new FakeSandboxRunner());
         var result = await runner.RunAsync(
             new AgentRunRequest
             {
@@ -92,7 +477,7 @@ public sealed class AgentRunnerTests
     {
         var workspace = CreateWorkspace();
         var inputPath = Path.Combine(workspace, "INPUT.md");
-        var outputPath = Path.Combine(workspace, "OUTPUT.md");
+        var outputPath = CreateOutputPath(workspace);
         await File.WriteAllTextAsync(inputPath, "# Task\n\nWrite a generated note.");
         var provider = new FakeInferenceProvider(
             """
@@ -109,7 +494,7 @@ public sealed class AgentRunnerTests
             ```
             """);
 
-        var runner = new AgentRunner(
+        var runner = CreateRunner(
             new FakeSandboxRunner(),
             inferenceProvider: provider);
         var result = await runner.RunAsync(
@@ -131,7 +516,7 @@ public sealed class AgentRunnerTests
             "Inferred action completed.\n",
             await File.ReadAllTextAsync(Path.Combine(workspace, "generated", "inferred.txt")));
 
-        var transcript = await File.ReadAllTextAsync(Path.Combine(workspace, "agent-transcript.md"));
+        var transcript = await File.ReadAllTextAsync(CreateTranscriptPath(workspace));
         Assert.Contains("inference.started", transcript);
         Assert.Contains("inference.completed", transcript);
     }
@@ -141,7 +526,7 @@ public sealed class AgentRunnerTests
     {
         var workspace = CreateWorkspace();
         var inputPath = Path.Combine(workspace, "INPUT.md");
-        var outputPath = Path.Combine(workspace, "OUTPUT.md");
+        var outputPath = CreateOutputPath(workspace);
         await File.WriteAllTextAsync(inputPath, "# Task\n\nWrite a generated note.");
         var provider = new FakeInferenceProvider(
             """
@@ -149,7 +534,7 @@ public sealed class AgentRunnerTests
             []
             ```
             """);
-        var runner = new AgentRunner(
+        var runner = CreateRunner(
             new FakeSandboxRunner(),
             inferenceProvider: provider,
             config: new AgentRunConfig
@@ -183,7 +568,7 @@ public sealed class AgentRunnerTests
     {
         var workspace = CreateWorkspace();
         var inputPath = Path.Combine(workspace, "INPUT.md");
-        var outputPath = Path.Combine(workspace, "OUTPUT.md");
+        var outputPath = CreateOutputPath(workspace);
         await File.WriteAllTextAsync(
             inputPath,
             """
@@ -203,7 +588,7 @@ public sealed class AgentRunnerTests
             """);
         var provider = new FakeInferenceProvider("not used");
 
-        var runner = new AgentRunner(
+        var runner = CreateRunner(
             new FakeSandboxRunner(),
             inferenceProvider: provider);
         var result = await runner.RunAsync(
@@ -226,7 +611,7 @@ public sealed class AgentRunnerTests
     {
         var workspace = CreateWorkspace();
         var inputPath = Path.Combine(workspace, "INPUT.md");
-        var outputPath = Path.Combine(workspace, "OUTPUT.md");
+        var outputPath = CreateOutputPath(workspace);
         await File.WriteAllTextAsync(inputPath, "# Task\n\nWrite a generated note.");
         var provider = new FakeInferenceProvider(
             """
@@ -237,7 +622,7 @@ public sealed class AgentRunnerTests
             ```
             """);
 
-        var runner = new AgentRunner(
+        var runner = CreateRunner(
             new FakeSandboxRunner(),
             inferenceProvider: provider);
         var result = await runner.RunAsync(
@@ -264,7 +649,7 @@ public sealed class AgentRunnerTests
     {
         var workspace = CreateWorkspace();
         var inputPath = Path.Combine(workspace, "INPUT.md");
-        var outputPath = Path.Combine(workspace, "OUTPUT.md");
+        var outputPath = CreateOutputPath(workspace);
         await File.WriteAllTextAsync(inputPath, "# Task\n\nWrite a generated note.");
         var provider = new FakeInferenceProvider(new[]
         {
@@ -290,7 +675,7 @@ public sealed class AgentRunnerTests
             """
         });
 
-        var runner = new AgentRunner(
+        var runner = CreateRunner(
             new FakeSandboxRunner(),
             inferenceProvider: provider,
             config: new AgentRunConfig
@@ -317,11 +702,11 @@ public sealed class AgentRunnerTests
     {
         var workspace = CreateWorkspace();
         var inputPath = Path.Combine(workspace, "INPUT.md");
-        var outputPath = Path.Combine(workspace, "OUTPUT.md");
+        var outputPath = CreateOutputPath(workspace);
         await File.WriteAllTextAsync(inputPath, "# Task\n\nWrite a generated note.");
         var provider = new FakeInferenceProvider("provider failed", success: false);
 
-        var runner = new AgentRunner(
+        var runner = CreateRunner(
             new FakeSandboxRunner(),
             inferenceProvider: provider);
         var result = await runner.RunAsync(
@@ -347,7 +732,7 @@ public sealed class AgentRunnerTests
     {
         var workspace = CreateWorkspace();
         var inputPath = Path.Combine(workspace, "INPUT.md");
-        var outputPath = Path.Combine(workspace, "OUTPUT.md");
+        var outputPath = CreateOutputPath(workspace);
         var targetPath = Path.Combine(workspace, "notes.txt");
         await File.WriteAllTextAsync(inputPath, "# Task\n\nPatch the note.");
         await File.WriteAllTextAsync(targetPath, "hello");
@@ -383,7 +768,7 @@ public sealed class AgentRunnerTests
             """
         });
 
-        var runner = new AgentRunner(
+        var runner = CreateRunner(
             new FakeSandboxRunner(),
             inferenceProvider: provider,
             config: new AgentRunConfig
@@ -406,11 +791,11 @@ public sealed class AgentRunnerTests
         Assert.Contains("patch_file failed", provider.Prompts[1]);
         Assert.Equal("hi", await File.ReadAllTextAsync(targetPath));
 
-        var transcript = await File.ReadAllTextAsync(Path.Combine(workspace, "agent-transcript.md"));
+        var transcript = await File.ReadAllTextAsync(CreateTranscriptPath(workspace));
         Assert.Contains("inference.retry_planned", transcript);
         Assert.Contains("iteration 2", transcript);
 
-        var debugLog = await File.ReadAllTextAsync(Path.Combine(workspace, "agent-debug.jsonl"));
+        var debugLog = await File.ReadAllTextAsync(CreateDebugLogPath(workspace));
         Assert.Contains("\"type\":\"inference.iteration_started\"", debugLog);
         Assert.Contains("\"maxIterations\":\"2\"", debugLog);
         Assert.Contains("\"type\":\"inference.retry_planned\"", debugLog);
@@ -422,7 +807,7 @@ public sealed class AgentRunnerTests
     {
         var workspace = CreateWorkspace();
         var inputPath = Path.Combine(workspace, "INPUT.md");
-        var outputPath = Path.Combine(workspace, "OUTPUT.md");
+        var outputPath = CreateOutputPath(workspace);
         var targetPath = Path.Combine(workspace, "notes.txt");
         await File.WriteAllTextAsync(inputPath, "# Task\n\nPatch the note.");
         await File.WriteAllTextAsync(targetPath, "hello");
@@ -458,7 +843,7 @@ public sealed class AgentRunnerTests
             """
         });
 
-        var runner = new AgentRunner(
+        var runner = CreateRunner(
             new FakeSandboxRunner(),
             inferenceProvider: provider,
             config: new AgentRunConfig
@@ -483,7 +868,7 @@ public sealed class AgentRunnerTests
         Assert.Contains("failed inference-generated action iteration", output);
         Assert.Contains("Reached maxIterations (2)", output);
 
-        var transcript = await File.ReadAllTextAsync(Path.Combine(workspace, "agent-transcript.md"));
+        var transcript = await File.ReadAllTextAsync(CreateTranscriptPath(workspace));
         Assert.Contains("inference.max_iterations_reached", transcript);
     }
 
@@ -492,7 +877,7 @@ public sealed class AgentRunnerTests
     {
         var workspace = CreateWorkspace();
         var inputPath = Path.Combine(workspace, "INPUT.md");
-        var outputPath = Path.Combine(workspace, "OUTPUT.md");
+        var outputPath = CreateOutputPath(workspace);
         var targetPath = Path.Combine(workspace, "notes.txt");
         await File.WriteAllTextAsync(inputPath, "# Task\n\nWrite and patch the note.");
         await File.WriteAllTextAsync(targetPath, "hello");
@@ -535,7 +920,7 @@ public sealed class AgentRunnerTests
             """
         });
 
-        var runner = new AgentRunner(
+        var runner = CreateRunner(
             new FakeSandboxRunner(),
             inferenceProvider: provider,
             config: new AgentRunConfig
@@ -571,7 +956,7 @@ public sealed class AgentRunnerTests
     {
         var workspace = CreateWorkspace();
         var inputPath = Path.Combine(workspace, "INPUT.md");
-        var outputPath = Path.Combine(workspace, "OUTPUT.md");
+        var outputPath = CreateOutputPath(workspace);
         var targetPath = Path.Combine(workspace, "notes.txt");
         await File.WriteAllTextAsync(inputPath, "# Task\n\nPatch the note.");
         await File.WriteAllTextAsync(targetPath, "hello");
@@ -596,7 +981,7 @@ public sealed class AgentRunnerTests
             """
         });
 
-        var runner = new AgentRunner(
+        var runner = CreateRunner(
             new FakeSandboxRunner(),
             inferenceProvider: provider,
             config: new AgentRunConfig
@@ -627,10 +1012,10 @@ public sealed class AgentRunnerTests
     {
         var workspace = CreateWorkspace();
         var inputPath = Path.Combine(workspace, "INPUT.md");
-        var outputPath = Path.Combine(workspace, "OUTPUT.md");
+        var outputPath = CreateOutputPath(workspace);
         await File.WriteAllTextAsync(inputPath, "# Task\n\nWrite a generated note.");
 
-        var runner = new AgentRunner(
+        var runner = CreateRunner(
             new FakeSandboxRunner(),
             inferenceProvider: new ThrowingInferenceProvider());
         var result = await runner.RunAsync(
@@ -645,7 +1030,7 @@ public sealed class AgentRunnerTests
 
         Assert.False(result.Success);
         Assert.True(File.Exists(outputPath));
-        Assert.True(File.Exists(Path.Combine(workspace, "agent-debug.jsonl")));
+        Assert.True(File.Exists(CreateDebugLogPath(workspace)));
         Assert.Contains("provider exploded", await File.ReadAllTextAsync(outputPath));
     }
 
@@ -654,10 +1039,10 @@ public sealed class AgentRunnerTests
     {
         var workspace = CreateWorkspace();
         var inputPath = Path.Combine(workspace, "INPUT.md");
-        var outputPath = Path.Combine(workspace, "OUTPUT.md");
+        var outputPath = CreateOutputPath(workspace);
         await File.WriteAllTextAsync(inputPath, "# Task\n\nWrite a generated note.");
 
-        var runner = new AgentRunner(
+        var runner = CreateRunner(
             new FakeSandboxRunner(),
             inferenceProvider: new FakeInferenceProvider("No action fence here."));
         var result = await runner.RunAsync(
@@ -673,7 +1058,7 @@ public sealed class AgentRunnerTests
         Assert.True(result.Success);
         Assert.Empty(result.FilesChanged);
 
-        var transcript = await File.ReadAllTextAsync(Path.Combine(workspace, "agent-transcript.md"));
+        var transcript = await File.ReadAllTextAsync(CreateTranscriptPath(workspace));
         Assert.Contains("inference.no_actions", transcript);
     }
 
@@ -682,7 +1067,7 @@ public sealed class AgentRunnerTests
     {
         var workspace = CreateWorkspace();
         var inputPath = Path.Combine(workspace, "INPUT.md");
-        var outputPath = Path.Combine(workspace, "OUTPUT.md");
+        var outputPath = CreateOutputPath(workspace);
         await File.WriteAllTextAsync(inputPath, "# Task\n\nWrite notes.");
         var provider = new FakeInferenceProvider(
             """
@@ -706,7 +1091,7 @@ public sealed class AgentRunnerTests
             ```
             """);
 
-        var runner = new AgentRunner(
+        var runner = CreateRunner(
             new FakeSandboxRunner(),
             inferenceProvider: provider,
             config: new AgentRunConfig
@@ -734,7 +1119,7 @@ public sealed class AgentRunnerTests
     {
         var workspace = CreateWorkspace();
         var inputPath = Path.Combine(workspace, "INPUT.md");
-        var outputPath = Path.Combine(workspace, "OUTPUT.md");
+        var outputPath = CreateOutputPath(workspace);
         await File.WriteAllTextAsync(inputPath, "# Task\n\nDo something unsupported.");
         var provider = new FakeInferenceProvider(
             """
@@ -748,7 +1133,7 @@ public sealed class AgentRunnerTests
             ```
             """);
 
-        var runner = new AgentRunner(
+        var runner = CreateRunner(
             new FakeSandboxRunner(),
             inferenceProvider: provider);
         var result = await runner.RunAsync(
@@ -771,7 +1156,7 @@ public sealed class AgentRunnerTests
     {
         var workspace = CreateWorkspace();
         var inputPath = Path.Combine(workspace, "INPUT.md");
-        var outputPath = Path.Combine(workspace, "OUTPUT.md");
+        var outputPath = CreateOutputPath(workspace);
         await File.WriteAllTextAsync(inputPath, "# Task\n\nRun a command.");
         var provider = new FakeInferenceProvider(
             """
@@ -788,7 +1173,7 @@ public sealed class AgentRunnerTests
             ```
             """);
 
-        var runner = new AgentRunner(
+        var runner = CreateRunner(
             new FakeSandboxRunner(),
             inferenceProvider: provider);
         var result = await runner.RunAsync(
@@ -813,7 +1198,7 @@ public sealed class AgentRunnerTests
     {
         var workspace = CreateWorkspace();
         var inputPath = Path.Combine(workspace, "INPUT.md");
-        var outputPath = Path.Combine(workspace, "OUTPUT.md");
+        var outputPath = CreateOutputPath(workspace);
         await File.WriteAllTextAsync(inputPath, "# Task\n\nWrite generated notes.");
         var provider = new FakeInferenceProvider(new[]
         {
@@ -853,7 +1238,7 @@ public sealed class AgentRunnerTests
             """
         });
 
-        var runner = new AgentRunner(
+        var runner = CreateRunner(
             new FakeSandboxRunner(),
             inferenceProvider: provider,
             config: new AgentRunConfig
@@ -888,7 +1273,7 @@ public sealed class AgentRunnerTests
     {
         var workspace = CreateWorkspace();
         var inputPath = Path.Combine(workspace, "INPUT.md");
-        var outputPath = Path.Combine(workspace, "OUTPUT.md");
+        var outputPath = CreateOutputPath(workspace);
         var targetPath = Path.Combine(workspace, "notes.txt");
         await File.WriteAllTextAsync(inputPath, "# Task\n\nPatch the note.");
         await File.WriteAllTextAsync(targetPath, "abcdef");
@@ -909,7 +1294,7 @@ public sealed class AgentRunnerTests
             ```
             """);
 
-        var runner = new AgentRunner(
+        var runner = CreateRunner(
             new FakeSandboxRunner(),
             inferenceProvider: provider,
             config: new AgentRunConfig
@@ -938,7 +1323,7 @@ public sealed class AgentRunnerTests
     {
         var workspace = CreateWorkspace();
         var inputPath = Path.Combine(workspace, "INPUT.md");
-        var outputPath = Path.Combine(workspace, "OUTPUT.md");
+        var outputPath = CreateOutputPath(workspace);
         await File.WriteAllTextAsync(inputPath, "# Task\n\nWrite a note.");
         var provider = new FakeInferenceProvider(
             """
@@ -950,7 +1335,7 @@ public sealed class AgentRunnerTests
             ```
             """);
 
-        var runner = new AgentRunner(
+        var runner = CreateRunner(
             new FakeSandboxRunner(),
             inferenceProvider: provider);
         var result = await runner.RunAsync(
@@ -972,7 +1357,7 @@ public sealed class AgentRunnerTests
     {
         var workspace = CreateWorkspace();
         var inputPath = Path.Combine(workspace, "INPUT.md");
-        var outputPath = Path.Combine(workspace, "OUTPUT.md");
+        var outputPath = CreateOutputPath(workspace);
         await File.WriteAllTextAsync(
             inputPath,
             """
@@ -991,7 +1376,7 @@ public sealed class AgentRunnerTests
             ```
             """);
 
-        var runner = new AgentRunner(
+        var runner = CreateRunner(
             new SlowSandboxRunner(),
             config: new AgentRunConfig
             {
@@ -1016,7 +1401,7 @@ public sealed class AgentRunnerTests
     {
         var workspace = CreateWorkspace();
         var inputPath = Path.Combine(workspace, "INPUT.md");
-        var outputPath = Path.Combine(workspace, "OUTPUT.md");
+        var outputPath = CreateOutputPath(workspace);
         await File.WriteAllTextAsync(
             inputPath,
             """
@@ -1035,7 +1420,7 @@ public sealed class AgentRunnerTests
             ```
             """);
 
-        var runner = new AgentRunner();
+        var runner = CreateRunner();
         var result = await runner.RunAsync(
             new AgentRunRequest
             {
@@ -1059,7 +1444,7 @@ public sealed class AgentRunnerTests
     {
         var workspace = CreateWorkspace();
         var inputPath = Path.Combine(workspace, "INPUT.md");
-        var outputPath = Path.Combine(workspace, "OUTPUT.md");
+        var outputPath = CreateOutputPath(workspace);
         await File.WriteAllTextAsync(Path.Combine(workspace, "notes.txt"), "old value");
         await File.WriteAllTextAsync(
             inputPath,
@@ -1080,7 +1465,7 @@ public sealed class AgentRunnerTests
             ```
             """);
 
-        var runner = new AgentRunner(new FakeSandboxRunner());
+        var runner = CreateRunner(new FakeSandboxRunner());
         var result = await runner.RunAsync(
             new AgentRunRequest
             {
@@ -1101,7 +1486,7 @@ public sealed class AgentRunnerTests
     {
         var workspace = CreateWorkspace();
         var inputPath = Path.Combine(workspace, "INPUT.md");
-        var outputPath = Path.Combine(workspace, "OUTPUT.md");
+        var outputPath = CreateOutputPath(workspace);
         await File.WriteAllTextAsync(inputPath, "# Task\n\nUse the project baseline.");
         var provider = new FakeInferenceProvider(
             """
@@ -1123,12 +1508,12 @@ public sealed class AgentRunnerTests
                 }
             });
 
-        var runner = new AgentRunner(
+        var runner = CreateRunner(
             new FakeSandboxRunner(),
             inferenceProvider: provider,
             config: new AgentRunConfig
             {
-                OpenCaw = new OpenCawOptions { Enabled = true }
+                OpenCaw = new OpenCawOptions()
             },
             openCawBootstrapper: bootstrapper);
         var result = await runner.RunAsync(
@@ -1145,7 +1530,7 @@ public sealed class AgentRunnerTests
         Assert.True(bootstrapper.WasCalled);
         Assert.Equal("OpenCaw baseline plus host .ai memory.", provider.LastRequest.SystemPrompt);
         Assert.Contains("Use the project baseline.", provider.LastPrompt);
-        Assert.Contains("opencaw.context_loaded", await File.ReadAllTextAsync(Path.Combine(workspace, "agent-transcript.md")));
+        Assert.Contains("opencaw.context_loaded", await File.ReadAllTextAsync(CreateTranscriptPath(workspace)));
     }
 
     [Fact]
@@ -1153,7 +1538,7 @@ public sealed class AgentRunnerTests
     {
         var workspace = CreateWorkspace();
         var inputPath = Path.Combine(workspace, "INPUT.md");
-        var outputPath = Path.Combine(workspace, "OUTPUT.md");
+        var outputPath = CreateOutputPath(workspace);
         var bootstrapper = new FakeOpenCawBootstrapper(
             new OpenCawBootstrapResult
             {
@@ -1169,10 +1554,10 @@ public sealed class AgentRunnerTests
                 }
             });
 
-        var runner = new AgentRunner(
+        var runner = CreateRunner(
             config: new AgentRunConfig
             {
-                OpenCaw = new OpenCawOptions { Enabled = true }
+                OpenCaw = new OpenCawOptions()
             },
             openCawBootstrapper: bootstrapper);
         var result = await runner.RunAsync(
@@ -1188,7 +1573,7 @@ public sealed class AgentRunnerTests
         Assert.False(result.Success);
         Assert.True(File.Exists(outputPath));
         Assert.Contains("could not initialize the OpenCaw session", await File.ReadAllTextAsync(outputPath));
-        Assert.Contains("OpenCaw checkout is unavailable.", await File.ReadAllTextAsync(Path.Combine(workspace, "agent-debug.jsonl")));
+        Assert.Contains("OpenCaw checkout is unavailable.", await File.ReadAllTextAsync(CreateDebugLogPath(workspace)));
     }
 
     private static string CreateWorkspace()
@@ -1201,14 +1586,46 @@ public sealed class AgentRunnerTests
         return Path.GetFullPath(workspace);
     }
 
+    private static string CreateOutputPath(string workspace, params string[] relativeSegments)
+    {
+        return CreateArtifactPath(
+            workspace,
+            relativeSegments.Length == 0 ? new[] { "OUTPUT.md" } : relativeSegments);
+    }
+
+    private static string CreateDebugLogPath(string workspace, params string[] relativeDirectorySegments)
+    {
+        return CreateArtifactPath(
+            workspace,
+            relativeDirectorySegments.Concat(new[] { "agent-debug.jsonl" }).ToArray());
+    }
+
+    private static string CreateTranscriptPath(string workspace, params string[] relativeDirectorySegments)
+    {
+        return CreateArtifactPath(
+            workspace,
+            relativeDirectorySegments.Concat(new[] { "agent-transcript.md" }).ToArray());
+    }
+
+    private static string CreateArtifactPath(string workspace, params string[] relativeSegments)
+    {
+        return Path.Combine(
+            new[] { workspace, ".ai", "artifacts" }
+                .Concat(relativeSegments)
+                .ToArray());
+    }
+
     private sealed class FakeSandboxRunner : ISandboxRunner
     {
+        public List<SandboxCall> Calls { get; } = new();
+
         public Task<ToolResult> RunCommandAsync(
             string command,
             IReadOnlyList<string> arguments,
             SandboxOptions options,
             CancellationToken cancellationToken)
         {
+            Calls.Add(new SandboxCall(command, arguments, options));
             return Task.FromResult(new ToolResult
             {
                 Success = true,
@@ -1217,6 +1634,11 @@ public sealed class AgentRunnerTests
             });
         }
     }
+
+    private sealed record SandboxCall(
+        string Command,
+        IReadOnlyList<string> Arguments,
+        SandboxOptions Options);
 
     private sealed class SlowSandboxRunner : ISandboxRunner
     {
@@ -1229,6 +1651,21 @@ public sealed class AgentRunnerTests
             await Task.Delay(TimeSpan.FromMinutes(5), cancellationToken);
             return new ToolResult { Success = true };
         }
+    }
+
+    private static AgentRunner CreateRunner(
+        ISandboxRunner? sandboxRunner = null,
+        SandboxOptions? sandboxOptions = null,
+        IInferenceProvider? inferenceProvider = null,
+        AgentRunConfig? config = null,
+        IOpenCawBootstrapper? openCawBootstrapper = null)
+    {
+        return new AgentRunner(
+            sandboxRunner,
+            sandboxOptions,
+            inferenceProvider,
+            config,
+            openCawBootstrapper ?? new FakeOpenCawBootstrapper(new OpenCawBootstrapResult()));
     }
 
     private sealed class FakeOpenCawBootstrapper : IOpenCawBootstrapper

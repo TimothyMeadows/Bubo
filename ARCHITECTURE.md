@@ -27,7 +27,7 @@ Add repository-specific architecture instructions below these read directives.
 
 - Docker expectations are governed by `./.opencaw/.architecture/DOCKER.md`. Keep image construction, runtime configuration, and deployment concerns separate when adding or changing container assets.
 - Bubo targets .NET 8 LTS. All production projects use `net8.0`; `global.json` permits newer installed SDKs only through roll-forward.
-- The runtime is file-driven in v1: `INPUT.md` in, `OUTPUT.md`, `agent-debug.jsonl`, and `agent-transcript.md` out.
+- The runtime is file-driven in v1: `INPUT.md` or inline Markdown in, with Bubo-owned report artifacts under `.ai/artifacts`.
 - Runtime startup initializes OpenCaw from the workspace `.opencaw` submodule before reading `INPUT.md`; host project memory remains under `.ai` and must not be written into the OpenCaw baseline.
 - All file and command tools must pass through `WorkspaceGuard` or an equivalent sandbox-root check before touching the filesystem.
 - Docker is the required execution sandbox for agent-driven command execution. Network access must be explicit, and `none` is the default policy.

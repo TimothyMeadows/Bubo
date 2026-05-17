@@ -21,6 +21,13 @@
 ## OpenCaw Bootstrap On Windows
 
 - Invoke OpenCaw shell scripts from the `.opencaw` working directory using relative POSIX-style paths such as `./commands/create-host-ai-scaffold.sh`; Windows absolute paths passed to `bash` can fail under Git Bash path translation.
+- Put Git Bash before the Windows WSL launcher on `PATH` for .NET tests that spawn `bash` with a Windows working directory: `C:\Program Files\Git\bin;C:\Program Files\Git\usr\bin`.
+
+## Bubo Folder Workspace Boundary
+
+- `--folder` is the shared writable root for tools, Git, Docker commands, and OpenCaw. External `--input` is allowed as a host-runtime read path, but Bubo-owned report artifacts must resolve under `<folder>/.ai/artifacts`.
+- Do not route generic `write_file`/patch/Git changes into `.ai/artifacts`; those are code/file operations on requested guarded paths. Only Bubo-owned report artifacts belong there by default.
+- `--input` can also be inline Markdown text. Missing values that look like Markdown paths, rooted paths, or separator-containing paths still fail as missing files instead of being silently treated as prompts.
 
 ## Windows CUDA Native Builds
 

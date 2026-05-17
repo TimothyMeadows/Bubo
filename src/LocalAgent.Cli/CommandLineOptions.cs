@@ -26,13 +26,9 @@ public sealed record CommandLineOptions
 
     public string? SandboxGpu { get; init; }
 
-    public bool? OpenCawEnabled { get; init; }
-
     public string? OpenCawPath { get; init; }
 
     public string? OpenCawRef { get; init; }
 
     public bool? OpenCawUpdateOnRun { get; init; }
-
-    public bool? OpenCawExecuteBootstrap { get; init; }
 }
