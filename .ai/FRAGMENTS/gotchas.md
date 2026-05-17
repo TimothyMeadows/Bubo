@@ -9,3 +9,7 @@
 ## Current Main Branch Caveat
 
 - After PRs #7-#11 were merged, only PR #7 was merged directly into `main`; PRs #8-#11 were merged into their stacked feature bases. Future implementation work should verify whether to integrate the final stack branch into `main` before building on the broader runtime features.
+
+## Windows And WSL Git Status
+
+- The OpenCaw `pr-readiness-check.sh` script runs through WSL and may report broad false-positive modifications on this Windows checkout because of line-ending normalization. Cross-check PR scope with native PowerShell `git status --short --branch` before committing.

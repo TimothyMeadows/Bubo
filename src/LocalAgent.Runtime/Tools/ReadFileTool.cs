@@ -13,7 +13,7 @@ public sealed class ReadFileTool : WorkspaceToolBase
         WorkspaceGuard guard,
         CancellationToken cancellationToken)
     {
-        var path = guard.ResolveInsideWorkspace(GetArgument(request, "path"));
+        var path = guard.ResolveExistingFileInsideWorkspace(GetArgument(request, "path"));
         var text = await File.ReadAllTextAsync(path, cancellationToken);
         return new ToolResult
         {

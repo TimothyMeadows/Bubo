@@ -8,8 +8,10 @@ Bubo treats repository content, model output, and generated tool requests as unt
 - The sandbox run builder drops Linux capabilities, enables `no-new-privileges`, and uses a read-only root filesystem where practical.
 - Input and model mounts are read-only.
 - Workspace, output, and cache mounts are the only writable mounts.
-- File tools canonicalize paths through `WorkspaceGuard` and reject traversal outside the workspace.
+- File tools canonicalize paths through `WorkspaceGuard` and reject traversal, `.git` metadata edits, and symlink or reparse-point escape paths.
+- `patch_file` is a bounded exact old/new text replacement and fails when the old text is absent, ambiguous, oversized, or unsafe to target.
 - Agent-driven command execution runs through the Docker sandbox runner, avoids shell expansion, and starts from a small executable allowlist.
+- `git_apply_patch` preflights unified diff paths before invoking Docker-backed `git apply --check` and `git apply`.
 - `gh` and Git operations are available but Bubo does not auto-push or auto-create PRs unless the surrounding goal-flow explicitly asks for it.
 
 ## GPU Notes
@@ -30,6 +32,6 @@ Research should be mediated outside the sandbox when possible instead of giving 
 ## Known V1 Limits
 
 - The deterministic `bubo-actions` fixture format is intended for validation and controlled automation.
-- `run_command`, `git_status`, and `git_diff` require a Docker sandbox runner in normal CLI execution; unit tests inject fake runners for deterministic coverage.
+- `run_command`, `git_status`, `git_diff`, and `git_apply_patch` require a Docker sandbox runner in normal CLI execution; unit tests inject fake runners for deterministic coverage.
 - Model-driven planning/coding is scaffolded behind inference abstractions but not yet a fully autonomous loop.
 - Native llama.cpp package publishing requires populated native assets and per-RID smoke tests before release.

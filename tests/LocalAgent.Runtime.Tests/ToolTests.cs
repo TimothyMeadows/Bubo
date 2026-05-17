@@ -163,6 +163,167 @@ public sealed class ToolTests
     }
 
     [Fact]
+    public async Task PatchFileReplacesSingleMatch()
+    {
+        var workspace = CreateWorkspace();
+        var path = Path.Combine(workspace, "notes.txt");
+        await File.WriteAllTextAsync(path, "alpha\nold\nomega\n");
+        var tool = new PatchFileTool();
+
+        var result = await tool.InvokeAsync(
+            new ToolRequest
+            {
+                Name = "patch_file",
+                WorkspaceRoot = workspace,
+                Arguments = new Dictionary<string, string>
+                {
+                    ["path"] = "notes.txt",
+                    ["old"] = "old",
+                    ["new"] = "new"
+                }
+            },
+            CancellationToken.None);
+
+        Assert.True(result.Success);
+        Assert.Equal("notes.txt", result.Output);
+        Assert.Equal("alpha\nnew\nomega\n", await File.ReadAllTextAsync(path));
+    }
+
+    [Fact]
+    public async Task PatchFileRejectsAmbiguousMatch()
+    {
+        var workspace = CreateWorkspace();
+        var path = Path.Combine(workspace, "notes.txt");
+        await File.WriteAllTextAsync(path, "old\nold\n");
+        var tool = new PatchFileTool();
+
+        var result = await tool.InvokeAsync(
+            new ToolRequest
+            {
+                Name = "patch_file",
+                WorkspaceRoot = workspace,
+                Arguments = new Dictionary<string, string>
+                {
+                    ["path"] = "notes.txt",
+                    ["old"] = "old",
+                    ["new"] = "new"
+                }
+            },
+            CancellationToken.None);
+
+        Assert.False(result.Success);
+        Assert.Contains("more than once", result.Error);
+        Assert.Equal("old\nold\n", await File.ReadAllTextAsync(path));
+    }
+
+    [Fact]
+    public async Task PatchFileRejectsGitMetadataPath()
+    {
+        var workspace = CreateWorkspace();
+        Directory.CreateDirectory(Path.Combine(workspace, ".git"));
+        await File.WriteAllTextAsync(Path.Combine(workspace, ".git", "config"), "old");
+        var tool = new PatchFileTool();
+
+        var result = await tool.InvokeAsync(
+            new ToolRequest
+            {
+                Name = "patch_file",
+                WorkspaceRoot = workspace,
+                Arguments = new Dictionary<string, string>
+                {
+                    ["path"] = ".git/config",
+                    ["old"] = "old",
+                    ["new"] = "new"
+                }
+            },
+            CancellationToken.None);
+
+        Assert.False(result.Success);
+        Assert.Contains("reserved Git metadata", result.Error);
+    }
+
+    [Fact]
+    public async Task GitApplyPatchUsesSandboxRunnerAndReportsFiles()
+    {
+        var workspace = CreateWorkspace();
+        var runner = new RecordingSandboxRunner();
+        var tool = new GitApplyPatchTool(runner);
+
+        var patch = """
+                   diff --git a/notes.txt b/notes.txt
+                   new file mode 100644
+                   index 0000000..f2ba8f8
+                   --- /dev/null
+                   +++ b/notes.txt
+                   @@ -0,0 +1 @@
+                   +Hello
+                   """;
+
+        var result = await tool.InvokeAsync(
+            new ToolRequest
+            {
+                Name = "git_apply_patch",
+                WorkspaceRoot = workspace,
+                Arguments = new Dictionary<string, string>
+                {
+                    ["patch"] = patch
+                }
+            },
+            CancellationToken.None);
+
+        Assert.True(result.Success);
+        Assert.Equal("notes.txt", result.Output);
+        Assert.Equal(2, runner.Calls.Count);
+        Assert.All(runner.Calls, call => Assert.Equal("git", call.Command));
+        Assert.Equal("apply", runner.Calls[0].Arguments[0]);
+        Assert.Equal("--check", runner.Calls[0].Arguments[1]);
+        Assert.StartsWith("/workspace/.bubo/patches/", runner.Calls[0].Arguments[2], StringComparison.Ordinal);
+        Assert.Equal(workspace, runner.Calls[0].Options.WorkspacePath);
+    }
+
+    [Fact]
+    public async Task GitApplyPatchRejectsTraversal()
+    {
+        var workspace = CreateWorkspace();
+        var runner = new RecordingSandboxRunner();
+        var tool = new GitApplyPatchTool(runner);
+
+        var patch = """
+                   diff --git a/../outside.txt b/../outside.txt
+                   --- a/../outside.txt
+                   +++ b/../outside.txt
+                   @@ -1 +1 @@
+                   -old
+                   +new
+                   """;
+
+        var result = await tool.InvokeAsync(
+            new ToolRequest
+            {
+                Name = "git_apply_patch",
+                WorkspaceRoot = workspace,
+                Arguments = new Dictionary<string, string>
+                {
+                    ["patch"] = patch
+                }
+            },
+            CancellationToken.None);
+
+        Assert.False(result.Success);
+        Assert.Contains("parent traversal", result.Error);
+        Assert.Empty(runner.Calls);
+    }
+
+    [Fact]
+    public void ToolRegistryIncludesPatchTools()
+    {
+        var registry = ToolRegistry.CreateDefault(new RecordingSandboxRunner());
+
+        Assert.Contains("patch_file", registry.ToolNames);
+        Assert.Contains("git_apply_patch", registry.ToolNames);
+    }
+
+    [Fact]
     public async Task GitToolsUseSandboxRunner()
     {
         var workspace = CreateWorkspace();
@@ -195,6 +356,8 @@ public sealed class ToolTests
 
     private sealed class RecordingSandboxRunner : ISandboxRunner
     {
+        public List<SandboxCall> Calls { get; } = new();
+
         public string? Command { get; private set; }
 
         public IReadOnlyList<string>? Arguments { get; private set; }
@@ -210,6 +373,7 @@ public sealed class ToolTests
             Command = command;
             Arguments = arguments;
             Options = options;
+            Calls.Add(new SandboxCall(command, arguments, options));
 
             return Task.FromResult(new ToolResult
             {
@@ -219,4 +383,9 @@ public sealed class ToolTests
             });
         }
     }
+
+    private sealed record SandboxCall(
+        string Command,
+        IReadOnlyList<string> Arguments,
+        SandboxOptions Options);
 }

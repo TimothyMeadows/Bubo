@@ -21,6 +21,14 @@ $input = @'
     }
   },
   {
+    "tool": "patch_file",
+    "arguments": {
+      "path": "generated/script-result.txt",
+      "old": "Scripted fixture completed.",
+      "new": "Scripted fixture patched."
+    }
+  },
+  {
     "tool": "run_command",
     "arguments": {
       "executable": "dotnet",
@@ -47,6 +55,11 @@ foreach ($path in @($outputPath, $generatedPath, $debugPath, $transcriptPath)) {
     if (-not (Test-Path -LiteralPath $path)) {
         throw "Expected fixture artifact was not created: $path"
     }
+}
+
+$generatedContent = Get-Content -LiteralPath $generatedPath -Raw
+if ($generatedContent -notmatch "Scripted fixture patched\.") {
+    throw "Expected patch_file to update generated fixture content."
 }
 
 Write-Host "Bubo E2E fixture passed in $workspace"

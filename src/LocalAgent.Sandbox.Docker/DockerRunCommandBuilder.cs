@@ -106,8 +106,11 @@ public static class DockerRunCommandBuilder
             throw new ArgumentException("Host mount path must be provided.", nameof(hostPath));
         }
 
+        var source = Path.GetFullPath(hostPath);
+        RejectReparsePointMountSource(source);
+
         arguments.Add("--mount");
-        arguments.Add($"type=bind,source={Path.GetFullPath(hostPath)},target={containerPath}{(readOnly ? ",readonly" : string.Empty)}");
+        arguments.Add($"type=bind,source={source},target={containerPath}{(readOnly ? ",readonly" : string.Empty)}");
     }
 
     private static string GetContainerWorkingDirectory(SandboxOptions options)
@@ -126,6 +129,21 @@ public static class DockerRunCommandBuilder
         }
 
         return options.ContainerWorkingDirectory;
+    }
+
+    private static void RejectReparsePointMountSource(string source)
+    {
+        if (!File.Exists(source) && !Directory.Exists(source))
+        {
+            return;
+        }
+
+        var attributes = File.GetAttributes(source);
+        if ((attributes & FileAttributes.ReparsePoint) != 0)
+        {
+            throw new ArgumentException(
+                $"Docker mount path must not be a symlink or reparse point: {source}");
+        }
     }
 
     private static string ToDockerNetwork(NetworkPolicy policy)

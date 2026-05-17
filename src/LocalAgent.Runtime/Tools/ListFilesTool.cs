@@ -16,7 +16,7 @@ public sealed class ListFilesTool : WorkspaceToolBase
         var requestedPath = request.Arguments.TryGetValue("path", out var value)
             ? value
             : ".";
-        var path = guard.ResolveInsideWorkspace(requestedPath);
+        var path = guard.ResolveExistingDirectoryInsideWorkspace(requestedPath);
         var files = Directory.EnumerateFiles(path, "*", SearchOption.AllDirectories)
             .Take(500)
             .Select(file => Path.GetRelativePath(guard.WorkspaceRoot, file).Replace('\\', '/'));

@@ -13,7 +13,7 @@ public sealed class WriteFileTool : WorkspaceToolBase
         WorkspaceGuard guard,
         CancellationToken cancellationToken)
     {
-        var path = guard.ResolveInsideWorkspace(GetArgument(request, "path"));
+        var path = guard.ResolveWritableFileInsideWorkspace(GetArgument(request, "path"));
         var content = GetArgument(request, "content");
         Directory.CreateDirectory(Path.GetDirectoryName(path) ?? guard.WorkspaceRoot);
         await File.WriteAllTextAsync(path, content, cancellationToken);

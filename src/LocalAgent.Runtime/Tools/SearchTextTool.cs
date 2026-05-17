@@ -17,7 +17,7 @@ public sealed class SearchTextTool : WorkspaceToolBase
         var requestedPath = request.Arguments.TryGetValue("path", out var value)
             ? value
             : ".";
-        var root = guard.ResolveInsideWorkspace(requestedPath);
+        var root = guard.ResolveExistingDirectoryInsideWorkspace(requestedPath);
         var matches = new List<string>();
 
         foreach (var file in Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories).Take(1_000))

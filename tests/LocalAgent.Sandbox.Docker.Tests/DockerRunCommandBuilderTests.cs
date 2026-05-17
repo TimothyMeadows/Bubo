@@ -113,6 +113,38 @@ public sealed class DockerRunCommandBuilderTests
         Assert.Equal("/workspace/src", args[workdirIndex + 1]);
     }
 
+    [Fact]
+    public void BuildRunArgumentsRejectsSymlinkMountSource()
+    {
+        var target = CreateDirectory("target");
+        var link = Path.Combine(Path.GetTempPath(), "bubo-docker-tests", Guid.NewGuid().ToString("N"), "link");
+        Directory.CreateDirectory(Path.GetDirectoryName(link)!);
+
+        try
+        {
+            Directory.CreateSymbolicLink(link, target);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or PlatformNotSupportedException)
+        {
+            return;
+        }
+
+        var thrown = Assert.Throws<ArgumentException>(() =>
+            DockerRunCommandBuilder.BuildRunArguments(
+                "true",
+                Array.Empty<string>(),
+                new SandboxOptions
+                {
+                    WorkspacePath = link,
+                    InputPath = target,
+                    OutputPath = target,
+                    CachePath = target,
+                    ModelsPath = null,
+                    Gpu = null
+                }));
+        Assert.Contains("symlink or reparse point", thrown.Message);
+    }
+
     private static string CreateDirectory(string name)
     {
         var path = Path.Combine(
