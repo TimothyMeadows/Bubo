@@ -55,7 +55,7 @@ Continuing goal execution after PR #18 merged. Current task: add Bubo configurat
 - bubo-main-stack-integration | base: `main` | head: `feature/bubo-main-stack-integration` | PR: https://github.com/TimothyMeadows/Bubo/pull/14 | depends on: bubo-e2e-hardening-packaging | status: post_pr_qa_passed
 - bubo-tool-hardening | base: `main` | head: `feature/bubo-tool-hardening` | PR: https://github.com/TimothyMeadows/Bubo/pull/16 | depends on: bubo-main-stack-integration | status: post_pr_qa_passed
 - bubo-inference-action-loop | base: `main` | head: `feature/bubo-inference-action-loop` | PR: https://github.com/TimothyMeadows/Bubo/pull/18 | depends on: bubo-tool-hardening | status: post_pr_qa_passed
-- bubo-config-loading | base: `main` | head: `feature/bubo-config-loading` | PR: pending | depends on: bubo-inference-action-loop | status: in_progress
+- bubo-config-loading | base: `main` | head: `feature/bubo-config-loading` | PR: https://github.com/TimothyMeadows/Bubo/pull/20 | depends on: bubo-inference-action-loop | status: pr_open_post_pr_qa_in_progress
 
 ## Automation Rules
 - Complete one task at a time unless the project-manager lane plan explicitly marks safe parallel work.
@@ -79,6 +79,7 @@ Continuing goal execution after PR #18 merged. Current task: add Bubo configurat
 - Integrate Bubo goal stack onto main: https://github.com/TimothyMeadows/Bubo/pull/14
 - Harden Bubo workspace tools and patch flow: https://github.com/TimothyMeadows/Bubo/pull/16
 - Add Bubo inference-driven action loop: https://github.com/TimothyMeadows/Bubo/pull/18
+- Add Bubo configuration loading: https://github.com/TimothyMeadows/Bubo/pull/20
 
 ## QA Evidence
 
@@ -99,6 +100,7 @@ Continuing goal execution after PR #18 merged. Current task: add Bubo configurat
 - bubo-tool-hardening post-PR QA posted on PR #16; local QA passed and the latest GitHub Actions `dotnet` workflow passed.
 - bubo-inference-action-loop local validation passed: `dotnet build Bubo.sln --configuration Release --no-restore`, `dotnet test Bubo.sln --configuration Release --no-build --verbosity normal` with 60 passing tests, scripted E2E fixture, `dotnet format Bubo.sln --verify-no-changes`, and `git diff --check`.
 - bubo-inference-action-loop post-PR QA posted on PR #18; local QA passed and the GitHub Actions `dotnet` workflow passed.
+- bubo-config-loading local validation passed: `dotnet build Bubo.sln --configuration Release --no-restore`, `dotnet test Bubo.sln --configuration Release --no-build --verbosity normal` with 76 passing tests, `dotnet format Bubo.sln --verify-no-changes --no-restore`, `git diff --check`, config-driven CLI smoke, and `dotnet pack src/LocalAgent.Cli/LocalAgent.Cli.csproj --configuration Release --no-build --output artifacts/packages`. Docker live sandbox smoke is blocked locally because Docker is not installed on this host.
 
 ## Goal Completion Report
 - Generated at `.ai/goals/bubo-local-cloud-agent/GOAL_REPORT.md`.
@@ -111,4 +113,4 @@ Continuing goal execution after PR #18 merged. Current task: add Bubo configurat
 - PRs #8 through #11 were merged into their stacked base branches, and PR #14 integrates the completed stack back onto `main`.
 - Task #15 hardens workspace/patch tools after PR #14 merged; issue #15 is linked to PR #16 and should close on merge.
 - Task #17 connects inference providers to guarded action generation after PR #16 merged; PR #18 merged and issue #17 is closed as completed.
-- Task #19 adds external configuration loading after PR #18 merged.
+- Task #19 adds external configuration loading after PR #18 merged; issue #19 is linked to PR #20.
