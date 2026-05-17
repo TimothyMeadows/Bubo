@@ -252,10 +252,64 @@ public sealed class AgentRunnerTests
 
         Assert.False(result.Success);
         Assert.DoesNotContain(result.ChangesMade, change => change.Contains("Wrote", StringComparison.OrdinalIgnoreCase));
+        Assert.Equal(1, provider.CallCount);
 
         var output = await File.ReadAllTextAsync(outputPath);
         Assert.Contains("could not parse model-proposed actions", output);
         Assert.Contains("bubo-actions fence must contain a JSON array", output);
+    }
+
+    [Fact]
+    public async Task RunAsyncDoesNotRetryInvalidInferenceActions()
+    {
+        var workspace = CreateWorkspace();
+        var inputPath = Path.Combine(workspace, "INPUT.md");
+        var outputPath = Path.Combine(workspace, "OUTPUT.md");
+        await File.WriteAllTextAsync(inputPath, "# Task\n\nWrite a generated note.");
+        var provider = new FakeInferenceProvider(new[]
+        {
+            """
+            ```bubo-actions
+            {
+              "tool": "write_file"
+            }
+            ```
+            """,
+            """
+            ```bubo-actions
+            [
+              {
+                "tool": "write_file",
+                "arguments": {
+                  "path": "should-not-write.txt",
+                  "content": "nope"
+                }
+              }
+            ]
+            ```
+            """
+        });
+
+        var runner = new AgentRunner(
+            new FakeSandboxRunner(),
+            inferenceProvider: provider,
+            config: new AgentRunConfig
+            {
+                Limits = new AgentLimits { MaxIterations = 2 }
+            });
+        var result = await runner.RunAsync(
+            new AgentRunRequest
+            {
+                WorkspacePath = workspace,
+                InputPath = inputPath,
+                OutputPath = outputPath,
+                Mode = AgentMode.Cloud
+            },
+            CancellationToken.None);
+
+        Assert.False(result.Success);
+        Assert.Equal(1, provider.CallCount);
+        Assert.False(File.Exists(Path.Combine(workspace, "should-not-write.txt")));
     }
 
     [Fact]
@@ -286,6 +340,207 @@ public sealed class AgentRunnerTests
         var output = await File.ReadAllTextAsync(outputPath);
         Assert.Contains("could not get model-proposed actions", output);
         Assert.Contains("inference provider `fake-inference` failed", output, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task RunAsyncRetriesInferenceGeneratedActionsAfterToolFailure()
+    {
+        var workspace = CreateWorkspace();
+        var inputPath = Path.Combine(workspace, "INPUT.md");
+        var outputPath = Path.Combine(workspace, "OUTPUT.md");
+        var targetPath = Path.Combine(workspace, "notes.txt");
+        await File.WriteAllTextAsync(inputPath, "# Task\n\nPatch the note.");
+        await File.WriteAllTextAsync(targetPath, "hello");
+        var provider = new FakeInferenceProvider(new[]
+        {
+            """
+            ```bubo-actions
+            [
+              {
+                "tool": "patch_file",
+                "arguments": {
+                  "path": "notes.txt",
+                  "old": "missing",
+                  "new": "ignored"
+                }
+              }
+            ]
+            ```
+            """,
+            """
+            ```bubo-actions
+            [
+              {
+                "tool": "patch_file",
+                "arguments": {
+                  "path": "notes.txt",
+                  "old": "hello",
+                  "new": "hi"
+                }
+              }
+            ]
+            ```
+            """
+        });
+
+        var runner = new AgentRunner(
+            new FakeSandboxRunner(),
+            inferenceProvider: provider,
+            config: new AgentRunConfig
+            {
+                Limits = new AgentLimits { MaxIterations = 2 }
+            });
+        var result = await runner.RunAsync(
+            new AgentRunRequest
+            {
+                WorkspacePath = workspace,
+                InputPath = inputPath,
+                OutputPath = outputPath,
+                Mode = AgentMode.Cloud
+            },
+            CancellationToken.None);
+
+        Assert.True(result.Success);
+        Assert.Equal(2, provider.CallCount);
+        Assert.Contains("Previous attempt observations", provider.Prompts[1]);
+        Assert.Contains("patch_file failed", provider.Prompts[1]);
+        Assert.Equal("hi", await File.ReadAllTextAsync(targetPath));
+
+        var transcript = await File.ReadAllTextAsync(Path.Combine(workspace, "agent-transcript.md"));
+        Assert.Contains("inference.retry_planned", transcript);
+        Assert.Contains("iteration 2", transcript);
+
+        var debugLog = await File.ReadAllTextAsync(Path.Combine(workspace, "agent-debug.jsonl"));
+        Assert.Contains("\"type\":\"inference.iteration_started\"", debugLog);
+        Assert.Contains("\"maxIterations\":\"2\"", debugLog);
+        Assert.Contains("\"type\":\"inference.retry_planned\"", debugLog);
+        Assert.Contains("\"observation\"", debugLog);
+    }
+
+    [Fact]
+    public async Task RunAsyncStopsAfterInferenceIterationLimit()
+    {
+        var workspace = CreateWorkspace();
+        var inputPath = Path.Combine(workspace, "INPUT.md");
+        var outputPath = Path.Combine(workspace, "OUTPUT.md");
+        var targetPath = Path.Combine(workspace, "notes.txt");
+        await File.WriteAllTextAsync(inputPath, "# Task\n\nPatch the note.");
+        await File.WriteAllTextAsync(targetPath, "hello");
+        var provider = new FakeInferenceProvider(new[]
+        {
+            """
+            ```bubo-actions
+            [
+              {
+                "tool": "patch_file",
+                "arguments": {
+                  "path": "notes.txt",
+                  "old": "missing",
+                  "new": "ignored"
+                }
+              }
+            ]
+            ```
+            """,
+            """
+            ```bubo-actions
+            [
+              {
+                "tool": "patch_file",
+                "arguments": {
+                  "path": "notes.txt",
+                  "old": "still missing",
+                  "new": "ignored"
+                }
+              }
+            ]
+            ```
+            """
+        });
+
+        var runner = new AgentRunner(
+            new FakeSandboxRunner(),
+            inferenceProvider: provider,
+            config: new AgentRunConfig
+            {
+                Limits = new AgentLimits { MaxIterations = 2 }
+            });
+        var result = await runner.RunAsync(
+            new AgentRunRequest
+            {
+                WorkspacePath = workspace,
+                InputPath = inputPath,
+                OutputPath = outputPath,
+                Mode = AgentMode.Cloud
+            },
+            CancellationToken.None);
+
+        Assert.False(result.Success);
+        Assert.Equal(2, provider.CallCount);
+        Assert.Equal("hello", await File.ReadAllTextAsync(targetPath));
+
+        var output = await File.ReadAllTextAsync(outputPath);
+        Assert.Contains("failed inference-generated action iteration", output);
+        Assert.Contains("Reached maxIterations (2)", output);
+
+        var transcript = await File.ReadAllTextAsync(Path.Combine(workspace, "agent-transcript.md"));
+        Assert.Contains("inference.max_iterations_reached", transcript);
+    }
+
+    [Fact]
+    public async Task RunAsyncReportsFailureWhenRetryReturnsNoActionsAfterFailure()
+    {
+        var workspace = CreateWorkspace();
+        var inputPath = Path.Combine(workspace, "INPUT.md");
+        var outputPath = Path.Combine(workspace, "OUTPUT.md");
+        var targetPath = Path.Combine(workspace, "notes.txt");
+        await File.WriteAllTextAsync(inputPath, "# Task\n\nPatch the note.");
+        await File.WriteAllTextAsync(targetPath, "hello");
+        var provider = new FakeInferenceProvider(new[]
+        {
+            """
+            ```bubo-actions
+            [
+              {
+                "tool": "patch_file",
+                "arguments": {
+                  "path": "notes.txt",
+                  "old": "missing",
+                  "new": "ignored"
+                }
+              }
+            ]
+            ```
+            """,
+            """
+            No action fence here.
+            """
+        });
+
+        var runner = new AgentRunner(
+            new FakeSandboxRunner(),
+            inferenceProvider: provider,
+            config: new AgentRunConfig
+            {
+                Limits = new AgentLimits { MaxIterations = 2 }
+            });
+        var result = await runner.RunAsync(
+            new AgentRunRequest
+            {
+                WorkspacePath = workspace,
+                InputPath = inputPath,
+                OutputPath = outputPath,
+                Mode = AgentMode.Cloud
+            },
+            CancellationToken.None);
+
+        Assert.False(result.Success);
+        Assert.Equal(2, provider.CallCount);
+        Assert.Equal("hello", await File.ReadAllTextAsync(targetPath));
+
+        var output = await File.ReadAllTextAsync(outputPath);
+        Assert.Contains("returned no actions following a failed iteration", output);
+        Assert.Contains("Earlier inference iteration issue", output);
     }
 
     [Fact]
@@ -390,6 +645,7 @@ public sealed class AgentRunnerTests
             CancellationToken.None);
 
         Assert.False(result.Success);
+        Assert.Equal(1, provider.CallCount);
         Assert.False(File.Exists(Path.Combine(workspace, "one.txt")));
         Assert.Contains("exceeds maxToolCalls", await File.ReadAllTextAsync(outputPath));
     }
@@ -427,6 +683,7 @@ public sealed class AgentRunnerTests
             CancellationToken.None);
 
         Assert.False(result.Success);
+        Assert.Equal(1, provider.CallCount);
         Assert.Contains("inference-generated bubo-actions block", await File.ReadAllTextAsync(outputPath));
     }
 
@@ -466,9 +723,85 @@ public sealed class AgentRunnerTests
             CancellationToken.None);
 
         Assert.False(result.Success);
+        Assert.Equal(1, provider.CallCount);
 
         var output = await File.ReadAllTextAsync(outputPath);
         Assert.Contains("Unknown tool requested by inference-generated bubo-actions block: run_command", output);
+    }
+
+    [Fact]
+    public async Task RunAsyncEnforcesCumulativeInferenceToolCallLimit()
+    {
+        var workspace = CreateWorkspace();
+        var inputPath = Path.Combine(workspace, "INPUT.md");
+        var outputPath = Path.Combine(workspace, "OUTPUT.md");
+        await File.WriteAllTextAsync(inputPath, "# Task\n\nWrite generated notes.");
+        var provider = new FakeInferenceProvider(new[]
+        {
+            """
+            ```bubo-actions
+            [
+              {
+                "tool": "patch_file",
+                "arguments": {
+                  "path": "missing.txt",
+                  "old": "x",
+                  "new": "y"
+                }
+              }
+            ]
+            ```
+            """,
+            """
+            ```bubo-actions
+            [
+              {
+                "tool": "write_file",
+                "arguments": {
+                  "path": "one.txt",
+                  "content": "one"
+                }
+              },
+              {
+                "tool": "write_file",
+                "arguments": {
+                  "path": "two.txt",
+                  "content": "two"
+                }
+              }
+            ]
+            ```
+            """
+        });
+
+        var runner = new AgentRunner(
+            new FakeSandboxRunner(),
+            inferenceProvider: provider,
+            config: new AgentRunConfig
+            {
+                Limits = new AgentLimits
+                {
+                    MaxIterations = 2,
+                    MaxToolCalls = 2
+                }
+            });
+        var result = await runner.RunAsync(
+            new AgentRunRequest
+            {
+                WorkspacePath = workspace,
+                InputPath = inputPath,
+                OutputPath = outputPath,
+                Mode = AgentMode.Cloud
+            },
+            CancellationToken.None);
+
+        Assert.False(result.Success);
+        Assert.Equal(2, provider.CallCount);
+        Assert.False(File.Exists(Path.Combine(workspace, "one.txt")));
+        Assert.False(File.Exists(Path.Combine(workspace, "two.txt")));
+
+        var output = await File.ReadAllTextAsync(outputPath);
+        Assert.Contains("cumulative action count 3 exceeds maxToolCalls (2)", output);
     }
 
     [Fact]
@@ -726,12 +1059,22 @@ public sealed class AgentRunnerTests
 
     private sealed class FakeInferenceProvider : IInferenceProvider
     {
-        private readonly string _response;
+        private readonly Queue<string> _responses;
         private readonly bool _success;
 
         public FakeInferenceProvider(string response, bool success = true)
+            : this(new[] { response }, success)
         {
-            _response = response;
+        }
+
+        public FakeInferenceProvider(IEnumerable<string> responses, bool success = true)
+        {
+            _responses = new Queue<string>(responses);
+            if (_responses.Count == 0)
+            {
+                throw new ArgumentException("At least one fake inference response is required.", nameof(responses));
+            }
+
             _success = success;
         }
 
@@ -739,7 +1082,11 @@ public sealed class AgentRunnerTests
 
         public bool WasCalled { get; private set; }
 
+        public int CallCount { get; private set; }
+
         public string LastPrompt { get; private set; } = string.Empty;
+
+        public List<string> Prompts { get; } = new();
 
         public InferenceRequest LastRequest { get; private set; } = new()
         {
@@ -753,12 +1100,17 @@ public sealed class AgentRunnerTests
             CancellationToken cancellationToken)
         {
             WasCalled = true;
+            CallCount++;
             LastPrompt = request.Prompt;
+            Prompts.Add(request.Prompt);
             LastRequest = request;
+            var response = _responses.Count > 1
+                ? _responses.Dequeue()
+                : _responses.Peek();
             return Task.FromResult(new InferenceResponse
             {
                 Success = _success,
-                Text = _response,
+                Text = response,
                 Events = new[]
                 {
                     new TranscriptEvent

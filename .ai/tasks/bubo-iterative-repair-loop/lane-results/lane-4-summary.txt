@@ -1,0 +1,10 @@
+QA review completed.
+
+Findings:
+- Highest-value tests cover retry success, max-iteration exhaustion, invalid output no-retry, unknown tool no-retry, no-action-after-failure, cumulative tool-call limits, and debug JSONL evidence.
+- Explicit deterministic actions should remain non-inference.
+
+Implementation impact:
+- Runtime tests now cover the retry loop, maxIterations, non-retry cases, cumulative tool-call budget, no-actions-after-failure, debug event evidence, and deterministic non-regression.
+
+Files changed by lane: None.

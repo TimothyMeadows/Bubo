@@ -6,7 +6,7 @@ Each example is a workspace-shaped folder with an `INPUT.md` file. Run one by po
 dotnet run --project src/LocalAgent.Cli -- run --workspace examples/file-edit --mode local
 ```
 
-The examples use the deterministic `bubo-actions` block so they can run without a local model. When a run input omits `bubo-actions`, the CLI can ask the selected local/cloud inference provider for the same fenced JSON shape; keep examples deterministic unless you are intentionally testing provider behavior.
+The examples use the deterministic `bubo-actions` block so they can run without a local model. When a run input omits `bubo-actions`, the CLI can ask the selected local/cloud inference provider for the same fenced JSON shape and retry after guarded tool failures within configured limits; keep examples deterministic unless you are intentionally testing provider behavior.
 
 `examples/bubo.config.json` shows workspace-default configuration for mode, model profiles, and lowered runtime limits. Bubo auto-loads a file with that name from the selected workspace when it exists.
 

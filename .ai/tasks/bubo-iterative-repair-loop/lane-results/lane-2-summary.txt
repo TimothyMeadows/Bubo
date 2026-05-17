@@ -1,0 +1,15 @@
+Backend architecture review completed.
+
+Findings:
+- Keep the loop inference-only so explicit bubo-actions remain deterministic and single-pass.
+- Replace retryability string matching with a small internal execution outcome and typed stop reason.
+- Treat oversized generated plans and unknown tools as non-retryable protocol/safety failures.
+- Preserve failure state when a retry returns no actions.
+- Include action-level observations in retry prompts.
+
+Implementation impact:
+- AgentRunner now uses ActionExecutionOutcome and ActionExecutionStopReason internally.
+- ExecuteActionsAsync remains as a public-result wrapper for deterministic actions.
+- The inference loop retries only ToolFailed outcomes.
+
+Files changed by lane: None.

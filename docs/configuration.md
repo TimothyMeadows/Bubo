@@ -119,11 +119,12 @@ bubo run --workspace ./repo --mode local
 
 If `bubo.config.json` says `cloud`, the command above still runs local.
 
-The first inference-driven runtime slice uses the `coder` model profile for one-shot action proposal when `INPUT.md` does not contain a deterministic `bubo-actions` fence. Future planner/coder orchestration will use both profiles across multiple steps. One-shot inference uses a model-safe tool registry and does not expose generic `run_command`.
+The inference-driven runtime uses the `coder` model profile for bounded generated-action retries when `INPUT.md` does not contain a deterministic `bubo-actions` fence. Future planner/coder orchestration will use both profiles across multiple steps. Inference-generated actions use a model-safe tool registry and do not expose generic `run_command`.
 
 Patch and file-change limits are used by deterministic tools:
 
+- `maxIterations` bounds inference-generated action repair attempts.
 - `maxPatchBytes` bounds `patch_file` old/new payloads and `git_apply_patch` unified diff payloads.
 - `maxFilesChanged` bounds the number of file paths accepted by `git_apply_patch` preflight scanning.
-- `maxToolCalls` bounds parsed deterministic or inference-proposed action plans before any tool executes.
+- `maxToolCalls` bounds parsed deterministic and inference-generated action plans before any tool executes.
 - `maxCommandSeconds` bounds individual tool invocations and kills timed-out sandboxed child process trees.

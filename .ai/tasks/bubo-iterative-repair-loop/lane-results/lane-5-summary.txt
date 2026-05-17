@@ -1,0 +1,10 @@
+Technical writing review completed.
+
+Findings:
+- Docs needed to replace stale one-shot inference wording with bounded generated-action repair wording.
+- Wording should avoid overstating autonomy; separate planner/coder orchestration remains future work.
+
+Implementation impact:
+- README, configuration docs, security docs, and examples now describe bounded generated-action retries with MaxIterations.
+
+Files changed by lane: None.
