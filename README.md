@@ -99,6 +99,7 @@ Bubo treats model output as untrusted. File writes, command execution, Git opera
 | Local inference provider | Scaffolded | Uses the shared inference abstraction and reports native runtime availability. |
 | codex-cli provider | Scaffolded | Builds non-interactive `codex exec` invocations through the shared inference abstraction. |
 | Inference action proposal | Available | If `INPUT.md` has no deterministic action fence, the configured provider can propose a fenced `bubo-actions` JSON array. |
+| Config loading | Available | `bubo run` loads safe workspace defaults from `bubo.config.json`; explicit `--config` is required for trusted sandbox policy. |
 | Guarded file/search/Git tools | Available | Deterministic action execution routes through workspace-guarded tools. |
 | Deterministic tool fixtures | Available | `bubo-actions` fixtures validate file writes and command execution without a model. |
 | Package workflows | Available | CI and package metadata cover managed, native, and CLI package outputs. |
@@ -271,7 +272,8 @@ dotnet run --project src/LocalAgent.Cli -- run \
   --workspace <path> \
   --input <path-to-INPUT.md> \
   --output <path-to-OUTPUT.md> \
-  --mode <local|cloud>
+  --mode <local|cloud> \
+  --config <path-to-bubo.config.json>
 ```
 
 Defaults:
@@ -281,7 +283,14 @@ Defaults:
 --input <workspace>/INPUT.md
 --output <workspace>/OUTPUT.md
 --mode local
+--config <workspace>/bubo.config.json when present
 ```
+
+Configuration precedence is defaults, then workspace `bubo.config.json`, then explicit `--config`, then explicit CLI flags. Today `--mode` is the CLI override: if config says `cloud` and the command says `--mode local`, Bubo runs local.
+
+The workspace-default config is treated as repository content and cannot set sandbox policy such as network, GPU, Docker image, host mounts, or hardening switches. Pass a config file with `--config` when you deliberately trust those sandbox settings.
+
+Relative `--config` paths resolve from the current shell directory.
 
 Utility commands:
 
@@ -377,6 +386,48 @@ Use the Markdown report for communication and the JSONL stream for diagnostics.
 
 Local mode is designed for GGUF models that fit the target machine. The starting target is 16 GB GPU memory.
 
+Create a workspace-default `bubo.config.json` for model profiles and runtime limits:
+
+```json
+{
+  "mode": "local",
+  "models": {
+    "planner": {
+      "path": "/models/planner.gguf",
+      "contextSize": 32768,
+      "temperature": 0.2,
+      "topP": 0.9,
+      "repeatPenalty": 1.05,
+      "maxTokens": 4096,
+      "gpuLayers": "auto",
+      "threads": 0
+    },
+    "coder": {
+      "path": "/models/coder.gguf",
+      "contextSize": 32768,
+      "temperature": 0.1,
+      "topP": 0.95,
+      "repeatPenalty": 1.05,
+      "maxTokens": 8192,
+      "gpuLayers": "auto",
+      "threads": 0
+    }
+  },
+  "limits": {
+    "maxToolCalls": 40,
+    "maxCommandSeconds": 300,
+    "maxPatchBytes": 131072,
+    "maxFilesChanged": 15
+  }
+}
+```
+
+Run it with default discovery:
+
+```bash
+bubo run --workspace ./repo
+```
+
 Recommended planner profile:
 
 ```json
@@ -458,6 +509,23 @@ Host prerequisites for GPU mode:
 
 CPU fallback should remain available when GPU support is missing.
 
+Sandbox policy is trusted configuration. Use an explicit `--config` path when you want to enable GPU, model mounts, or a network mode:
+
+```bash
+bubo run --workspace ./repo --config ./bubo.trusted.config.json
+```
+
+```json
+{
+  "sandbox": {
+    "image": "bubo-sandbox:local",
+    "network": "package-restore",
+    "gpu": "nvidia",
+    "modelsPath": "C:/Models/Bubo"
+  }
+}
+```
+
 ## Guided Example 5: Cloud Mode Through codex-cli
 
 Cloud mode uses `codex-cli` as a child process rather than changing the rest of the agent runtime.
@@ -470,6 +538,20 @@ bubo run \
   --input ./repo/INPUT.md \
   --output ./repo/OUTPUT.md \
   --mode cloud
+```
+
+Or set cloud mode in config:
+
+```json
+{
+  "mode": "cloud"
+}
+```
+
+Then run:
+
+```bash
+bubo run --workspace ./repo
 ```
 
 Provider responsibilities:
@@ -616,7 +698,7 @@ Both modes should feed the same runtime contracts and write the same output arti
 
 Model profiles make defaults replaceable without code changes.
 
-Full conceptual config:
+Workspace-default config:
 
 ```json
 {
@@ -643,6 +725,8 @@ Full conceptual config:
   }
 }
 ```
+
+`threads: 0` means `Environment.ProcessorCount`. Configured runtime limits may lower built-in safety ceilings but cannot raise them.
 
 Planner responsibilities:
 
@@ -950,7 +1034,7 @@ Short-term:
 - Expand P/Invoke bindings for tokenization, decode, logits, sampling, and streaming generation.
 - Add optional guarded commit tooling.
 - Expand one-shot inference action proposal into multi-iteration planner/coder orchestration over inference providers and guarded tools.
-- Add richer config loading for model profiles, sandbox policy, and loop limits.
+- Expand config loading with provider-specific cloud options and richer approval policy.
 - Harden command approval policy and secret redaction.
 - Keep `codex-cli` non-interactive invocation checks current as CLI flags evolve.
 

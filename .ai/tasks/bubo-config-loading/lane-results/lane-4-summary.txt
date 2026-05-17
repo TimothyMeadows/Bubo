@@ -1,0 +1,13 @@
+QA review completed.
+
+Findings:
+- Highest-value coverage is config discovery, explicit --config, mode precedence, invalid config, runtime limit enforcement, and documented example parsing.
+- Program E2E tests should prove workspace-default config affects deterministic bubo-actions runs.
+- Runtime tests should prove configured coder profile reaches inference.
+
+Implementation impact:
+- Added AgentConfigLoader unit tests for defaults, explicit config, invalid values, safety rejection, unknown JSON members, timeout disable prevention, and examples.
+- Added Program.Main E2E tests for workspace config discovery, mode precedence, config-selected mode, and invalid config.
+- Added runtime test for configured coder profile propagation.
+
+Files changed by lane: None.

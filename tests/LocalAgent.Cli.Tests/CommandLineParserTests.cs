@@ -18,7 +18,9 @@ public sealed class CommandLineParserTests
             "--output",
             "repo/OUTPUT.md",
             "--mode",
-            "cloud"
+            "cloud",
+            "--config",
+            "repo/bubo.config.json"
         });
 
         Assert.True(result.IsSuccess);
@@ -27,6 +29,25 @@ public sealed class CommandLineParserTests
         Assert.Equal("repo/INPUT.md", result.Options.InputPath);
         Assert.Equal("repo/OUTPUT.md", result.Options.OutputPath);
         Assert.Equal(AgentMode.Cloud, result.Options.Mode);
+        Assert.True(result.Options.ModeWasSpecified);
+        Assert.Equal("repo/bubo.config.json", result.Options.ConfigPath);
+    }
+
+    [Fact]
+    public void ParseRunCommandLeavesModeUnspecifiedWhenModeIsOmitted()
+    {
+        var result = CommandLineParser.Parse(new[]
+        {
+            "run",
+            "--workspace",
+            "repo"
+        });
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Options);
+        Assert.Equal(AgentMode.Local, result.Options.Mode);
+        Assert.False(result.Options.ModeWasSpecified);
+        Assert.Null(result.Options.ConfigPath);
     }
 
     [Fact]

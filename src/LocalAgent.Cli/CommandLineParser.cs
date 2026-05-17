@@ -39,7 +39,9 @@ public static class CommandLineParser
         var workspace = Environment.CurrentDirectory;
         string? input = null;
         string? output = null;
+        string? configPath = null;
         var mode = AgentMode.Local;
+        var modeWasSpecified = false;
 
         for (var index = 1; index < args.Count; index++)
         {
@@ -72,6 +74,10 @@ public static class CommandLineParser
                         return ParseResult.Failure($"Unsupported mode: {value}");
                     }
 
+                    modeWasSpecified = true;
+                    break;
+                case "--config":
+                    configPath = value;
                     break;
                 default:
                     return ParseResult.Failure($"Unknown option: {current}");
@@ -87,7 +93,9 @@ public static class CommandLineParser
             WorkspacePath = workspace,
             InputPath = input,
             OutputPath = output,
-            Mode = mode
+            Mode = mode,
+            ModeWasSpecified = modeWasSpecified,
+            ConfigPath = configPath
         });
     }
 
@@ -95,7 +103,7 @@ public static class CommandLineParser
     {
         return """
                Usage:
-                 bubo run --workspace <path> --input <INPUT.md> --output <OUTPUT.md> --mode <local|cloud>
+                 bubo run --workspace <path> --input <INPUT.md> --output <OUTPUT.md> --mode <local|cloud> --config <bubo.config.json>
                  bubo doctor
                  bubo models list
                  bubo sandbox test --workspace <path>
@@ -106,6 +114,7 @@ public static class CommandLineParser
                  --input <workspace>/INPUT.md
                  --output <workspace>/OUTPUT.md
                  --mode local
+                 --config <workspace>/bubo.config.json when present
                """;
     }
 

@@ -95,6 +95,194 @@ public sealed class ProgramE2ETests
         Assert.Contains("write_file failed", output);
     }
 
+    [Fact]
+    public async Task RunCommandLoadsWorkspaceConfigByDefault()
+    {
+        var workspace = CreateWorkspace();
+        var inputPath = Path.Combine(workspace, "INPUT.md");
+        var outputPath = Path.Combine(workspace, "OUTPUT.md");
+        await File.WriteAllTextAsync(
+            Path.Combine(workspace, "bubo.config.json"),
+            """
+            {
+              "limits": {
+                "maxToolCalls": 1
+              }
+            }
+            """);
+        await File.WriteAllTextAsync(
+            inputPath,
+            """
+            # CLI Config Fixture
+
+            ```bubo-actions
+            [
+              {
+                "tool": "write_file",
+                "arguments": {
+                  "path": "one.txt",
+                  "content": "one"
+                }
+              },
+              {
+                "tool": "write_file",
+                "arguments": {
+                  "path": "two.txt",
+                  "content": "two"
+                }
+              }
+            ]
+            ```
+            """);
+
+        var exitCode = await Program.Main(new[]
+        {
+            "run",
+            "--workspace",
+            workspace,
+            "--input",
+            inputPath,
+            "--output",
+            outputPath
+        });
+
+        Assert.Equal(1, exitCode);
+        Assert.False(File.Exists(Path.Combine(workspace, "one.txt")));
+        Assert.False(File.Exists(Path.Combine(workspace, "two.txt")));
+
+        var output = await File.ReadAllTextAsync(outputPath);
+        Assert.Contains("exceeds maxToolCalls (1)", output);
+    }
+
+    [Fact]
+    public async Task RunCommandLetsExplicitModeOverrideConfigMode()
+    {
+        var workspace = CreateWorkspace();
+        var inputPath = Path.Combine(workspace, "INPUT.md");
+        var outputPath = Path.Combine(workspace, "OUTPUT.md");
+        await File.WriteAllTextAsync(
+            Path.Combine(workspace, "bubo.config.json"),
+            """
+            {
+              "mode": "cloud"
+            }
+            """);
+        await File.WriteAllTextAsync(
+            inputPath,
+            """
+            # CLI Config Mode Fixture
+
+            ```bubo-actions
+            [
+              {
+                "tool": "write_file",
+                "arguments": {
+                  "path": "mode.txt",
+                  "content": "cloud mode from config"
+                }
+              }
+            ]
+            ```
+            """);
+
+        var exitCode = await Program.Main(new[]
+        {
+            "run",
+            "--workspace",
+            workspace,
+            "--input",
+            inputPath,
+            "--output",
+            outputPath,
+            "--mode",
+            "local"
+        });
+
+        Assert.Equal(0, exitCode);
+
+        var debugLog = await File.ReadAllTextAsync(Path.Combine(workspace, "agent-debug.jsonl"));
+        Assert.Contains("\"mode\":\"Local\"", debugLog);
+    }
+
+    [Fact]
+    public async Task RunCommandUsesConfigModeWhenModeIsOmitted()
+    {
+        var workspace = CreateWorkspace();
+        var inputPath = Path.Combine(workspace, "INPUT.md");
+        var outputPath = Path.Combine(workspace, "OUTPUT.md");
+        await File.WriteAllTextAsync(
+            Path.Combine(workspace, "bubo.config.json"),
+            """
+            {
+              "mode": "cloud"
+            }
+            """);
+        await File.WriteAllTextAsync(
+            inputPath,
+            """
+            # CLI Config Mode Fixture
+
+            ```bubo-actions
+            [
+              {
+                "tool": "write_file",
+                "arguments": {
+                  "path": "mode.txt",
+                  "content": "cloud mode from config"
+                }
+              }
+            ]
+            ```
+            """);
+
+        var exitCode = await Program.Main(new[]
+        {
+            "run",
+            "--workspace",
+            workspace,
+            "--input",
+            inputPath,
+            "--output",
+            outputPath
+        });
+
+        Assert.Equal(0, exitCode);
+        Assert.True(File.Exists(Path.Combine(workspace, "mode.txt")));
+
+        var debugLog = await File.ReadAllTextAsync(Path.Combine(workspace, "agent-debug.jsonl"));
+        Assert.Contains("\"mode\":\"Cloud\"", debugLog);
+    }
+
+    [Fact]
+    public async Task RunCommandReportsInvalidConfig()
+    {
+        var workspace = CreateWorkspace();
+        var inputPath = Path.Combine(workspace, "INPUT.md");
+        var outputPath = Path.Combine(workspace, "OUTPUT.md");
+        await File.WriteAllTextAsync(inputPath, "# Invalid Config Fixture");
+        await File.WriteAllTextAsync(
+            Path.Combine(workspace, "bubo.config.json"),
+            """
+            {
+              "mode": "orbital"
+            }
+            """);
+
+        var exitCode = await Program.Main(new[]
+        {
+            "run",
+            "--workspace",
+            workspace,
+            "--input",
+            inputPath,
+            "--output",
+            outputPath
+        });
+
+        Assert.Equal(1, exitCode);
+        Assert.False(File.Exists(outputPath));
+    }
+
     private static string CreateWorkspace()
     {
         var workspace = Path.Combine(
