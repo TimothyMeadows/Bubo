@@ -91,7 +91,7 @@ All planned goal tasks complete; awaiting human PR review/merge.
 - bubo-main-stack-integration local validation passed: `dotnet restore Bubo.sln`, `dotnet build Bubo.sln --configuration Release --no-restore`, `dotnet test Bubo.sln --configuration Release --no-build --verbosity normal` with 32 passing tests, package validation for three packages, doctor/models CLI checks, Docker image build and sandbox smoke, scripted E2E fixture, `dotnet format Bubo.sln --verify-no-changes`, and `git diff --check`.
 - bubo-main-stack-integration post-PR QA posted on PR #14.
 - bubo-tool-hardening local validation passed: `dotnet build Bubo.sln --configuration Release --no-restore`, `dotnet test Bubo.sln --configuration Release --no-build --verbosity normal` with 44 passing tests, scripted E2E fixture, live `git_apply_patch` fixture, `dotnet format Bubo.sln --verify-no-changes`, and `git diff --check`.
-- bubo-tool-hardening post-PR QA posted on PR #16; local QA passed and GitHub Actions `dotnet` workflow run #6 passed.
+- bubo-tool-hardening post-PR QA posted on PR #16; local QA passed and the latest GitHub Actions `dotnet` workflow passed.
 
 ## Goal Completion Report
 - Generated at `.ai/goals/bubo-local-cloud-agent/GOAL_REPORT.md`.
