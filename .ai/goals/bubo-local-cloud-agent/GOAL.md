@@ -40,11 +40,11 @@ Implement Bubo as a .NET 8 LTS coding-agent runtime with a Docker sandbox, local
 7. [x] Harden Bubo workspace tools and patch flow (`../.ai/tasks/bubo-tool-hardening/TASK.md`)
 8. [x] Add Bubo inference-driven action loop (`../.ai/tasks/bubo-inference-action-loop/TASK.md`)
 9. [x] Add Bubo configuration loading (`../.ai/tasks/bubo-config-loading/TASK.md`)
-10. [ ] Add Bubo iterative inference repair loop (`../.ai/tasks/bubo-iterative-repair-loop/TASK.md`)
+10. [x] Add Bubo iterative inference repair loop (`../.ai/tasks/bubo-iterative-repair-loop/TASK.md`)
 
 ## Current Task
 
-Continuing goal execution with stacked task #21: add Bubo iterative inference repair loop.
+Goal implementation is complete through stacked task #21. PR #20 and PR #22 remain open for human review and merge approval.
 
 ## Branch Chain
 - base-structure | base: `main` | head: `chore/opencaw-base-structure` | PR: https://github.com/TimothyMeadows/Bubo/pull/1 | depends on: none | status: merged
@@ -57,7 +57,7 @@ Continuing goal execution with stacked task #21: add Bubo iterative inference re
 - bubo-tool-hardening | base: `main` | head: `feature/bubo-tool-hardening` | PR: https://github.com/TimothyMeadows/Bubo/pull/16 | depends on: bubo-main-stack-integration | status: post_pr_qa_passed
 - bubo-inference-action-loop | base: `main` | head: `feature/bubo-inference-action-loop` | PR: https://github.com/TimothyMeadows/Bubo/pull/18 | depends on: bubo-tool-hardening | status: post_pr_qa_passed
 - bubo-config-loading | base: `main` | head: `feature/bubo-config-loading` | PR: https://github.com/TimothyMeadows/Bubo/pull/20 | depends on: bubo-inference-action-loop | status: post_pr_qa_passed
-- bubo-iterative-repair-loop | base: `feature/bubo-config-loading` | head: `feature/bubo-iterative-repair-loop` | PR: pending | depends on: bubo-config-loading | status: in_progress
+- bubo-iterative-repair-loop | base: `feature/bubo-config-loading` | head: `feature/bubo-iterative-repair-loop` | PR: https://github.com/TimothyMeadows/Bubo/pull/22 | depends on: bubo-config-loading | status: post_pr_qa_passed
 
 ## Automation Rules
 - Complete one task at a time unless the project-manager lane plan explicitly marks safe parallel work.
@@ -82,6 +82,7 @@ Continuing goal execution with stacked task #21: add Bubo iterative inference re
 - Harden Bubo workspace tools and patch flow: https://github.com/TimothyMeadows/Bubo/pull/16
 - Add Bubo inference-driven action loop: https://github.com/TimothyMeadows/Bubo/pull/18
 - Add Bubo configuration loading: https://github.com/TimothyMeadows/Bubo/pull/20
+- Add Bubo iterative inference repair loop: https://github.com/TimothyMeadows/Bubo/pull/22
 
 ## QA Evidence
 
@@ -104,7 +105,8 @@ Continuing goal execution with stacked task #21: add Bubo iterative inference re
 - bubo-inference-action-loop post-PR QA posted on PR #18; local QA passed and the GitHub Actions `dotnet` workflow passed.
 - bubo-config-loading local validation passed: `dotnet build Bubo.sln --configuration Release --no-restore`, `dotnet test Bubo.sln --configuration Release --no-build --verbosity normal` with 76 passing tests, `dotnet format Bubo.sln --verify-no-changes --no-restore`, `git diff --check`, config-driven CLI smoke, and `dotnet pack src/LocalAgent.Cli/LocalAgent.Cli.csproj --configuration Release --no-build --output artifacts/packages`. Docker live sandbox smoke is blocked locally because Docker is not installed on this host.
 - bubo-config-loading post-PR QA posted on PR #20; local QA passed and the GitHub Actions `dotnet` workflow passed.
-- bubo-iterative-repair-loop local validation passed: `dotnet build Bubo.sln --configuration Release --no-restore`, focused runtime tests with 44 passing tests, focused iterative-loop filter with 4 passing tests, `dotnet test Bubo.sln --configuration Release --no-build --verbosity normal` with 81 passing tests, `dotnet format Bubo.sln --verify-no-changes --no-restore`, `git diff --check`, and package validation for `LlamaCppSharp.Native`, `LlamaCppSharp`, and `LocalAgent.Cli`. Docker live sandbox smoke is blocked locally because Docker is not installed on this host.
+- bubo-iterative-repair-loop local validation passed: `dotnet build Bubo.sln --configuration Release --no-restore`, focused runtime tests with 44 passing tests, focused iterative-loop filter with 4 passing tests, side-effect auditability focused regression with 2 passing tests, `dotnet test Bubo.sln --configuration Release --no-build --verbosity minimal` with 82 passing tests after the auditability fix, `dotnet format Bubo.sln --verify-no-changes --no-restore`, `git diff --check`, and package validation for `LlamaCppSharp.Native`, `LlamaCppSharp`, and `LocalAgent.Cli`. Docker live sandbox smoke is blocked locally because Docker is not installed on this host.
+- bubo-iterative-repair-loop post-PR QA posted on PR #22 and mirrored to issue #21; initial GitHub Actions `dotnet` workflow run #16 passed for head `b29bfd4732ede5ffc7c0cc9d5a372583d2fda98b`, and a follow-up auditability fix was validated locally before final goal reporting.
 
 ## Goal Completion Report
 - Generated at `.ai/goals/bubo-local-cloud-agent/GOAL_REPORT.md`.
@@ -118,4 +120,5 @@ Continuing goal execution with stacked task #21: add Bubo iterative inference re
 - Task #15 hardens workspace/patch tools after PR #14 merged; issue #15 is linked to PR #16 and should close on merge.
 - Task #17 connects inference providers to guarded action generation after PR #16 merged; PR #18 merged and issue #17 is closed as completed.
 - Task #19 adds external configuration loading after PR #18 merged; issue #19 is linked to PR #20.
-- Task #21 adds an iterative inference repair loop stacked on PR #20 because it uses the config/limit wiring from that branch.
+- Task #21 adds an iterative inference repair loop stacked on PR #20 because it uses the config/limit wiring from that branch; issue #21 is linked to PR #22.
+- Human merge order for the remaining open stack is PR #20 first, then PR #22 after confirming checks/base freshness.

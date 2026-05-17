@@ -456,19 +456,25 @@ public sealed class AgentRunner
             Message = $"Inference-generated actions failed after {maxIterations} iteration(s)."
         });
 
-        return lastFailure is null
-            ? CreateNoOpResult(events)
-            : lastFailure with
+        if (lastFailure is null)
+        {
+            return CreateNoOpResult(events);
+        }
+
+        var finalFailure = lastFailure with
+        {
+            Summary = $"Bubo stopped after {maxIterations} failed inference-generated action iteration(s).",
+            IssuesOrRisks = lastFailure.IssuesOrRisks
+                .Concat(new[] { $"Reached maxIterations ({maxIterations}) for inference-generated actions." })
+                .ToArray(),
+            NextSteps = new[]
             {
-                Summary = $"Bubo stopped after {maxIterations} failed inference-generated action iteration(s).",
-                IssuesOrRisks = lastFailure.IssuesOrRisks
-                    .Concat(new[] { $"Reached maxIterations ({maxIterations}) for inference-generated actions." })
-                    .ToArray(),
-                NextSteps = new[]
-                {
-                    "Review agent-debug.jsonl for the failed iterations, then adjust the task, model prompt, or use a deterministic bubo-actions block."
-                }
-            };
+                "Review agent-debug.jsonl for the failed iterations, then adjust the task, model prompt, or use a deterministic bubo-actions block."
+            }
+        };
+        return AttachPriorAttemptEvidence(
+            previousFailures.Take(Math.Max(0, previousFailures.Count - 1)).ToArray(),
+            finalFailure);
     }
 
     private static string BuildInferenceObservation(int iteration, ActionExecutionOutcome outcome)

@@ -13,6 +13,11 @@ Bubo now has a bounded inference-generated action repair loop for inputs without
 - `dotnet format Bubo.sln --verify-no-changes --no-restore`
 - `git diff --check`
 - `dotnet test Bubo.sln --configuration Release --no-build --verbosity minimal`
+- `dotnet test tests/LocalAgent.Runtime.Tests/LocalAgent.Runtime.Tests.csproj --configuration Release --filter "FullyQualifiedName~RunAsyncReportsPriorSideEffectsWhenInferenceIterationLimitIsReached|FullyQualifiedName~RunAsyncStopsAfterInferenceIterationLimit" --verbosity normal`
+- `dotnet build Bubo.sln --configuration Release --no-restore`
+- `dotnet test Bubo.sln --configuration Release --no-build --verbosity minimal`
+- `dotnet format Bubo.sln --verify-no-changes --no-restore`
+- `git diff --check`
 - `dotnet pack src/LlamaCppSharp.Native/LlamaCppSharp.Native.csproj --configuration Release --no-build --output artifacts/packages`
 - `dotnet pack src/LlamaCppSharp/LlamaCppSharp.csproj --configuration Release --no-build --output artifacts/packages`
 - `dotnet pack src/LocalAgent.Cli/LocalAgent.Cli.csproj --configuration Release --no-build --output artifacts/packages`
@@ -21,7 +26,8 @@ Bubo now has a bounded inference-generated action repair loop for inputs without
 
 - Focused runtime tests passed: 44 tests after implementation.
 - Focused iterative-loop filter passed: 4 tests.
-- Full solution tests passed: 81 tests.
+- Lane-2 auditability follow-up passed: max-iteration exhaustion now reports prior partial side effects, with a focused 2-test run.
+- Full solution tests passed: 82 tests after the auditability fix.
 - Build, format, diff, and package validation passed.
 - `git diff --check` reported line-ending normalization warnings only.
 - Docker live sandbox smoke remains blocked locally because Docker is not installed on this host.

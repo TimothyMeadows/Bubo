@@ -488,6 +488,85 @@ public sealed class AgentRunnerTests
     }
 
     [Fact]
+    public async Task RunAsyncReportsPriorSideEffectsWhenInferenceIterationLimitIsReached()
+    {
+        var workspace = CreateWorkspace();
+        var inputPath = Path.Combine(workspace, "INPUT.md");
+        var outputPath = Path.Combine(workspace, "OUTPUT.md");
+        var targetPath = Path.Combine(workspace, "notes.txt");
+        await File.WriteAllTextAsync(inputPath, "# Task\n\nWrite and patch the note.");
+        await File.WriteAllTextAsync(targetPath, "hello");
+        var provider = new FakeInferenceProvider(new[]
+        {
+            """
+            ```bubo-actions
+            [
+              {
+                "tool": "write_file",
+                "arguments": {
+                  "path": "notes.txt",
+                  "content": "partial"
+                }
+              },
+              {
+                "tool": "patch_file",
+                "arguments": {
+                  "path": "notes.txt",
+                  "old": "missing",
+                  "new": "ignored"
+                }
+              }
+            ]
+            ```
+            """,
+            """
+            ```bubo-actions
+            [
+              {
+                "tool": "patch_file",
+                "arguments": {
+                  "path": "notes.txt",
+                  "old": "still missing",
+                  "new": "ignored"
+                }
+              }
+            ]
+            ```
+            """
+        });
+
+        var runner = new AgentRunner(
+            new FakeSandboxRunner(),
+            inferenceProvider: provider,
+            config: new AgentRunConfig
+            {
+                Limits = new AgentLimits { MaxIterations = 2 }
+            });
+        var result = await runner.RunAsync(
+            new AgentRunRequest
+            {
+                WorkspacePath = workspace,
+                InputPath = inputPath,
+                OutputPath = outputPath,
+                Mode = AgentMode.Cloud
+            },
+            CancellationToken.None);
+
+        Assert.False(result.Success);
+        Assert.Equal(2, provider.CallCount);
+        Assert.Equal("partial", await File.ReadAllTextAsync(targetPath));
+        Assert.Contains("notes.txt", result.FilesChanged);
+        Assert.Contains(result.ChangesMade, change => change.Contains("Wrote `notes.txt`", StringComparison.Ordinal));
+        Assert.Contains(result.IssuesOrRisks, issue => issue.Contains("Earlier inference iteration issue", StringComparison.Ordinal));
+        Assert.Contains(result.IssuesOrRisks, issue => issue.Contains("Reached maxIterations (2)", StringComparison.Ordinal));
+
+        var output = await File.ReadAllTextAsync(outputPath);
+        Assert.Contains("notes.txt", output);
+        Assert.Contains("Wrote `notes.txt`", output);
+        Assert.Contains("Reached maxIterations (2)", output);
+    }
+
+    [Fact]
     public async Task RunAsyncReportsFailureWhenRetryReturnsNoActionsAfterFailure()
     {
         var workspace = CreateWorkspace();

@@ -4,6 +4,10 @@
 
 https://github.com/TimothyMeadows/Bubo/issues/21
 
+## Pull Request
+
+https://github.com/TimothyMeadows/Bubo/pull/22
+
 ## Flow
 
 - Type: goal
@@ -52,8 +56,21 @@ Expand Bubo's one-shot inference action proposal into a bounded iterative loop t
 - `dotnet test tests/LocalAgent.Runtime.Tests/LocalAgent.Runtime.Tests.csproj --configuration Release --verbosity minimal` passed with 44 tests.
 - `dotnet build Bubo.sln --configuration Release --no-restore` passed.
 - Focused iterative-loop filter passed with 4 tests.
-- `dotnet test Bubo.sln --configuration Release --no-build --verbosity normal` passed with 81 tests.
+- Added a side-effect auditability regression test after lane-2 review found that max-iteration exhaustion could under-report prior partial writes.
+- `dotnet test tests/LocalAgent.Runtime.Tests/LocalAgent.Runtime.Tests.csproj --configuration Release --filter "FullyQualifiedName~RunAsyncReportsPriorSideEffectsWhenInferenceIterationLimitIsReached|FullyQualifiedName~RunAsyncStopsAfterInferenceIterationLimit" --verbosity normal` passed with 2 tests.
+- `dotnet build Bubo.sln --configuration Release --no-restore` passed after the auditability fix.
+- `dotnet test Bubo.sln --configuration Release --no-build --verbosity minimal` passed with 82 tests.
+- `dotnet test Bubo.sln --configuration Release --no-build --verbosity normal` passed with 81 tests before the auditability fix and the focused side-effect test was added.
 - `dotnet format Bubo.sln --verify-no-changes --no-restore` passed after formatting one whitespace issue.
 - `git diff --check` passed with line-ending normalization warnings only.
-- `dotnet test Bubo.sln --configuration Release --no-build --verbosity minimal` passed with 81 tests after formatting.
+- `dotnet test Bubo.sln --configuration Release --no-build --verbosity minimal` passed with 82 tests after the auditability fix.
 - Package validation passed for `LlamaCppSharp.Native`, `LlamaCppSharp`, and `LocalAgent.Cli`.
+
+## Post-PR QA
+
+- PR #22 was opened against `feature/bubo-config-loading`.
+- GitHub Actions `dotnet` workflow run #16 passed for initial head `b29bfd4732ede5ffc7c0cc9d5a372583d2fda98b`.
+- Post-PR QA evidence was posted to PR #22 and mirrored to issue #21 before the auditability follow-up.
+- A lane-2 auditability risk was resolved before finalizing the task: max-iteration exhaustion now aggregates prior failed-attempt evidence, including partial side effects.
+- Final local validation after the follow-up fix passed: build, full tests with 82 tests, format check, diff check, and package validation.
+- Docker live sandbox smoke remains blocked locally because Docker is not installed on this host.

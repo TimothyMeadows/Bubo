@@ -178,3 +178,7 @@ Implementation impact:
 
 Files changed by lane: None.
 ```
+
+## Post-PR Lane Follow-Up
+
+Lane 2 performed a final read-only diff audit after PR #22 opened and found one auditability edge case: max-iteration exhaustion returned the final failed attempt without aggregating prior failed-attempt side effects. The main lane fixed this before finalizing the task by composing the final failure through `AttachPriorAttemptEvidence` and adding `RunAsyncReportsPriorSideEffectsWhenInferenceIterationLimitIsReached`.
