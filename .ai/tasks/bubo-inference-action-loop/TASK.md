@@ -57,6 +57,9 @@ Connect Bubo's local/cloud inference providers to the runtime so tasks without a
   - `powershell -ExecutionPolicy Bypass -File .\scripts\run-e2e-fixture.ps1 -Configuration Release`
   - `dotnet format Bubo.sln --verify-no-changes`
   - `git diff --check`
+- PR opened: https://github.com/TimothyMeadows/Bubo/pull/18
+- Post-PR QA posted on PR #18 and mirrored to issue #17.
+- GitHub Actions `dotnet` workflow passed.
 
 ## Issue
 
