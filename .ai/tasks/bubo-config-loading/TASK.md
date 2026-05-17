@@ -63,3 +63,9 @@ Add external configuration loading so Bubo can configure local/cloud mode, plann
 - `git diff --check` passed; Git reported line-ending normalization warnings only.
 - Config-driven CLI smoke passed with workspace-default `bubo.config.json` and deterministic `write_file` action.
 - `dotnet pack src/LocalAgent.Cli/LocalAgent.Cli.csproj --configuration Release --no-build --output artifacts/packages` passed.
+
+## Post-PR QA
+
+- PR: https://github.com/TimothyMeadows/Bubo/pull/20
+- QA comment posted on PR #20.
+- GitHub Actions `dotnet` workflow run #14 passed for head `221e565483e665b8e179d3944d4d2a2fe26f2c83`.

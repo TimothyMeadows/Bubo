@@ -8,4 +8,4 @@
 6. [x] Integrate Bubo goal stack onto main (`.ai/tasks/bubo-main-stack-integration/TASK.md`)
 7. [x] Harden Bubo workspace tools and patch flow (`.ai/tasks/bubo-tool-hardening/TASK.md`)
 8. [x] Add Bubo inference-driven action loop (`.ai/tasks/bubo-inference-action-loop/TASK.md`)
-9. [ ] Add Bubo configuration loading (`.ai/tasks/bubo-config-loading/TASK.md`)
+9. [x] Add Bubo configuration loading (`.ai/tasks/bubo-config-loading/TASK.md`)

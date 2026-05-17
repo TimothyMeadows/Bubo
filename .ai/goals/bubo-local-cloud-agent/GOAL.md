@@ -43,7 +43,7 @@ Implement Bubo as a .NET 8 LTS coding-agent runtime with a Docker sandbox, local
 
 ## Current Task
 
-Continuing goal execution after PR #18 merged. Current task: add Bubo configuration loading.
+Task #19 / PR #20 passed post-PR QA and is ready for human review/merge.
 
 ## Branch Chain
 - base-structure | base: `main` | head: `chore/opencaw-base-structure` | PR: https://github.com/TimothyMeadows/Bubo/pull/1 | depends on: none | status: merged
@@ -55,7 +55,7 @@ Continuing goal execution after PR #18 merged. Current task: add Bubo configurat
 - bubo-main-stack-integration | base: `main` | head: `feature/bubo-main-stack-integration` | PR: https://github.com/TimothyMeadows/Bubo/pull/14 | depends on: bubo-e2e-hardening-packaging | status: post_pr_qa_passed
 - bubo-tool-hardening | base: `main` | head: `feature/bubo-tool-hardening` | PR: https://github.com/TimothyMeadows/Bubo/pull/16 | depends on: bubo-main-stack-integration | status: post_pr_qa_passed
 - bubo-inference-action-loop | base: `main` | head: `feature/bubo-inference-action-loop` | PR: https://github.com/TimothyMeadows/Bubo/pull/18 | depends on: bubo-tool-hardening | status: post_pr_qa_passed
-- bubo-config-loading | base: `main` | head: `feature/bubo-config-loading` | PR: https://github.com/TimothyMeadows/Bubo/pull/20 | depends on: bubo-inference-action-loop | status: pr_open_post_pr_qa_in_progress
+- bubo-config-loading | base: `main` | head: `feature/bubo-config-loading` | PR: https://github.com/TimothyMeadows/Bubo/pull/20 | depends on: bubo-inference-action-loop | status: post_pr_qa_passed
 
 ## Automation Rules
 - Complete one task at a time unless the project-manager lane plan explicitly marks safe parallel work.
@@ -101,6 +101,7 @@ Continuing goal execution after PR #18 merged. Current task: add Bubo configurat
 - bubo-inference-action-loop local validation passed: `dotnet build Bubo.sln --configuration Release --no-restore`, `dotnet test Bubo.sln --configuration Release --no-build --verbosity normal` with 60 passing tests, scripted E2E fixture, `dotnet format Bubo.sln --verify-no-changes`, and `git diff --check`.
 - bubo-inference-action-loop post-PR QA posted on PR #18; local QA passed and the GitHub Actions `dotnet` workflow passed.
 - bubo-config-loading local validation passed: `dotnet build Bubo.sln --configuration Release --no-restore`, `dotnet test Bubo.sln --configuration Release --no-build --verbosity normal` with 76 passing tests, `dotnet format Bubo.sln --verify-no-changes --no-restore`, `git diff --check`, config-driven CLI smoke, and `dotnet pack src/LocalAgent.Cli/LocalAgent.Cli.csproj --configuration Release --no-build --output artifacts/packages`. Docker live sandbox smoke is blocked locally because Docker is not installed on this host.
+- bubo-config-loading post-PR QA posted on PR #20; local QA passed and the GitHub Actions `dotnet` workflow passed.
 
 ## Goal Completion Report
 - Generated at `.ai/goals/bubo-local-cloud-agent/GOAL_REPORT.md`.
