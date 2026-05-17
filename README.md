@@ -4,7 +4,11 @@
   <img src="logo.png" alt="Bubo robotic owl logo" width="220" />
 </p>
 
-Bubo is a local-first .NET 8 coding-agent runtime. It reads a task from `INPUT.md`, works inside a repository workspace, runs guarded tools, and writes auditable results to Markdown and JSONL artifacts.
+Bubo is a local-first .NET 8 coding-agent runtime. It reads a task from `INPUT.md`, works inside a supplied code folder, runs guarded tools, and writes auditable results to Markdown and JSONL artifacts.
+
+<p align="center">
+  <img src="flow.png" alt="Bubo agent flow diagram" />
+</p>
 
 The name comes from Bubo, the mythical robotic owl created by Hephaestus.
 
@@ -50,32 +54,49 @@ Build the sandbox image:
 docker build --pull -f docker/bubo-sandbox/Dockerfile -t bubo-sandbox:local docker/bubo-sandbox
 ```
 
-Check the sandbox:
+CPU example:
 
 ```powershell
-dotnet run --no-build --configuration Release --project src/LocalAgent.Cli/LocalAgent.Cli.csproj -- sandbox test --workspace .
+dotnet run --no-build --configuration Release --project src/LocalAgent.Cli/LocalAgent.Cli.csproj -- sandbox test --workspace . --gpu none
+pwsh ./scripts/test-native-package.ps1 -Backend cpu -BuildNative
 ```
 
-Run Bubo against an OpenCaw-enabled workspace:
+NVIDIA GPU example:
 
 ```powershell
-dotnet run --project src/LocalAgent.Cli/LocalAgent.Cli.csproj -- run --workspace ./repo
+dotnet run --no-build --configuration Release --project src/LocalAgent.Cli/LocalAgent.Cli.csproj -- sandbox test --workspace . --gpu nvidia
+pwsh ./scripts/test-native-package.ps1 -Rid win-x64 -Backend cuda -CudaArchitectures "120" -CudaToolkitRoot "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.2" -Generator Ninja -BuildNative
 ```
 
-For an isolated throwaway fixture that does not have a `.opencaw` submodule, add `--no-opencaw`.
+For RTX 50xx / Blackwell GPUs, use CUDA architecture `120` and CUDA Toolkit 12.8 or newer. Adjust `-Rid` and `-CudaToolkitRoot` for your platform.
+
+Run Bubo locally against an OpenCaw-enabled code folder:
+
+```powershell
+dotnet run --project src/LocalAgent.Cli/LocalAgent.Cli.csproj -- run --folder ./repo
+```
+
+Cloud mode example with `codex-cli`:
+
+```powershell
+codex --version
+dotnet run --project src/LocalAgent.Cli/LocalAgent.Cli.csproj -- run --folder ./repo --mode cloud
+```
+
+Bubo always initializes OpenCaw before reading input. The target folder must contain or be able to create a verified `.opencaw` checkout.
 
 ## What Bubo Does
 
 Bubo is built for coding-agent workflows:
 
 - Read user instructions from `INPUT.md`.
-- Inspect and modify files inside one workspace.
+- Inspect and modify files inside one code folder.
 - Execute deterministic user-provided tool actions.
 - Ask a local or cloud inference provider for guarded tool actions when no deterministic action block is provided.
-- Initialize an OpenCaw session from the workspace `.opencaw` submodule before reading `INPUT.md`.
+- Initialize an OpenCaw session from the code folder `.opencaw` submodule before reading `INPUT.md`.
 - Retry inference-generated repair actions within configured loop limits.
 - Run build, test, Git, and command tools through bounded runtime APIs.
-- Write `OUTPUT.md`, `agent-debug.jsonl`, and `agent-transcript.md`.
+- Write `.ai/artifacts/OUTPUT.md`, `.ai/artifacts/agent-debug.jsonl`, and `.ai/artifacts/agent-transcript.md`.
 - Keep command execution inside a Docker sandbox.
 
 Bubo treats model output as untrusted. The model proposes actions; the runtime validates and executes them.
@@ -100,15 +121,15 @@ LocalAgent.Runtime
    +--> Docker sandbox for command execution
    |
    v
-OUTPUT.md
-agent-debug.jsonl
-agent-transcript.md
+.ai/artifacts/OUTPUT.md
+.ai/artifacts/agent-debug.jsonl
+.ai/artifacts/agent-transcript.md
 ```
 
 Run behavior:
 
 1. Load CLI options and optional configuration.
-2. Validate workspace, input, and output paths.
+2. Validate the code folder, input, and output paths.
 3. Update and verify the OpenCaw submodule when enabled.
 4. Run the OpenCaw host scaffold bootstrap when required, preserving existing `.ai` memory, fragments, learnings, and task files.
 5. Load OpenCaw baseline instructions plus host repository context into the inference system prompt.
@@ -118,23 +139,28 @@ Run behavior:
 9. Execute generated actions through the model-safe tool registry.
 10. Feed concise tool observations into retries after retryable tool failures.
 11. Stop on success, no actions, invalid action JSON, unknown tools, non-retryable safety failures, provider failure, or loop limits.
-12. Write the output report, transcript, and debug log.
+12. Write the output report, transcript, and debug log under `.ai/artifacts`.
 
 ## Input And Output Contract
 
-Input:
+Input can be a Markdown file path or inline Markdown passed with `--input`:
 
 ```text
 INPUT.md
 ```
 
-Output:
+The input file may live outside the code folder. If the `--input` value is not an existing Markdown file path and does not look like a missing path, Bubo treats the value itself as the Markdown prompt.
+
+Bubo-owned report artifacts:
 
 ```text
-OUTPUT.md
-agent-debug.jsonl
-agent-transcript.md
+.ai/artifacts/OUTPUT.md
+.ai/artifacts/agent-debug.jsonl
+.ai/artifacts/agent-transcript.md
 ```
+
+The output report and sidecar artifacts are written under `.ai/artifacts` inside the code folder. `--output` may name a file or subpath under that artifact root, but paths outside `.ai/artifacts` are rejected.
+Code edits, generic file tools, Git operations, OpenCaw context, and sandboxed commands still operate on the paths they are given inside `--folder`.
 
 `OUTPUT.md` uses this stable shape:
 
@@ -168,9 +194,9 @@ Main command:
 
 ```bash
 bubo run \
-  --workspace ./repo \
-  --input ./repo/INPUT.md \
-  --output ./repo/OUTPUT.md \
+  --folder ./repo \
+  --input ./prompts/INPUT.md \
+  --output reports/OUTPUT.md \
   --mode local \
   --config ./bubo.config.json
 ```
@@ -178,20 +204,19 @@ bubo run \
 When running from source:
 
 ```bash
-dotnet run --project src/LocalAgent.Cli/LocalAgent.Cli.csproj -- run --workspace ./repo
+dotnet run --project src/LocalAgent.Cli/LocalAgent.Cli.csproj -- run --folder ./repo
 ```
 
 Defaults:
 
 ```text
---workspace current directory
---input <workspace>/INPUT.md
---output <workspace>/OUTPUT.md
+--folder current directory
+--workspace compatibility alias for --folder
+--input <folder>/INPUT.md, or inline Markdown when explicitly supplied
+--output <folder>/.ai/artifacts/OUTPUT.md
 --mode local
---config <workspace>/bubo.config.json when present
---opencaw enabled
+--config <folder>/bubo.config.json when present
 --opencaw-update true
---opencaw-bootstrap true
 ```
 
 Utility commands:
@@ -217,18 +242,18 @@ dotnet run --project src/LocalAgent.Cli/LocalAgent.Cli.csproj -- native test --b
 Configuration precedence:
 
 1. Built-in defaults.
-2. Workspace `bubo.config.json`.
+2. Folder `bubo.config.json`.
 3. Explicit `--config`.
 4. Explicit CLI flags.
 
 `--mode` is a CLI override. If config says `cloud` and the command says `--mode local`, Bubo runs local.
 
-Workspace-default config is treated as repository content. It can configure mode, model profiles, and safe runtime limits. It cannot set trusted sandbox policy such as network mode, GPU mode, Docker image, host model mounts, or hardening switches.
+Folder-default config is treated as repository content. It can configure mode, model profiles, and safe runtime limits. It cannot set trusted sandbox policy such as network mode, GPU mode, Docker image, host model mounts, or hardening switches.
 
 Use explicit `--config` when you deliberately trust sandbox settings:
 
 ```bash
-bubo run --workspace ./repo --config ./bubo.trusted.config.json
+bubo run --folder ./repo --config ./bubo.trusted.config.json
 ```
 
 Example:
@@ -268,16 +293,14 @@ Example:
 }
 ```
 
-OpenCaw bootstrap is enabled by default in the CLI. It expects `.opencaw` to be the OpenCaw submodule, verifies the checkout origin, updates it when configured, runs the scaffold script when required, and preserves project-local `.ai` state. Use these flags for explicit control:
+OpenCaw bootstrap is mandatory. Bubo expects `.opencaw` to be the OpenCaw submodule, verifies the checkout origin, updates it when configured, runs the scaffold script when required, and preserves project-local `.ai` state. Use these flags for explicit path/ref/update control:
 
 ```bash
-bubo run --workspace ./repo --no-opencaw
-bubo run --workspace ./repo --no-opencaw-update
-bubo run --workspace ./repo --no-opencaw-bootstrap
-bubo run --workspace ./repo --opencaw-path .opencaw --opencaw-ref main
+bubo run --folder ./repo --opencaw-update false
+bubo run --folder ./repo --opencaw-path .opencaw --opencaw-ref main
 ```
 
-OpenCaw path/ref/bootstrap policy in JSON config requires explicit `--config`; workspace-default `bubo.config.json` cannot silently redirect bootstrap code execution.
+OpenCaw path/ref/update policy in JSON config requires explicit `--config`; folder-default `bubo.config.json` cannot silently redirect bootstrap code execution. There is no CLI or config switch that disables OpenCaw loading or bootstrap.
 
 Trusted sandbox policy example:
 
@@ -311,16 +334,18 @@ Say hello from Bubo and prove the output contract works.
 Run:
 
 ```powershell
-dotnet run --project .\src\LocalAgent.Cli -- run --workspace $workspace --mode local --no-opencaw
+git -C $workspace init
+git -C $workspace submodule add -b main https://github.com/TimothyMeadows/OpenCaw .opencaw
+dotnet run --project .\src\LocalAgent.Cli -- run --folder $workspace --mode local
 ```
 
 Inspect:
 
 ```powershell
 Get-ChildItem $workspace
-Get-Content (Join-Path $workspace "OUTPUT.md")
-Get-Content (Join-Path $workspace "agent-transcript.md")
-Get-Content (Join-Path $workspace "agent-debug.jsonl")
+Get-Content (Join-Path $workspace ".ai/artifacts/OUTPUT.md")
+Get-Content (Join-Path $workspace ".ai/artifacts/agent-transcript.md")
+Get-Content (Join-Path $workspace ".ai/artifacts/agent-debug.jsonl")
 ```
 
 ### Example 2: Deterministic Tool Actions
@@ -356,7 +381,7 @@ Write and patch a generated note.
 Run:
 
 ```bash
-bubo run --workspace ./repo
+bubo run --folder ./repo
 ```
 
 The deterministic action fence executes once. It does not invoke inference.
@@ -396,7 +421,7 @@ Check the .NET SDK version.
 Cloud mode uses `codex-cli` behind the same inference abstraction:
 
 ```bash
-bubo run --workspace ./repo --mode cloud
+bubo run --folder ./repo --mode cloud
 ```
 
 When OpenCaw is enabled, the Codex prompt receives OpenCaw baseline instructions and host `.ai` context as system context before the user task.
@@ -439,7 +464,7 @@ Container layout:
 ```text
 /workspace  writable workspace
 /input      read-only task input
-/output     writable output
+/output     writable artifact area rooted in the same folder
 /models     read-only model mount
 /cache      writable cache
 ```
@@ -592,12 +617,12 @@ Default rules:
 - No host secrets mounted by default.
 - Network disabled by default.
 - Input and model mounts are read-only.
-- All writable paths stay inside the workspace or configured output/cache mounts.
+- Tool writes stay inside the code folder on their requested paths. Bubo-owned report artifacts stay under `.ai/artifacts`.
 - Command execution goes through Docker.
 - Tool arguments are validated before execution.
 - Git hooks and remote mutations are not trusted by default.
 - Bubo does not push, open PRs, merge, or publish unless explicitly configured or requested.
-- OpenCaw bootstrap only runs from the verified workspace `.opencaw` checkout and records observable bootstrap/update events.
+- OpenCaw bootstrap only runs from the verified folder `.opencaw` checkout and records observable bootstrap/update events.
 - Output artifacts include summaries, tool observations, and decisions, not hidden chain-of-thought.
 
 Threats the design accounts for:
@@ -610,7 +635,7 @@ Threats the design accounts for:
 - Docker escape risk.
 - GPU device exposure.
 - Malicious package install scripts.
-- Accidental edits outside the workspace.
+- Accidental edits outside the code folder.
 
 ## Developer Onboarding
 
@@ -733,10 +758,10 @@ Agent expectations:
 
 - Do not assume network access.
 - Do not assume secrets are mounted.
-- Do not write outside the workspace.
+- Do not write code changes outside the folder.
 - Do not run destructive Git operations without explicit approval.
 - Prefer small patches and focused tests.
-- Report commands run and validation results in `OUTPUT.md`.
+- Report commands run and validation results in `.ai/artifacts/OUTPUT.md`.
 - Keep hidden chain-of-thought out of artifacts.
 
 ## Troubleshooting
@@ -747,7 +772,15 @@ Create one:
 
 ```bash
 echo "# Task" > INPUT.md
-bubo run --workspace .
+bubo run --folder .
+```
+
+Or pass inline Markdown directly:
+
+```bash
+bubo run --folder . --input "# Task
+
+Summarize this repository."
 ```
 
 ### Docker Is Not On PATH

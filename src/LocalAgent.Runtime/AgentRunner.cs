@@ -34,15 +34,9 @@ public sealed class AgentRunner
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var guard = new WorkspaceGuard(request.WorkspacePath);
-        var inputPath = guard.ResolveInsideWorkspace(request.InputPath);
-        var outputPath = guard.ResolveInsideWorkspace(request.OutputPath);
-
-        if (!Directory.Exists(guard.WorkspaceRoot))
-        {
-            throw new DirectoryNotFoundException(
-                $"Workspace does not exist: {guard.WorkspaceRoot}");
-        }
+        var paths = AgentRunPathResolver.ResolveWorkspaceAndOutput(request);
+        var guard = new WorkspaceGuard(paths.WorkspaceRoot);
+        var outputPath = paths.OutputPath;
 
         Directory.CreateDirectory(Path.GetDirectoryName(outputPath) ?? guard.WorkspaceRoot);
         var events = new List<TranscriptEvent>
@@ -54,7 +48,9 @@ public sealed class AgentRunner
                 Data = new Dictionary<string, string>(StringComparer.Ordinal)
                 {
                     ["mode"] = request.Mode.ToString(),
-                    ["workspace"] = guard.WorkspaceRoot
+                    ["workspace"] = guard.WorkspaceRoot,
+                    ["input"] = AgentRunPathResolver.DescribeInput(request.InputPath, guard),
+                    ["output"] = DisplayPath(guard, outputPath)
                 }
             }
         };
@@ -112,12 +108,8 @@ public sealed class AgentRunner
             return failure;
         }
 
-        if (!File.Exists(inputPath))
-        {
-            throw new FileNotFoundException("Input file does not exist.", inputPath);
-        }
-
-        var input = await File.ReadAllTextAsync(inputPath, cancellationToken);
+        var runInput = await AgentRunPathResolver.ReadInputAsync(request.InputPath, guard, cancellationToken);
+        var input = runInput.Markdown;
         var actions = AgentInputActionParser.Parse(input);
         events.Add(new TranscriptEvent
         {
@@ -125,7 +117,7 @@ public sealed class AgentRunner
             Message = "Read task input.",
             Data = new Dictionary<string, string>(StringComparer.Ordinal)
             {
-                ["path"] = Path.GetRelativePath(guard.WorkspaceRoot, inputPath),
+                ["source"] = DisplayInputSource(guard, runInput),
                 ["characters"] = input.Length.ToString()
             }
         });
@@ -151,6 +143,20 @@ public sealed class AgentRunner
         await WriteRunArtifactsAsync(outputPath, guard.WorkspaceRoot, result, events, cancellationToken);
 
         return result;
+    }
+
+    private static string DisplayPath(WorkspaceGuard guard, string path)
+    {
+        return guard.IsInsideWorkspace(path)
+            ? Path.GetRelativePath(guard.WorkspaceRoot, path)
+            : path;
+    }
+
+    private static string DisplayInputSource(WorkspaceGuard guard, AgentRunInput input)
+    {
+        return input.IsInline
+            ? input.Source
+            : DisplayPath(guard, input.Source);
     }
 
     private static async Task WriteRunArtifactsAsync(
@@ -804,7 +810,7 @@ public sealed class AgentRunner
             {
                 "Read INPUT.md.",
                 $"Execute the {actionSource} with guarded tools.",
-                "Write auditable OUTPUT.md, agent-debug.jsonl, and agent-transcript.md."
+                "Write auditable OUTPUT.md, agent-debug.jsonl, and agent-transcript.md under .ai/artifacts."
             },
             ChangesMade = changesMade.Count == 0
                 ? new[] { "No file changes were made." }

@@ -18,7 +18,6 @@ public sealed class OpenCawBootstrapperTests
             new WorkspaceGuard(workspace),
             new OpenCawOptions
             {
-                Enabled = true,
                 UpdateOnRun = false
             },
             CancellationToken.None);
@@ -47,7 +46,6 @@ public sealed class OpenCawBootstrapperTests
             new WorkspaceGuard(workspace),
             new OpenCawOptions
             {
-                Enabled = true,
                 UpdateOnRun = false
             },
             CancellationToken.None);
@@ -70,7 +68,6 @@ public sealed class OpenCawBootstrapperTests
             new WorkspaceGuard(workspace),
             new OpenCawOptions
             {
-                Enabled = true,
                 UpdateOnRun = false
             },
             CancellationToken.None);
@@ -89,7 +86,6 @@ public sealed class OpenCawBootstrapperTests
                 new WorkspaceGuard(workspace),
                 new OpenCawOptions
                 {
-                    Enabled = true,
                     Path = "../opencaw",
                     UpdateOnRun = false
                 },

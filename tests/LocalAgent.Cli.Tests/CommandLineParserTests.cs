@@ -34,6 +34,78 @@ public sealed class CommandLineParserTests
     }
 
     [Fact]
+    public void ParseRunCommandAcceptsFolderOption()
+    {
+        var result = CommandLineParser.Parse(new[]
+        {
+            "run",
+            "--folder",
+            "repo"
+        });
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Options);
+        Assert.Equal("repo", result.Options.WorkspacePath);
+        Assert.Equal(Path.Combine("repo", "INPUT.md"), result.Options.InputPath);
+        Assert.Equal(Path.Combine("repo", ".ai", "artifacts", "OUTPUT.md"), result.Options.OutputPath);
+    }
+
+    [Fact]
+    public void ParseRunCommandAcceptsExternalInputAndFolderOutputPath()
+    {
+        var result = CommandLineParser.Parse(new[]
+        {
+            "run",
+            "--folder",
+            "repo",
+            "--input",
+            "prompts/INPUT.md",
+            "--output",
+            "reports/OUTPUT.md"
+        });
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Options);
+        Assert.Equal("repo", result.Options.WorkspacePath);
+        Assert.Equal("prompts/INPUT.md", result.Options.InputPath);
+        Assert.Equal("reports/OUTPUT.md", result.Options.OutputPath);
+    }
+
+    [Fact]
+    public void ParseRunCommandAcceptsFolderAndWorkspaceWhenTheyResolveToSamePath()
+    {
+        var folder = Path.Combine(Path.GetTempPath(), "bubo-cli-parser", Guid.NewGuid().ToString("N"));
+        var result = CommandLineParser.Parse(new[]
+        {
+            "run",
+            "--folder",
+            folder,
+            "--workspace",
+            Path.Combine(folder, ".")
+        });
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Options);
+        Assert.Equal(folder, result.Options.WorkspacePath);
+    }
+
+    [Fact]
+    public void ParseRunCommandRejectsFolderAndWorkspaceWhenTheyResolveDifferently()
+    {
+        var result = CommandLineParser.Parse(new[]
+        {
+            "run",
+            "--folder",
+            "repo-a",
+            "--workspace",
+            "repo-b"
+        });
+
+        Assert.False(result.IsSuccess);
+        Assert.Contains("--folder and --workspace", result.ErrorMessage);
+    }
+
+    [Fact]
     public void ParseRunCommandLeavesModeUnspecifiedWhenModeIsOmitted()
     {
         var result = CommandLineParser.Parse(new[]
@@ -58,43 +130,44 @@ public sealed class CommandLineParserTests
             "run",
             "--workspace",
             "repo",
-            "--opencaw",
-            "disabled",
             "--opencaw-path",
             ".cursor",
             "--opencaw-ref",
             "release/test",
             "--opencaw-update",
-            "false",
-            "--opencaw-bootstrap",
             "false"
         });
 
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Options);
-        Assert.False(result.Options.OpenCawEnabled);
         Assert.Equal(".cursor", result.Options.OpenCawPath);
         Assert.Equal("release/test", result.Options.OpenCawRef);
         Assert.False(result.Options.OpenCawUpdateOnRun);
-        Assert.False(result.Options.OpenCawExecuteBootstrap);
     }
 
     [Fact]
-    public void ParseRunCommandAcceptsOpenCawDisableShortFlags()
+    public void ParseRunCommandRejectsOpenCawDisableOptions()
     {
-        var result = CommandLineParser.Parse(new[]
+        var removedOptions = new[]
         {
-            "run",
-            "--no-opencaw",
-            "--no-opencaw-update",
-            "--no-opencaw-bootstrap"
-        });
+            string.Concat("--no-", "opencaw"),
+            string.Concat("--no-", "opencaw", "-update"),
+            string.Concat("--no-", "opencaw", "-bootstrap"),
+            string.Concat("--", "opencaw"),
+            string.Concat("--", "opencaw", "-bootstrap")
+        };
 
-        Assert.True(result.IsSuccess);
-        Assert.NotNull(result.Options);
-        Assert.False(result.Options.OpenCawEnabled);
-        Assert.False(result.Options.OpenCawUpdateOnRun);
-        Assert.False(result.Options.OpenCawExecuteBootstrap);
+        foreach (var option in removedOptions)
+        {
+            var args = option.StartsWith("--no-", StringComparison.Ordinal)
+                ? new[] { "run", option }
+                : new[] { "run", option, "false" };
+
+            var result = CommandLineParser.Parse(args);
+
+            Assert.False(result.IsSuccess);
+            Assert.Contains(option, result.ErrorMessage);
+        }
     }
 
     [Fact]

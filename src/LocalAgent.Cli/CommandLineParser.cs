@@ -36,17 +36,16 @@ public static class CommandLineParser
             return ParseResult.Failure($"Unknown command: {args[0]}");
         }
 
-        var workspace = Environment.CurrentDirectory;
+        string? folder = null;
+        string? workspace = null;
         string? input = null;
         string? output = null;
         string? configPath = null;
         var mode = AgentMode.Local;
         var modeWasSpecified = false;
-        bool? openCawEnabled = null;
         string? openCawPath = null;
         string? openCawRef = null;
         bool? openCawUpdate = null;
-        bool? openCawBootstrap = null;
 
         for (var index = 1; index < args.Count; index++)
         {
@@ -54,24 +53,6 @@ public static class CommandLineParser
             if (IsHelp(current))
             {
                 return ParseResult.Help();
-            }
-
-            if (string.Equals(current, "--no-opencaw", StringComparison.OrdinalIgnoreCase))
-            {
-                openCawEnabled = false;
-                continue;
-            }
-
-            if (string.Equals(current, "--no-opencaw-update", StringComparison.OrdinalIgnoreCase))
-            {
-                openCawUpdate = false;
-                continue;
-            }
-
-            if (string.Equals(current, "--no-opencaw-bootstrap", StringComparison.OrdinalIgnoreCase))
-            {
-                openCawBootstrap = false;
-                continue;
             }
 
             if (index + 1 >= args.Count)
@@ -82,6 +63,9 @@ public static class CommandLineParser
             var value = args[++index];
             switch (current)
             {
+                case "--folder":
+                    folder = value;
+                    break;
                 case "--workspace":
                     workspace = value;
                     break;
@@ -102,13 +86,6 @@ public static class CommandLineParser
                 case "--config":
                     configPath = value;
                     break;
-                case "--opencaw":
-                    if (!TryParseOpenCawMode(value, out openCawEnabled))
-                    {
-                        return ParseResult.Failure($"Unsupported OpenCaw mode: {value}");
-                    }
-
-                    break;
                 case "--opencaw-path":
                     openCawPath = value;
                     break;
@@ -123,36 +100,36 @@ public static class CommandLineParser
 
                     openCawUpdate = parsedUpdate;
                     break;
-                case "--opencaw-bootstrap":
-                    if (!TryParseBoolean(value, out var parsedBootstrap))
-                    {
-                        return ParseResult.Failure($"Unsupported OpenCaw bootstrap value: {value}");
-                    }
-
-                    openCawBootstrap = parsedBootstrap;
-                    break;
                 default:
                     return ParseResult.Failure($"Unknown option: {current}");
             }
         }
 
-        input ??= Path.Combine(workspace, "INPUT.md");
-        output ??= Path.Combine(workspace, "OUTPUT.md");
+        string runFolder;
+        try
+        {
+            runFolder = ResolveRunFolder(folder, workspace);
+        }
+        catch (ArgumentException exception)
+        {
+            return ParseResult.Failure(exception.Message);
+        }
+
+        input ??= Path.Combine(runFolder, "INPUT.md");
+        output ??= Path.Combine(runFolder, ".ai", "artifacts", "OUTPUT.md");
 
         return ParseResult.Success(new CommandLineOptions
         {
             Command = "run",
-            WorkspacePath = workspace,
+            WorkspacePath = runFolder,
             InputPath = input,
             OutputPath = output,
             Mode = mode,
             ModeWasSpecified = modeWasSpecified,
             ConfigPath = configPath,
-            OpenCawEnabled = openCawEnabled,
             OpenCawPath = openCawPath,
             OpenCawRef = openCawRef,
-            OpenCawUpdateOnRun = openCawUpdate,
-            OpenCawExecuteBootstrap = openCawBootstrap
+            OpenCawUpdateOnRun = openCawUpdate
         });
     }
 
@@ -160,22 +137,54 @@ public static class CommandLineParser
     {
         return """
                Usage:
-                 bubo run --workspace <path> --input <INPUT.md> --output <OUTPUT.md> --mode <local|cloud> --config <bubo.config.json> --opencaw <enabled|disabled>
+                 bubo run --folder <path> --input <INPUT.md|markdown> --output <artifact-output.md> --mode <local|cloud> --config <bubo.config.json>
                  bubo doctor
                  bubo models list
                  bubo sandbox test --workspace <path> --gpu <none|nvidia>
                  bubo native test --base-directory <path> --backend <cpu|cuda|metal|vulkan> --strict
 
                Defaults:
-                 --workspace current directory
-                 --input <workspace>/INPUT.md
-                 --output <workspace>/OUTPUT.md
+                 --folder current directory
+                 --workspace compatibility alias for --folder
+                 --input <folder>/INPUT.md, or inline Markdown when provided explicitly
+                 --output <folder>/.ai/artifacts/OUTPUT.md
                  --mode local
-                 --config <workspace>/bubo.config.json when present
-                 --opencaw enabled
+                 --config <folder>/bubo.config.json when present
                  --opencaw-update true
-                 --opencaw-bootstrap true
                """;
+    }
+
+    private static string ResolveRunFolder(string? folder, string? workspace)
+    {
+        if (!string.IsNullOrWhiteSpace(folder) &&
+            !string.IsNullOrWhiteSpace(workspace) &&
+            !PathsResolveEqual(folder, workspace))
+        {
+            throw new ArgumentException(
+                "--folder and --workspace resolve to different paths. Use one folder value.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(folder))
+        {
+            return folder;
+        }
+
+        if (!string.IsNullOrWhiteSpace(workspace))
+        {
+            return workspace;
+        }
+
+        return Environment.CurrentDirectory;
+    }
+
+    private static bool PathsResolveEqual(string left, string right)
+    {
+        return string.Equals(
+            Path.GetFullPath(left),
+            Path.GetFullPath(right),
+            OperatingSystem.IsWindows()
+                ? StringComparison.OrdinalIgnoreCase
+                : StringComparison.Ordinal);
     }
 
     private static ParseResult ParseSandbox(IReadOnlyList<string> args)
@@ -229,7 +238,7 @@ public static class CommandLineParser
             Command = "sandbox-test",
             WorkspacePath = workspace,
             InputPath = Path.Combine(workspace, "INPUT.md"),
-            OutputPath = Path.Combine(workspace, "OUTPUT.md"),
+            OutputPath = Path.Combine(workspace, ".ai", "artifacts", "OUTPUT.md"),
             SandboxGpu = gpu
         });
     }
@@ -290,7 +299,7 @@ public static class CommandLineParser
             Command = "native-test",
             WorkspacePath = workspace,
             InputPath = Path.Combine(workspace, "INPUT.md"),
-            OutputPath = Path.Combine(workspace, "OUTPUT.md"),
+            OutputPath = Path.Combine(workspace, ".ai", "artifacts", "OUTPUT.md"),
             NativeBaseDirectory = baseDirectory,
             NativeStrict = strict,
             NativeBackend = backend
@@ -315,7 +324,7 @@ public static class CommandLineParser
             Command = command,
             WorkspacePath = workspace,
             InputPath = Path.Combine(workspace, "INPUT.md"),
-            OutputPath = Path.Combine(workspace, "OUTPUT.md")
+            OutputPath = Path.Combine(workspace, ".ai", "artifacts", "OUTPUT.md")
         });
     }
 
@@ -345,7 +354,7 @@ public static class CommandLineParser
             Command = command,
             WorkspacePath = workspace,
             InputPath = Path.Combine(workspace, "INPUT.md"),
-            OutputPath = Path.Combine(workspace, "OUTPUT.md")
+            OutputPath = Path.Combine(workspace, ".ai", "artifacts", "OUTPUT.md")
         });
     }
 
@@ -364,26 +373,6 @@ public static class CommandLineParser
         }
 
         mode = AgentMode.Local;
-        return false;
-    }
-
-    private static bool TryParseOpenCawMode(string value, out bool? enabled)
-    {
-        if (string.Equals(value, "enabled", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(value, "true", StringComparison.OrdinalIgnoreCase))
-        {
-            enabled = true;
-            return true;
-        }
-
-        if (string.Equals(value, "disabled", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(value, "false", StringComparison.OrdinalIgnoreCase))
-        {
-            enabled = false;
-            return true;
-        }
-
-        enabled = null;
         return false;
     }
 

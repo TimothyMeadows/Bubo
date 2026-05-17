@@ -32,7 +32,7 @@ Add native OpenCaw support directly into Bubo so each enabled run updates the Op
 - Added runtime `OpenCawBootstrapper` that validates a direct-child `.opencaw` path, updates/verifies the OpenCaw Git checkout, runs the host scaffold script when required, preserves existing `.ai` files, and builds system prompt context before `INPUT.md`.
 - Renamed the OpenCaw submodule mount to `.opencaw` so Bubo-owned startup and Codex CLI fallback can share the same baseline path.
 - Added `InferenceRequest.SystemPrompt` and wired it through the runtime, Codex CLI provider prompt composition, and local provider request handling.
-- Added CLI flags for `--no-opencaw`, `--no-opencaw-update`, `--no-opencaw-bootstrap`, and explicit OpenCaw path/ref/update/bootstrap options.
+- Added explicit OpenCaw path/ref/update options. OpenCaw loading and bootstrap execution are mandatory and cannot be disabled.
 - Updated README, configuration, security, examples, architecture notes, and durable `.ai` memory fragments.
 
 ## Validation Plan
