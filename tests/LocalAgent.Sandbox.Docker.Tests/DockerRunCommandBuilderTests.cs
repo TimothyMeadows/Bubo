@@ -90,6 +90,28 @@ public sealed class DockerRunCommandBuilderTests
     }
 
     [Fact]
+    public void BuildRunArgumentsRejectsUnsupportedGpuMode()
+    {
+        var workspace = CreateDirectory("workspace");
+
+        var exception = Assert.Throws<ArgumentException>(() =>
+            DockerRunCommandBuilder.BuildRunArguments(
+                "true",
+                Array.Empty<string>(),
+                new SandboxOptions
+                {
+                    WorkspacePath = workspace,
+                    InputPath = workspace,
+                    OutputPath = workspace,
+                    CachePath = workspace,
+                    ModelsPath = null,
+                    Gpu = "amd"
+                }));
+
+        Assert.Contains("Unsupported Docker GPU mode", exception.Message);
+    }
+
+    [Fact]
     public void BuildRunArgumentsUsesContainerWorkingDirectory()
     {
         var workspace = CreateDirectory("workspace");

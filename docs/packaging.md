@@ -15,6 +15,8 @@ runtimes/
   win-x64/native/llama.dll
   linux-x64/native/libllama.so
   osx-arm64/native/libllama.dylib
+  linux-x64/native/cuda/libllama.so
+  win-x64/native/cuda/llama.dll
 ```
 
 Pinned upstream:
@@ -35,27 +37,30 @@ Local native builds require:
   - Linux: GCC or Clang plus normal build essentials.
   - macOS: Xcode command line tools.
 - .NET 8 SDK for package and smoke-test validation.
+- CUDA Toolkit 12.8 or newer for RTX 50xx / Blackwell CUDA builds.
+- Ninja is recommended for local Windows CUDA builds when using Visual Studio Build Tools.
 
 The first supported runtime identifiers are `win-x64`, `linux-x64`, and `osx-arm64`.
 
-| RID | Package Validation | Notes |
+| Backend | RID | Package Validation | Notes |
 | --- | --- | --- |
-| `win-x64` | Supported | Produces `llama.dll` plus sidecar `.dll` files when required. |
-| `linux-x64` | Supported | Produces `libllama.so` plus sidecar `.so` files when required. |
-| `osx-arm64` | Supported | Produces `libllama.dylib` plus sidecar `.dylib` files when required. |
-| `win-arm64` | Experimental script input | Not part of v1 package validation. |
-| `linux-arm64` | Experimental script input | Not part of v1 package validation. |
-| `osx-x64` | Experimental script input | Not part of v1 package validation. |
+| `cpu` | `win-x64` | Supported | Produces `llama.dll` plus sidecar `.dll` files when required. |
+| `cpu` | `linux-x64` | Supported | Produces `libllama.so` plus sidecar `.so` files when required. |
+| `cpu` | `osx-arm64` | Supported | Produces `libllama.dylib` plus sidecar `.dylib` files when required. |
+| `cuda` | `linux-x64` | Supported with NVIDIA runner | Requires CUDA Toolkit 12.8+ for RTX 50xx. |
+| `cuda` | `win-x64` | Script-supported | Requires local CUDA Toolkit and Visual Studio C++ tooling. |
+| `metal` | `osx-arm64` | Script-supported | Requires macOS/Xcode tooling. |
+| `vulkan` | `linux-x64`, `win-x64` | Experimental script input | Requires Vulkan SDK/runtime validation. |
 
 ## Build Native Assets Locally
 
-Build and stage the current platform asset into the package layout:
+Build and stage the current platform CPU asset into the package layout:
 
 ```powershell
 pwsh ./scripts/build-llama-native.ps1 -StageToPackage
 ```
 
-Build a specific supported RID:
+Build a specific supported CPU RID:
 
 ```powershell
 pwsh ./scripts/build-llama-native.ps1 -Rid linux-x64 -StageToPackage -Clean
@@ -67,9 +72,37 @@ Outputs:
 artifacts/native/<rid>/<library>
 artifacts/native/<rid>/llama-native-build.json
 src/LlamaCppSharp.Native/runtimes/<rid>/native/<library>   # only with -StageToPackage
+src/LlamaCppSharp.Native/runtimes/<rid>/native/<backend>/<library>   # non-CPU backends
 ```
 
 The build script clones or updates `ggml-org/llama.cpp` under `artifacts/src/llama.cpp`, checks out the requested ref, builds shared libraries with CMake, copies `llama` plus any sidecar dynamic libraries produced by the build, and writes a small build manifest.
+
+CUDA build:
+
+```powershell
+pwsh ./scripts/build-llama-native.ps1 -Rid linux-x64 -Backend cuda -CudaArchitectures "86;89;120" -StageToPackage
+```
+
+CUDA build with an explicit compiler:
+
+```powershell
+pwsh ./scripts/build-llama-native.ps1 -Rid linux-x64 -Backend cuda -CudaArchitectures "86;89;120" -CudaCompiler /usr/local/cuda-12.8/bin/nvcc -StageToPackage
+```
+
+Windows CUDA build with an explicit CUDA Toolkit root and CMake generator:
+
+```powershell
+pwsh ./scripts/build-llama-native.ps1 `
+  -Rid win-x64 `
+  -Backend cuda `
+  -CudaArchitectures "120" `
+  -CudaToolkitRoot "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.2" `
+  -Generator Ninja `
+  -StageToPackage
+```
+
+Use architecture `120` for RTX 50xx / Blackwell. The script checks `nvcc --version` and fails early when Blackwell architectures are requested with CUDA Toolkit older than 12.8.
+Use `-Generator`, `-Platform`, `-Toolset`, and `-CudaToolkitRoot` when CMake cannot infer the Windows CUDA toolchain. `-CudaToolkitRoot` also sets CUDA package discovery hints, the Visual Studio `CudaToolkitDir` global, and the verifier runtime `PATH` entries for CUDA `bin` and `bin/x64`.
 
 ## Smoke Test And Package Verification
 
@@ -83,13 +116,15 @@ To build, stage, smoke test, pack, and verify in one command:
 
 ```powershell
 pwsh ./scripts/test-native-package.ps1 -Rid linux-x64 -BuildNative
+pwsh ./scripts/test-native-package.ps1 -Rid linux-x64 -Backend cuda -CudaArchitectures "86;89;120" -BuildNative
+pwsh ./scripts/test-native-package.ps1 -Rid win-x64 -Backend cuda -CudaArchitectures "120" -CudaToolkitRoot "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.2" -Generator Ninja -BuildNative
 ```
 
 The verification script:
 
 1. Confirms the staged asset exists.
 2. Builds the .NET solution.
-3. Runs `bubo native test --base-directory src/LlamaCppSharp.Native --strict`.
+3. Runs `bubo native test --base-directory src/LlamaCppSharp.Native --backend <backend> --strict`.
 4. Packs `Bubo.LlamaCppSharp.Native` with required native asset validation enabled.
 5. Opens the `.nupkg` and verifies `runtimes/<rid>/native/<library>` plus staged sidecar libraries are present.
 
@@ -112,15 +147,28 @@ dotnet pack src/LlamaCppSharp.Native/LlamaCppSharp.Native.csproj `
   --no-build `
   --output artifacts/packages `
   -p:RequireNativeAssetsForPack=true `
-  -p:RequiredNativeRid=linux-x64
+  -p:RequiredNativeRid=linux-x64 `
+  -p:RequiredNativeBackend=cpu
 ```
 
-Omit `RequiredNativeRid` to require all supported RID assets.
+Omit `RequiredNativeRid` to require all supported RID assets for the selected backend.
+
+CUDA package validation:
+
+```powershell
+dotnet pack src/LlamaCppSharp.Native/LlamaCppSharp.Native.csproj `
+  --configuration Release `
+  --no-build `
+  --output artifacts/packages `
+  -p:RequireNativeAssetsForPack=true `
+  -p:RequiredNativeRid=linux-x64 `
+  -p:RequiredNativeBackend=cuda
+```
 
 The strict runtime smoke test probes only the staged package layout and does not fall back to an ambient library on `PATH`:
 
 ```powershell
-dotnet run --no-build --configuration Release --project src/LocalAgent.Cli/LocalAgent.Cli.csproj -- native test --base-directory src/LlamaCppSharp.Native --strict
+dotnet run --no-build --configuration Release --project src/LocalAgent.Cli/LocalAgent.Cli.csproj -- native test --base-directory src/LlamaCppSharp.Native --backend cuda --strict
 ```
 
 ## CI Native Asset Workflow
@@ -128,13 +176,21 @@ dotnet run --no-build --configuration Release --project src/LocalAgent.Cli/Local
 `.github/workflows/native-assets.yml` is manually dispatched and runs the same script path used locally:
 
 ```text
-scripts/test-native-package.ps1 -Rid <rid> -Ref <ref> -Configuration Release -BuildNative
+scripts/test-native-package.ps1 -Rid <rid> -Backend cpu -Ref <ref> -Configuration Release -BuildNative
 ```
 
-Each matrix job builds one RID, smoke-tests the staged native library, packs the native package with RID validation enabled, and uploads:
+CPU matrix jobs build one RID, smoke-test the staged native library, pack the native package with RID validation enabled, and upload:
 
-- `llama-<rid>`: the built native asset and build manifest.
-- `package-<rid>`: the verified native NuGet package for that RID.
+- `llama-cpu-<rid>`: the built native asset and build manifest.
+- `package-cpu-<rid>`: the verified native NuGet package for that RID.
+
+CUDA CI lanes are opt-in through `include_cuda` and expect a self-hosted runner labeled `self-hosted`, `linux`, `x64`, `nvidia`, and `cuda`. They run:
+
+```text
+scripts/test-native-package.ps1 -Rid linux-x64 -Backend cuda -CudaArchitectures <architectures> -BuildNative
+```
+
+Hosted GitHub runners should not be treated as CUDA runtime validation because they do not provide NVIDIA GPU devices.
 
 ## Unsupported Platforms
 

@@ -27,6 +27,17 @@ public sealed class NativeAssetInfoTests
     }
 
     [Fact]
+    public void ExpectedRidAssetPathUsesBackendNativeLayoutForGpuBackends()
+    {
+        var baseDirectory = Path.Combine(Path.GetTempPath(), "bubo-native-test");
+
+        var path = LlamaNativeLibrary.ExpectedRidAssetPath(baseDirectory, LlamaNativeLibrary.CudaBackend);
+
+        Assert.Contains(Path.Combine("runtimes", LlamaNativeLibrary.RuntimeIdentifier, "native", "cuda"), path);
+        Assert.EndsWith(LlamaNativeLibrary.NativeLibraryFileName, path);
+    }
+
+    [Fact]
     public void TryLoadDefaultReturnsStructuredResultWhenNativeAssetIsMissing()
     {
         var baseDirectory = Path.Combine(
@@ -58,11 +69,28 @@ public sealed class NativeAssetInfoTests
             Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(baseDirectory);
 
-        var result = LlamaRuntimeAvailability.Probe(baseDirectory, allowFallbackByName: false);
+        var result = LlamaRuntimeAvailability.Probe(
+            baseDirectory,
+            allowFallbackByName: false,
+            backend: LlamaNativeLibrary.CudaBackend);
 
         Assert.False(result.Success);
         Assert.NotNull(result.Error);
-        Assert.Contains(LlamaNativeLibrary.ExpectedRidAssetPath(baseDirectory), result.Error);
+        Assert.Contains(LlamaNativeLibrary.ExpectedRidAssetPath(baseDirectory, LlamaNativeLibrary.CudaBackend), result.Error);
+        Assert.Contains("backend 'cuda'", result.Error);
+        Assert.Equal(LlamaNativeLibrary.CudaBackend, result.Backend);
+        Assert.Equal(LlamaNativeLibrary.RuntimeIdentifier, result.RuntimeIdentifier);
+        Assert.Equal(
+            LlamaNativeLibrary.ExpectedRidAssetPath(baseDirectory, LlamaNativeLibrary.CudaBackend),
+            result.ExpectedPath);
         Assert.DoesNotContain("or by name", result.Error);
+    }
+
+    [Fact]
+    public void NormalizeBackendRejectsUnsupportedBackend()
+    {
+        var exception = Assert.Throws<ArgumentException>(() => LlamaNativeLibrary.NormalizeBackend("quantum"));
+
+        Assert.Contains("Unsupported", exception.Message);
     }
 }

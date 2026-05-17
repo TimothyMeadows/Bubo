@@ -17,3 +17,9 @@
 ## Model-Safe Tooling
 
 - Do not expose generic `run_command` to one-shot model-proposed actions. Keep command execution behind deterministic/user-authored fixtures or a future explicit approval-gated loop.
+
+## Windows CUDA Native Builds
+
+- Visual Studio developer shells may set `Platform=x64`; clear it for managed `dotnet` verification or output probing can look under `bin/x64/Release` instead of the default SDK project output path.
+- Ninja is a good Windows CUDA generator with VS Build Tools, but single-config CMake builds must receive `-DCMAKE_BUILD_TYPE=Release`; `--config Release` alone is not enough.
+- CUDA Toolkit 13.2 installs `cublas64_13.dll` under `CUDA\v13.2\bin\x64`; CUDA runtime smoke tests need both `bin` and `bin\x64` on `PATH`.

@@ -80,7 +80,7 @@ public static class Program
         var runner = new DockerSandboxRunner(dockerExecutable);
         var result = await runner.RunCommandAsync(
             "sh",
-            new[] { "-lc", "git --version && gh --version && dotnet --version" },
+            BuildSandboxTestArguments(options),
             new SandboxOptions
             {
                 WorkspacePath = options.WorkspacePath,
@@ -89,7 +89,7 @@ public static class Program
                 CachePath = options.WorkspacePath,
                 ModelsPath = null,
                 Network = NetworkPolicy.None,
-                Gpu = null
+                Gpu = options.SandboxGpu
             },
             CancellationToken.None);
 
@@ -137,7 +137,8 @@ public static class Program
     {
         var native = LlamaRuntimeAvailability.Probe(
             options.NativeBaseDirectory,
-            allowFallbackByName: !options.NativeStrict);
+            allowFallbackByName: !options.NativeStrict,
+            backend: options.NativeBackend);
         if (native.Success)
         {
             Console.WriteLine($"Loaded llama.cpp native library from: {native.ResolvedPath}");
@@ -146,6 +147,17 @@ public static class Program
 
         Console.Error.WriteLine(native.Error);
         return 1;
+    }
+
+    private static string[] BuildSandboxTestArguments(CommandLineOptions options)
+    {
+        var command = "git --version && gh --version && dotnet --version";
+        if (string.Equals(options.SandboxGpu, "nvidia", StringComparison.OrdinalIgnoreCase))
+        {
+            command += " && nvidia-smi --query-gpu=name,driver_version --format=csv,noheader";
+        }
+
+        return new[] { "-lc", command };
     }
 
     private static void WriteModelProfile(ModelProfile profile)

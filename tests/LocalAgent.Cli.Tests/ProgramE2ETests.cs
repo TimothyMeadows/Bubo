@@ -298,6 +298,8 @@ public sealed class ProgramE2ETests
                 "test",
                 "--base-directory",
                 baseDirectory,
+                "--backend",
+                "cuda",
                 "--strict"
             });
 
@@ -310,7 +312,9 @@ public sealed class ProgramE2ETests
 
         var message = error.ToString();
         Assert.Contains("Unable to load llama.cpp native library", message);
+        Assert.Contains("backend 'cuda'", message);
         Assert.Contains("runtimes", message);
+        Assert.Contains(Path.Combine("native", "cuda"), message);
         Assert.DoesNotContain("or by name", message);
     }
 

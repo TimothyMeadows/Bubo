@@ -20,7 +20,7 @@ public sealed record SandboxOptions
 
     public NetworkPolicy Network { get; init; } = NetworkPolicy.None;
 
-    public string? Gpu { get; init; } = "nvidia";
+    public string? Gpu { get; init; }
 
     public string? Memory { get; init; } = "16g";
 

@@ -106,8 +106,8 @@ public static class CommandLineParser
                  bubo run --workspace <path> --input <INPUT.md> --output <OUTPUT.md> --mode <local|cloud> --config <bubo.config.json>
                  bubo doctor
                  bubo models list
-                 bubo sandbox test --workspace <path>
-                 bubo native test --base-directory <path> --strict
+                 bubo sandbox test --workspace <path> --gpu <none|nvidia>
+                 bubo native test --base-directory <path> --backend <cpu|cuda|metal|vulkan> --strict
 
                Defaults:
                  --workspace current directory
@@ -126,6 +126,7 @@ public static class CommandLineParser
         }
 
         var workspace = Environment.CurrentDirectory;
+        string? gpu = null;
         for (var index = 2; index < args.Count; index++)
         {
             var current = args[index];
@@ -146,6 +147,20 @@ public static class CommandLineParser
                 continue;
             }
 
+            if (string.Equals(current, "--gpu", StringComparison.OrdinalIgnoreCase))
+            {
+                if (!string.Equals(value, "none", StringComparison.OrdinalIgnoreCase) &&
+                    !string.Equals(value, "nvidia", StringComparison.OrdinalIgnoreCase))
+                {
+                    return ParseResult.Failure($"Unsupported GPU mode: {value}");
+                }
+
+                gpu = string.Equals(value, "none", StringComparison.OrdinalIgnoreCase)
+                    ? null
+                    : "nvidia";
+                continue;
+            }
+
             return ParseResult.Failure($"Unknown option: {current}");
         }
 
@@ -154,7 +169,8 @@ public static class CommandLineParser
             Command = "sandbox-test",
             WorkspacePath = workspace,
             InputPath = Path.Combine(workspace, "INPUT.md"),
-            OutputPath = Path.Combine(workspace, "OUTPUT.md")
+            OutputPath = Path.Combine(workspace, "OUTPUT.md"),
+            SandboxGpu = gpu
         });
     }
 
@@ -167,6 +183,7 @@ public static class CommandLineParser
 
         string? baseDirectory = null;
         var strict = false;
+        var backend = "cpu";
         for (var index = 2; index < args.Count; index++)
         {
             var current = args[index];
@@ -193,6 +210,17 @@ public static class CommandLineParser
                 continue;
             }
 
+            if (string.Equals(current, "--backend", StringComparison.OrdinalIgnoreCase))
+            {
+                if (!IsSupportedNativeBackend(value))
+                {
+                    return ParseResult.Failure($"Unsupported native backend: {value}");
+                }
+
+                backend = value.ToLowerInvariant();
+                continue;
+            }
+
             return ParseResult.Failure($"Unknown option: {current}");
         }
 
@@ -204,7 +232,8 @@ public static class CommandLineParser
             InputPath = Path.Combine(workspace, "INPUT.md"),
             OutputPath = Path.Combine(workspace, "OUTPUT.md"),
             NativeBaseDirectory = baseDirectory,
-            NativeStrict = strict
+            NativeStrict = strict,
+            NativeBackend = backend
         });
     }
 
@@ -282,5 +311,13 @@ public static class CommandLineParser
     {
         return string.Equals(value, "-h", StringComparison.OrdinalIgnoreCase) ||
                string.Equals(value, "--help", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsSupportedNativeBackend(string value)
+    {
+        return string.Equals(value, "cpu", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(value, "cuda", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(value, "metal", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(value, "vulkan", StringComparison.OrdinalIgnoreCase);
     }
 }

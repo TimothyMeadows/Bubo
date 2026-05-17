@@ -106,6 +106,27 @@ public sealed class AgentConfigLoaderTests
     }
 
     [Fact]
+    public async Task LoadRejectsUnsupportedGpuValue()
+    {
+        var workspace = CreateWorkspace();
+        var configPath = Path.Combine(workspace, "trusted.bubo.json");
+        await File.WriteAllTextAsync(
+            configPath,
+            """
+            {
+              "sandbox": {
+                "gpu": "amd"
+              }
+            }
+            """);
+
+        var exception = Assert.Throws<ArgumentException>(
+            () => AgentConfigLoader.Load(workspace, configPath));
+
+        Assert.Contains("sandbox.gpu", exception.Message);
+    }
+
+    [Fact]
     public async Task LoadRejectsWorkspaceDefaultSandboxPolicy()
     {
         var workspace = CreateWorkspace();

@@ -21,4 +21,8 @@ public sealed record CommandLineOptions
     public string? NativeBaseDirectory { get; init; }
 
     public bool NativeStrict { get; init; }
+
+    public string NativeBackend { get; init; } = "cpu";
+
+    public string? SandboxGpu { get; init; }
 }

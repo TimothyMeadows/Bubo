@@ -158,7 +158,7 @@ public static class AgentConfigLoader
             CachePath = defaults.CachePath,
             ContainerWorkingDirectory = defaults.ContainerWorkingDirectory,
             Network = ParseNetwork(config.Network, defaults.Network),
-            Gpu = config.Gpu ?? defaults.Gpu,
+            Gpu = ParseGpu(config.Gpu, defaults.Gpu),
             Memory = config.Memory ?? defaults.Memory,
             Cpus = GetNullablePositive(config.Cpus, defaults.Cpus, "cpus"),
             PidsLimit = GetBoundedPositive(config.PidsLimit, defaults.PidsLimit, defaults.PidsLimit, "pidsLimit"),
@@ -297,6 +297,26 @@ public static class AgentConfigLoader
         }
 
         throw new ArgumentException($"Unsupported Bubo config sandbox.network: {value}");
+    }
+
+    private static string? ParseGpu(string? value, string? fallback)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return fallback;
+        }
+
+        if (string.Equals(value, "none", StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        if (string.Equals(value, "nvidia", StringComparison.OrdinalIgnoreCase))
+        {
+            return "nvidia";
+        }
+
+        throw new ArgumentException($"Unsupported Bubo config sandbox.gpu: {value}");
     }
 
     private static int GetPositive(int? value, int fallback, string name)
