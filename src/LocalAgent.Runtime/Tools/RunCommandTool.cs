@@ -50,6 +50,8 @@ public sealed class RunCommandTool : SandboxBackedToolBase
                 throw new DirectoryNotFoundException(
                     $"run_command working directory does not exist: {requestedWorkingDirectory}");
             }
+
+            guard.ResolveSandboxWorkingDirectoryInsideWorkspace(requestedWorkingDirectory);
         }
 
         return RunSandboxedCommandAsync(

@@ -31,11 +31,11 @@ public abstract class SandboxBackedToolBase : WorkspaceToolBase
         var containerWorkingDirectory = ToContainerWorkingDirectory(guard, workingDirectory);
         var options = _sandboxOptions with
         {
-            WorkspacePath = guard.WorkspaceRoot,
-            InputPath = guard.WorkspaceRoot,
-            OutputPath = guard.WorkspaceRoot,
-            CachePath = guard.WorkspaceRoot,
-            ModelsPath = ResolveOptionalDirectory(_sandboxOptions.ModelsPath),
+            WorkspacePath = ResolveRequiredMountRoot(_sandboxOptions.WorkspacePath, guard.WorkspaceRoot),
+            InputPath = ResolveRequiredMountRoot(_sandboxOptions.InputPath, guard.WorkspaceRoot),
+            OutputPath = ResolveRequiredMountRoot(_sandboxOptions.OutputPath, guard.WorkspaceRoot),
+            CachePath = ResolveRequiredMountRoot(_sandboxOptions.CachePath, guard.WorkspaceRoot),
+            ModelsPath = ResolveOptionalMountRoot(_sandboxOptions.ModelsPath),
             ContainerWorkingDirectory = containerWorkingDirectory
         };
 
@@ -54,15 +54,38 @@ public abstract class SandboxBackedToolBase : WorkspaceToolBase
         return $"/workspace/{containerRelative}";
     }
 
-    private static string? ResolveOptionalDirectory(string? path)
+    private static string ResolveRequiredMountRoot(string configuredPath, string fallbackPath)
+    {
+        var path = Directory.Exists(configuredPath)
+            ? configuredPath
+            : fallbackPath;
+        RejectReparsePoint(path);
+        return path;
+    }
+
+    private static string? ResolveOptionalMountRoot(string? path)
     {
         if (string.IsNullOrWhiteSpace(path))
         {
             return null;
         }
 
-        return Directory.Exists(path)
-            ? path
-            : null;
+        if (!Directory.Exists(path))
+        {
+            return null;
+        }
+
+        RejectReparsePoint(path);
+        return path;
+    }
+
+    private static void RejectReparsePoint(string path)
+    {
+        var attributes = File.GetAttributes(path);
+        if ((attributes & FileAttributes.ReparsePoint) != 0)
+        {
+            throw new ArgumentException(
+                $"Docker mount path must not be a symlink or reparse point: {path}");
+        }
     }
 }

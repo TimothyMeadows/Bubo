@@ -9,9 +9,9 @@
 ## Bubo Solution Layout
 
 - `src/LocalAgent.Abstractions`: shared agent, inference, sandbox, tool, model, run, and transcript contracts.
-- `src/LocalAgent.Runtime`: workspace guarding, run orchestration, output/report artifact generation, and future tool dispatch.
+- `src/LocalAgent.Runtime`: workspace guarding, run orchestration, output/report artifact generation, deterministic file tools, Docker-backed Git/command tools, and tool dispatch.
 - `src/LocalAgent.Cli`: CLI entrypoint for `bubo run`.
-- `src/LocalAgent.Sandbox.Docker`: Docker sandbox abstraction and runtime implementation surface.
+- `src/LocalAgent.Sandbox.Docker`: Docker sandbox argument construction, security defaults, mount validation, and runtime implementation surface.
 - `src/LocalAgent.Inference.LlamaCpp`: local inference provider surface for direct llama.cpp interop.
 - `src/LocalAgent.Inference.CodexCli`: cloud inference provider surface for `codex-cli`.
 - `src/LlamaCppSharp.Native`: native llama.cpp package metadata and RID asset layout.

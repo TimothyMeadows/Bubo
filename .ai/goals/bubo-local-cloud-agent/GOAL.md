@@ -37,10 +37,11 @@ Implement Bubo as a .NET 8 LTS coding-agent runtime with a Docker sandbox, local
 4. [x] Bubo agent runtime and inference providers (`../.ai/tasks/bubo-agent-runtime-inference/TASK.md`)
 5. [x] Bubo end-to-end hardening and packaging (`../.ai/tasks/bubo-e2e-hardening-packaging/TASK.md`)
 6. [x] Integrate Bubo goal stack onto main (`../.ai/tasks/bubo-main-stack-integration/TASK.md`)
+7. [ ] Harden Bubo workspace tools and patch flow (`../.ai/tasks/bubo-tool-hardening/TASK.md`)
 
 ## Current Task
 
-complete
+bubo-tool-hardening
 
 ## Branch Chain
 - base-structure | base: `main` | head: `chore/opencaw-base-structure` | PR: https://github.com/TimothyMeadows/Bubo/pull/1 | depends on: none | status: merged
@@ -50,6 +51,7 @@ complete
 - bubo-agent-runtime-inference | base: `feature/bubo-llamacpp-native-wrapper` | head: `feature/bubo-agent-runtime-inference` | PR: https://github.com/TimothyMeadows/Bubo/pull/10 | depends on: bubo-llamacpp-native-wrapper | status: merged
 - bubo-e2e-hardening-packaging | base: `feature/bubo-agent-runtime-inference` | head: `feature/bubo-e2e-hardening-packaging` | PR: https://github.com/TimothyMeadows/Bubo/pull/11 | depends on: bubo-agent-runtime-inference | status: merged
 - bubo-main-stack-integration | base: `main` | head: `feature/bubo-main-stack-integration` | PR: https://github.com/TimothyMeadows/Bubo/pull/14 | depends on: bubo-e2e-hardening-packaging | status: post_pr_qa_passed
+- bubo-tool-hardening | base: `main` | head: `feature/bubo-tool-hardening` | PR: pending | depends on: bubo-main-stack-integration | status: in_progress
 
 ## Automation Rules
 - Complete one task at a time unless the project-manager lane plan explicitly marks safe parallel work.
@@ -71,6 +73,7 @@ complete
 - Bubo agent runtime and inference providers: https://github.com/TimothyMeadows/Bubo/pull/10
 - Bubo end-to-end hardening and packaging: https://github.com/TimothyMeadows/Bubo/pull/11
 - Integrate Bubo goal stack onto main: https://github.com/TimothyMeadows/Bubo/pull/14
+- Harden Bubo workspace tools and patch flow: pending
 
 ## QA Evidence
 
@@ -87,6 +90,8 @@ complete
 - bubo-e2e-hardening-packaging post-PR QA posted on PR #11.
 - bubo-main-stack-integration local validation passed: `dotnet restore Bubo.sln`, `dotnet build Bubo.sln --configuration Release --no-restore`, `dotnet test Bubo.sln --configuration Release --no-build --verbosity normal` with 32 passing tests, package validation for three packages, doctor/models CLI checks, Docker image build and sandbox smoke, scripted E2E fixture, `dotnet format Bubo.sln --verify-no-changes`, and `git diff --check`.
 - bubo-main-stack-integration post-PR QA posted on PR #14.
+- bubo-tool-hardening local validation passed: `dotnet build Bubo.sln --configuration Release --no-restore`, `dotnet test Bubo.sln --configuration Release --no-build --verbosity normal` with 44 passing tests, scripted E2E fixture, live `git_apply_patch` fixture, `dotnet format Bubo.sln --verify-no-changes`, and `git diff --check`.
+- bubo-tool-hardening post-PR QA: pending.
 
 ## Goal Completion Report
 - Generated at `.ai/goals/bubo-local-cloud-agent/GOAL_REPORT.md`.
@@ -96,5 +101,5 @@ complete
 ## Review Notes
 
 - PRs #7 through #11 are closed and merged. Issues #2 through #6 are closed as completed.
-- PRs #8 through #11 were merged into their stacked base branches, not directly into `main`; verify the desired final branch integration before deleting stack branches.
-- Task #13 integrates the completed stacked implementation branch back onto `main` while preserving README and `.ai` context from PR #12.
+- PRs #8 through #11 were merged into their stacked base branches, and PR #14 integrates the completed stack back onto `main`.
+- Task #15 hardens workspace/patch tools after PR #14 merged.

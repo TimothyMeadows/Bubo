@@ -28,9 +28,11 @@ public sealed class ToolRegistry
             new WriteFileTool(),
             new ListFilesTool(),
             new SearchTextTool(),
+            new PatchFileTool(),
             new RunCommandTool(sandboxRunner, sandboxOptions),
             new GitStatusTool(sandboxRunner, sandboxOptions),
-            new GitDiffTool(sandboxRunner, sandboxOptions)
+            new GitDiffTool(sandboxRunner, sandboxOptions),
+            new GitApplyPatchTool(sandboxRunner, sandboxOptions)
         });
     }
 }

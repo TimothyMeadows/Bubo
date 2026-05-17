@@ -505,6 +505,14 @@ Write a generated note and verify the .NET SDK version.
     }
   },
   {
+    "tool": "patch_file",
+    "arguments": {
+      "path": "generated/result.txt",
+      "old": "Hello from Bubo.",
+      "new": "Patched by Bubo."
+    }
+  },
+  {
     "tool": "run_command",
     "arguments": {
       "executable": "dotnet",
@@ -518,8 +526,9 @@ Write a generated note and verify the .NET SDK version.
 Guardrails:
 
 - `write_file` can only write inside the workspace.
+- `patch_file` applies one exact old/new text replacement and fails if the old text is absent or ambiguous.
 - `run_command` avoids shell expansion.
-- `run_command`, `git_status`, and `git_diff` execute through the Docker sandbox runner.
+- `run_command`, `git_status`, `git_diff`, and `git_apply_patch` execute through the Docker sandbox runner.
 - Executables are allowlisted.
 - Results are recorded in `OUTPUT.md`, `agent-debug.jsonl`, and `agent-transcript.md`.
 
@@ -671,24 +680,24 @@ Current default registry:
 | --- | --- |
 | `read_file` | Read a UTF-8 file inside the workspace. |
 | `write_file` | Write a UTF-8 file inside the workspace. |
+| `patch_file` | Apply a bounded old/new text replacement inside the workspace. |
 | `list_files` | Enumerate files under the workspace. |
 | `search_text` | Search text under the workspace. |
 | `run_command` | Run allowlisted commands without shell expansion. |
 | `git_status` | Inspect Git status. |
 | `git_diff` | Inspect Git diffs. |
+| `git_apply_patch` | Apply guarded unified diffs through Docker-backed `git apply`. |
 
 Planned next tools:
 
 | Tool | Purpose |
 | --- | --- |
-| `patch_file` | Apply a bounded patch inside the workspace. |
-| `git_apply_patch` | Apply Git patches when allowed. |
 | `git_commit_optional` | Commit only when explicitly configured. |
 
 Tool safety rules:
 
 - Resolve every path against the workspace root.
-- Reject path traversal.
+- Reject path traversal, `.git` metadata edits, and symlink/reparse escape paths.
 - Bound file sizes and patch sizes.
 - Avoid shell string composition.
 - Capture stdout, stderr, and exit code.
@@ -933,7 +942,7 @@ Short-term:
 
 - Populate and smoke-test llama.cpp native assets for supported RIDs.
 - Expand P/Invoke bindings for tokenization, decode, logits, sampling, and streaming generation.
-- Add `patch_file`, `git_apply_patch`, and optional guarded commit tooling.
+- Add optional guarded commit tooling.
 - Implement planner/coder orchestration over inference providers and guarded tools.
 - Add richer config loading for model profiles, sandbox policy, and loop limits.
 - Harden command approval policy and secret redaction.

@@ -345,12 +345,22 @@ public sealed class AgentRunner
         ICollection<string> changesMade,
         ICollection<string> testResults)
     {
-        if (string.Equals(action.Tool, "write_file", StringComparison.OrdinalIgnoreCase) &&
+        if ((string.Equals(action.Tool, "write_file", StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(action.Tool, "patch_file", StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(action.Tool, "git_apply_patch", StringComparison.OrdinalIgnoreCase)) &&
             result.Success &&
             !string.IsNullOrWhiteSpace(result.Output))
         {
-            filesChanged.Add(result.Output.Trim());
-            changesMade.Add($"Wrote `{result.Output.Trim()}`.");
+            var changedFiles = SplitToolOutputLines(result.Output);
+            foreach (var changedFile in changedFiles)
+            {
+                filesChanged.Add(changedFile);
+            }
+
+            var verb = string.Equals(action.Tool, "write_file", StringComparison.OrdinalIgnoreCase)
+                ? "Wrote"
+                : "Changed";
+            changesMade.Add($"{verb} `{string.Join("`, `", changedFiles)}`.");
             return;
         }
 
@@ -367,6 +377,15 @@ public sealed class AgentRunner
         changesMade.Add(result.Success
             ? $"Ran `{action.Tool}` successfully."
             : $"`{action.Tool}` did not complete successfully.");
+    }
+
+    private static IReadOnlyList<string> SplitToolOutputLines(string output)
+    {
+        return output
+            .Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries)
+            .Select(line => line.Trim())
+            .Where(line => line.Length > 0)
+            .ToArray();
     }
 
     private static string BuildCommandDisplay(IReadOnlyDictionary<string, string> arguments)

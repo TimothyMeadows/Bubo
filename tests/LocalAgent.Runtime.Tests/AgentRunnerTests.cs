@@ -130,6 +130,48 @@ public sealed class AgentRunnerTests
         Assert.Contains("write_file failed", output);
     }
 
+    [Fact]
+    public async Task RunAsyncReportsPatchFileChanges()
+    {
+        var workspace = CreateWorkspace();
+        var inputPath = Path.Combine(workspace, "INPUT.md");
+        var outputPath = Path.Combine(workspace, "OUTPUT.md");
+        await File.WriteAllTextAsync(Path.Combine(workspace, "notes.txt"), "old value");
+        await File.WriteAllTextAsync(
+            inputPath,
+            """
+            # Task
+
+            ```bubo-actions
+            [
+              {
+                "tool": "patch_file",
+                "arguments": {
+                  "path": "notes.txt",
+                  "old": "old",
+                  "new": "new"
+                }
+              }
+            ]
+            ```
+            """);
+
+        var runner = new AgentRunner(new FakeSandboxRunner());
+        var result = await runner.RunAsync(
+            new AgentRunRequest
+            {
+                WorkspacePath = workspace,
+                InputPath = inputPath,
+                OutputPath = outputPath,
+                Mode = AgentMode.Local
+            },
+            CancellationToken.None);
+
+        Assert.True(result.Success);
+        Assert.Contains("notes.txt", result.FilesChanged);
+        Assert.Contains("Changed `notes.txt`.", result.ChangesMade);
+    }
+
     private static string CreateWorkspace()
     {
         var workspace = Path.Combine(

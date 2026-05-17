@@ -6,3 +6,4 @@
 4. [x] Bubo agent runtime and inference providers (`.ai/tasks/bubo-agent-runtime-inference/TASK.md`)
 5. [x] Bubo end-to-end hardening and packaging (`.ai/tasks/bubo-e2e-hardening-packaging/TASK.md`)
 6. [x] Integrate Bubo goal stack onto main (`.ai/tasks/bubo-main-stack-integration/TASK.md`)
+7. [ ] Harden Bubo workspace tools and patch flow (`.ai/tasks/bubo-tool-hardening/TASK.md`)

@@ -49,3 +49,8 @@ Bubo's v1 runtime exposes model and sandbox defaults in code and documents the i
 ```
 
 `threads: 0` means the runtime should use `Environment.ProcessorCount` when a persisted config loader is added.
+
+Patch and file-change limits are used by deterministic tools:
+
+- `maxPatchBytes` bounds `patch_file` old/new payloads and `git_apply_patch` unified diff payloads.
+- `maxFilesChanged` bounds the number of file paths accepted by `git_apply_patch` preflight scanning.
