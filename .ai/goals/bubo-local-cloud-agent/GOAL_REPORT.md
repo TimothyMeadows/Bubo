@@ -21,6 +21,7 @@ Goal flow may automatically raise and QA PRs, but it must never merge PRs or ena
 4. [x] Bubo agent runtime and inference providers (`../.ai/tasks/bubo-agent-runtime-inference/TASK.md`)
 5. [x] Bubo end-to-end hardening and packaging (`../.ai/tasks/bubo-e2e-hardening-packaging/TASK.md`)
 6. [x] Integrate Bubo goal stack onto main (`../.ai/tasks/bubo-main-stack-integration/TASK.md`)
+7. [x] Harden Bubo workspace tools and patch flow (`../.ai/tasks/bubo-tool-hardening/TASK.md`)
 
 ## Branch Chain
 
@@ -31,6 +32,7 @@ Goal flow may automatically raise and QA PRs, but it must never merge PRs or ena
 - bubo-agent-runtime-inference | base: `feature/bubo-llamacpp-native-wrapper` | head: `feature/bubo-agent-runtime-inference` | PR: https://github.com/TimothyMeadows/Bubo/pull/10 | depends on: bubo-llamacpp-native-wrapper | status: merged
 - bubo-e2e-hardening-packaging | base: `feature/bubo-agent-runtime-inference` | head: `feature/bubo-e2e-hardening-packaging` | PR: https://github.com/TimothyMeadows/Bubo/pull/11 | depends on: bubo-agent-runtime-inference | status: merged
 - bubo-main-stack-integration | base: `main` | head: `feature/bubo-main-stack-integration` | PR: https://github.com/TimothyMeadows/Bubo/pull/14 | depends on: bubo-e2e-hardening-packaging | status: post_pr_qa_passed
+- bubo-tool-hardening | base: `main` | head: `feature/bubo-tool-hardening` | PR: https://github.com/TimothyMeadows/Bubo/pull/16 | depends on: bubo-main-stack-integration | status: post_pr_qa_passed
 
 ## PR Merge Order
 
@@ -41,6 +43,7 @@ Goal flow may automatically raise and QA PRs, but it must never merge PRs or ena
 - Bubo agent runtime and inference providers: https://github.com/TimothyMeadows/Bubo/pull/10
 - Bubo end-to-end hardening and packaging: https://github.com/TimothyMeadows/Bubo/pull/11
 - Integrate Bubo goal stack onto main: https://github.com/TimothyMeadows/Bubo/pull/14
+- Harden Bubo workspace tools and patch flow: https://github.com/TimothyMeadows/Bubo/pull/16
 
 ## Post-PR QA Evidence
 
@@ -57,6 +60,8 @@ Goal flow may automatically raise and QA PRs, but it must never merge PRs or ena
 - bubo-e2e-hardening-packaging post-PR QA posted on PR #11.
 - bubo-main-stack-integration local validation passed: `dotnet restore Bubo.sln`, `dotnet build Bubo.sln --configuration Release --no-restore`, `dotnet test Bubo.sln --configuration Release --no-build --verbosity normal` with 32 passing tests, package validation for three packages, doctor/models CLI checks, Docker image build and sandbox smoke, scripted E2E fixture, `dotnet format Bubo.sln --verify-no-changes`, and `git diff --check`.
 - bubo-main-stack-integration post-PR QA posted on PR #14.
+- bubo-tool-hardening local validation passed: `dotnet build Bubo.sln --configuration Release --no-restore`, `dotnet test Bubo.sln --configuration Release --no-build --verbosity normal` with 44 passing tests, scripted E2E fixture, live Docker-backed `git_apply_patch` fixture, `dotnet format Bubo.sln --verify-no-changes`, and `git diff --check`.
+- bubo-tool-hardening post-PR QA posted on PR #16; GitHub Actions `dotnet` workflow run #6 passed.
 
 ## Review Notes
 
@@ -64,6 +69,7 @@ Goal flow may automatically raise and QA PRs, but it must never merge PRs or ena
 - Issues #2 through #6 are closed as completed.
 - PRs #8 through #11 were merged into their stacked base branches, not directly into `main`; PR #14 integrates the completed stack back onto `main`.
 - Task #13 integrates the completed stacked implementation branch back onto `main` while preserving README and `.ai` context from PR #12.
+- Task #15 adds guarded patch tools and workspace hardening after PR #14 merged; issue #15 is linked to PR #16 and should close on merge.
 
 ## Final Checklist
 

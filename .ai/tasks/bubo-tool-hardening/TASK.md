@@ -54,6 +54,9 @@ Harden Bubo's workspace boundary and add guarded patch application tools so dete
   - Live `git_apply_patch` fixture in a temporary Git workspace.
   - `dotnet format Bubo.sln --verify-no-changes`
   - `git diff --check`
+- PR opened: https://github.com/TimothyMeadows/Bubo/pull/16
+- Post-PR QA posted on PR #16 and mirrored to issue #15.
+- GitHub Actions `dotnet` workflow run #6 passed.
 
 ## Issue
 

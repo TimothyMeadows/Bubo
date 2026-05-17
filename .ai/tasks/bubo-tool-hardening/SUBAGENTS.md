@@ -15,7 +15,7 @@
 ### lane-1
 - Role: computer-science/security-engineer
 - Agent type: default
-- Status: local_validation_passed
+- Status: completed
 - Scope: Main-agent lane. Implement workspace hardening and guarded patch tools.
 - Write set: repository branch
 - Dependencies: none
@@ -73,3 +73,4 @@
 - lane-3 security review: identified symlink/reparse escapes, `.git` metadata edits, sandbox mount trust, generic command risks, and patch preflight risks. Integrated response: workspace guard now rejects `.git` targets and symlink/reparse segments, file/search/list/write tools use hardened helpers, sandbox tools and Docker mount argument construction reject reparse mount roots, and `git_apply_patch` preflights dangerous paths/modes before Docker-backed `git apply`.
 - lane-4 QA review: supplied coverage requirements for path hardening, patch tools, registry reachability, Docker-backed Git apply, and E2E fixtures. Integrated response: added unit tests for workspace guard hardening, patch tools, registry membership, runner reporting, and extended the scripted E2E fixture.
 - lane-5 technical writing review: flagged docs still treating patch tools as planned and missing deterministic examples. Integrated response: updated README, security/config docs, examples README, and added `patch-file` plus `git-apply-patch` example inputs.
+- lane-1 implementation result: PR #16 opened against `main`, post-PR QA posted, and GitHub Actions `dotnet` workflow run #6 passed.
