@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><AssemblyName>bubo</AssemblyName><Version>1.0.0</Version></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Bubo.Host/Bubo.Host.csproj" />
+    <ProjectReference Include="../runtime/proof-to-model/Infrastructure/ProofToModel.Infrastructure.csproj" />
+    <ProjectReference Include="../runtime/model-to-animation/Infrastructure/Motion.Infrastructure.csproj" />
+    <ProjectReference Include="../runtime/model-to-action/Infrastructure/Action.Infrastructure.csproj" />
+    <Content Include="../../resources/**/*" Link="resources/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="../../LICENSE;../../README.md;../../ARCHITECTURE.md;../../CONTRIBUTING.md;../../logo.png" Link="%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="../../provenance/*.json" Link="provenance/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="../runtime/proof-to-model/vendor/bubo/LICENSE;../runtime/proof-to-model/vendor/bubo/IMPORT.json" Link="notices/bubo/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="../runtime/proof-to-model/REUSE.md" Link="notices/bubo/REUSE.md" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

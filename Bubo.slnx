@@ -1,0 +1,56 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Bubo.Cli/Bubo.Cli.csproj" />
+    <Project Path="src/Bubo.Host.Tests/Bubo.Host.Tests.csproj" />
+    <Project Path="src/Bubo.Host/Bubo.Host.csproj" />
+  </Folder>
+  <Folder Name="/src/runtime/" />
+  <Folder Name="/src/runtime/asset-production/">
+    <Project Path="src/runtime/asset-production/AssetProduction.csproj" />
+  </Folder>
+  <Folder Name="/src/runtime/model-to-action/">
+    <Project Path="src/runtime/model-to-action/ModelToAction.csproj" />
+  </Folder>
+  <Folder Name="/src/runtime/model-to-action/Application/">
+    <Project Path="src/runtime/model-to-action/Application/Action.Application.csproj" />
+  </Folder>
+  <Folder Name="/src/runtime/model-to-action/Domain/">
+    <Project Path="src/runtime/model-to-action/Domain/Action.Domain.csproj" />
+  </Folder>
+  <Folder Name="/src/runtime/model-to-action/Infrastructure/">
+    <Project Path="src/runtime/model-to-action/Infrastructure/Action.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/runtime/model-to-action/Tests/">
+    <Project Path="src/runtime/model-to-action/Tests/RuntimeTests.csproj" />
+  </Folder>
+  <Folder Name="/src/runtime/model-to-animation/">
+    <Project Path="src/runtime/model-to-animation/ModelToAnimation.csproj" />
+  </Folder>
+  <Folder Name="/src/runtime/model-to-animation/Application/">
+    <Project Path="src/runtime/model-to-animation/Application/Motion.Application.csproj" />
+  </Folder>
+  <Folder Name="/src/runtime/model-to-animation/Domain/">
+    <Project Path="src/runtime/model-to-animation/Domain/Motion.Domain.csproj" />
+  </Folder>
+  <Folder Name="/src/runtime/model-to-animation/Infrastructure/">
+    <Project Path="src/runtime/model-to-animation/Infrastructure/Motion.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/runtime/model-to-animation/Tests/">
+    <Project Path="src/runtime/model-to-animation/Tests/RuntimeTests.csproj" />
+  </Folder>
+  <Folder Name="/src/runtime/proof-to-model/">
+    <Project Path="src/runtime/proof-to-model/ProofToModel.csproj" />
+  </Folder>
+  <Folder Name="/src/runtime/proof-to-model/Application/">
+    <Project Path="src/runtime/proof-to-model/Application/ProofToModel.Application.csproj" />
+  </Folder>
+  <Folder Name="/src/runtime/proof-to-model/Domain/">
+    <Project Path="src/runtime/proof-to-model/Domain/ProofToModel.Domain.csproj" />
+  </Folder>
+  <Folder Name="/src/runtime/proof-to-model/Infrastructure/">
+    <Project Path="src/runtime/proof-to-model/Infrastructure/ProofToModel.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/runtime/proof-to-model/Tests/">
+    <Project Path="src/runtime/proof-to-model/Tests/RuntimeTests.csproj" />
+  </Folder>
+</Solution>
