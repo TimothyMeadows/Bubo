@@ -426,7 +426,7 @@ sealed class Fixture
     JsonObject document;
     public Fixture(string root)
     {
-        Root = root;
+        Root = Path.GetFullPath(root);
         Directory.CreateDirectory(Root);
         WriteFile("inputs/rights.json", "{\"authorized\":true,\"reason\":\"SYNTHETIC TEST ONLY; no production rights asserted\"}");
         WriteFile("policy-receipt.json", "{\"kind\":\"opaque fixture policy data\"}");
