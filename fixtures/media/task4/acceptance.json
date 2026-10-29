@@ -1,0 +1,301 @@
+{
+  "schemaVersion": "bubo-native-acceptance-evidence/v1",
+  "implementationRevision": "da3afd20b66320681d212915da5010554e82c977",
+  "trackingIssue": "https://github.com/TimothyMeadows/OpenCaw/issues/145",
+  "platform": "Windows CUDA; RTX5080 Laptop16GB; dedicated pinned CPython3.12.16/Torch2.7.1+cu128",
+  "sourceRevision": "ca1e85fe9430179831e6bc6be790c332190a3866",
+  "modelRevision": "ACE-Step/Ace-Step1.5@19671f406d603126926c1b7e2adc169acbcade22",
+  "scope": "Actual complete public API executions; exact unchanged native WAV/settings bytes. Portable record omits absolute loaded-module paths and GPU UUID; full manifests and hashes are preserved task-locally.",
+  "records": [
+    {
+      "requestId": "music-instrumental-revision",
+      "file": "instrumental-revision.wav",
+      "originalManifestSha256": "d0b9b6fe4c5fb3fc1b1e4a4b6076e879eb184a356223e83f38b4a852e44e9dc9",
+      "request": {
+        "schemaVersion": "bubo-media-request/v1",
+        "requestId": "music-instrumental-revision",
+        "backend": "ace-step-turbo",
+        "task": "bubo-media-music",
+        "outputDirectory": "staging",
+        "rights": {
+          "path": "inputs/music-rights-v1.json",
+          "sha256": "de31b5e7d3b19d539d704e13ca5432a1f91c26a16afe2f6c92c7712261e2d6c2"
+        },
+        "installation": {
+          "path": "installations/ace-step-turbo-v2.json",
+          "sha256": "ab189a4e4ef7e6d40da43bc312abbb814cff3f2052b7365c41bee2ca53b7e97b"
+        },
+        "settings": {
+          "device": "cuda:0",
+          "precision": "bfloat16",
+          "offload": "none"
+        },
+        "budget": {
+          "maximumOutputs": 1,
+          "maximumBytesPerOutput": 33554432,
+          "maximumTotalBytes": 33554432,
+          "maximumPixels": 262144,
+          "maximumAudioSeconds": 60
+        },
+        "items": [
+          {
+            "id": "instrumental",
+            "prompt": "Instrumental gentle acoustic folk with fingerpicked acoustic guitar, warm piano, soft bass and restrained brush drums, steady pulse, no vocals or speech.",
+            "seed": 15485863,
+            "steps": 8,
+            "guidance": 1,
+            "seconds": 20,
+            "loopCandidate": false,
+            "music": {
+              "mode": "instrumental",
+              "lyrics": "",
+              "vocalLanguage": "unknown",
+              "bpm": 100,
+              "keyScale": "C major",
+              "timeSignature": "4",
+              "shift": 3
+            }
+          }
+        ],
+        "acceptance": {
+          "case": "instrumental",
+          "kind": "revision",
+          "approval": {
+            "path": "inputs/budget-shared-v1.json",
+            "sha256": "5b9dc685a455a53bb1e0128f472be493abbb69b67ab242d7b44238f73a5828a6"
+          }
+        }
+      },
+      "originalClaim": "shared-media/acceptance/instrumental/revision.json",
+      "backend": "ace-step-turbo",
+      "runtimeBuild": {
+        "cliSha256": "fc2a34c34afe812ff3fe0bea5f4ff7f80baeebe2e392321cb64b034f18cb35ba",
+        "resourceCatalogSha256": "1df76fe49c1f4555c7c36972d53a42df553cf62dc7faef2d0037b199e57bb06b",
+        "assemblies": {
+          "Action.Application.dll": "bb4cec5b1492ab99fcdb887fba17d7db1525528a4fcb5166fa721244b1fb650c",
+          "Action.Domain.dll": "bf26e95c65adb1ba5056225d3189c32f85c257c09ae13a9247970a11dde5b4c8",
+          "Action.Infrastructure.dll": "060c967c360bd3417741a07852fb4116c24946fb628eaa2613aa9da424895db3",
+          "AssetProduction.dll": "fbe61d2620388800bc92e10503c7774a60c22d4de65dd742dbdfdfd5d8270455",
+          "Bubo.Host.dll": "08defae919f9779abb1723adb978c3fe5bff8b7700ab0043fafd4d877f93971a",
+          "Media.Application.dll": "f83bbbf6e7f329adfd4460520b23d6fcbe37bb60a3728c4b3293869a705476ec",
+          "Media.Domain.dll": "4aa304a775a814bf90c5caf8b2eb6df7b808405e6875f96b7c492a7a6ab380df",
+          "Media.Infrastructure.dll": "c119e63ebf79caa46156a73f99c54bf23517c0b877e635ea8c08a709caa3cf03",
+          "Motion.Application.dll": "67c2e7182fb283cf336502e5eaff0024aba0aee7c3206c9892809a85c568b46c",
+          "Motion.Domain.dll": "4006d38278c0a0113e6dbe58078ec0192b3ad238479ee73a8356248471c713a7",
+          "Motion.Infrastructure.dll": "a33b616bca30eed79a4ba85a5f889a1a7822c2230bde9c955033c9c96e66982b",
+          "ProofToModel.Application.dll": "e10f65ad0e071dc7f57d942aabd05a0942d5a123931cf82f167fd4eb88940748",
+          "ProofToModel.Domain.dll": "90e64cfd779d0b1742c803de918238ea5592989b9380c0e3437d2032ed88f46c",
+          "ProofToModel.Infrastructure.dll": "3904170d832f2ed602b57a223d9df43382ecd10f8eefae9c28f3c328a4824eba",
+          "bubo.dll": "fc2a34c34afe812ff3fe0bea5f4ff7f80baeebe2e392321cb64b034f18cb35ba"
+        },
+        "launch": {
+          "bubo.deps.json": "5554a90aade976497162753d9fcfb72ae766c6073fedbb4314d7f071eadb5b40",
+          "bubo.runtimeconfig.json": "c230a317a54dd960bcbeb5f347f52e18dc665a26f7efda2159fced9a5ac7e097",
+          "bubo.exe": "108c078eeef9ef5ee35346da4a6e2a85ab8b8132fbb3a1a3551b48583544b5be"
+        }
+      },
+      "resourceCatalogSha256": "1df76fe49c1f4555c7c36972d53a42df553cf62dc7faef2d0037b199e57bb06b",
+      "catalogSha256": "460269bc5601f2fb7ede5f3ec255147b0c1a7674bc2f61fc5c551783e570ee5e",
+      "environmentSha256": "ebe0eb26fbae9ecfd3ccf4822fa369b8a7732ad67e541e614ecb5d481f2218ec",
+      "workerSourceSha256": "9fe3422351f3fc3f3e59098afe17510feee5144ae21d1259444593f069739c24",
+      "actualSettings": {
+        "device": "cuda:0",
+        "deviceName": "NVIDIA GeForce RTX 5080 Laptop GPU",
+        "precision": "bfloat16",
+        "offload": "none",
+        "componentPrecisions": [
+          "model:bfloat16",
+          "vae:bfloat16",
+          "text_encoder:bfloat16"
+        ],
+        "modelVersion": null,
+        "linkedLibraryCommit": null
+      },
+      "timing": {
+        "loadingSeconds": 31.26213050005026,
+        "unloadingSeconds": 0.1730956999817863,
+        "perOutputInferenceSeconds": [
+          13.96807279996574
+        ]
+      },
+      "cleanup": {
+        "mechanism": "torch._C._cuda_clearCublasWorkspaces",
+        "allocatedBeforeWorkspaceClearBytes": 8519680,
+        "reservedBeforeWorkspaceClearBytes": 7203717120,
+        "endingAllocatedBytes": 0,
+        "endingReservedBytes": 0
+      },
+      "modelLoads": 1,
+      "unloaded": true,
+      "output": {
+        "sha256": "a7c5614f60a02ece335c10da24dc0724ec32f02aa1dde85b3131d6033b1f8e8f",
+        "bytes": 7680088,
+        "inferenceSeconds": 13.96807279996574,
+        "sampleRate": 48000,
+        "channels": 2,
+        "frames": 960000,
+        "peak": 1.109375,
+        "rms": 0.08778029059094583,
+        "clippedFraction": 0.00021197916666666666,
+        "silentFraction": 0.0003838541666666667
+      },
+      "settingsFile": "instrumental-revision.settings.json",
+      "settingsSha256": "b950dfe0077235b082a3245cfb6fcf58010735f6e5a1460800557e24894d09e8",
+      "humanReview": "User accepted musical content; format/sample bytes identical to reviewed original; only ancillary PEAK timestamp differs",
+      "promotion": false
+    },
+    {
+      "requestId": "music-supplied-lyrics-revision",
+      "file": "supplied-lyrics-revision.wav",
+      "originalManifestSha256": "b4c294fd3a89029361df25bb9210c3894d6d651ca1ab8fd14f4f35b05a692b36",
+      "request": {
+        "schemaVersion": "bubo-media-request/v1",
+        "requestId": "music-supplied-lyrics-revision",
+        "backend": "ace-step-turbo",
+        "task": "bubo-media-music",
+        "outputDirectory": "staging",
+        "rights": {
+          "path": "inputs/music-rights-v1.json",
+          "sha256": "de31b5e7d3b19d539d704e13ca5432a1f91c26a16afe2f6c92c7712261e2d6c2"
+        },
+        "installation": {
+          "path": "installations/ace-step-turbo-v2.json",
+          "sha256": "ab189a4e4ef7e6d40da43bc312abbb814cff3f2052b7365c41bee2ca53b7e97b"
+        },
+        "settings": {
+          "device": "cuda:0",
+          "precision": "bfloat16",
+          "offload": "none"
+        },
+        "budget": {
+          "maximumOutputs": 1,
+          "maximumBytesPerOutput": 33554432,
+          "maximumTotalBytes": 33554432,
+          "maximumPixels": 262144,
+          "maximumAudioSeconds": 60
+        },
+        "items": [
+          {
+            "id": "supplied-lyrics",
+            "prompt": "Prominent clear solo female lead vocal singing in English from the first moment. The singer clearly sings each supplied lyric line melodically, vocals in the foreground throughout. Sparse quiet acoustic guitar accompaniment. Intimate vocal folk song, no instrumental introduction.",
+            "seed": 49979687,
+            "steps": 8,
+            "guidance": 1,
+            "seconds": 45,
+            "loopCandidate": false,
+            "music": {
+              "mode": "supplied-lyrics",
+              "lyrics": "[Verse - clear melodic female vocal]\nMorning light across the hill\nGolden skies are bright and still\nStep by step we find our way\nCarrying a brand new day",
+              "vocalLanguage": "en",
+              "bpm": 100,
+              "keyScale": "C major",
+              "timeSignature": "4",
+              "shift": 3
+            }
+          }
+        ],
+        "acceptance": {
+          "case": "supplied-lyrics",
+          "kind": "revision",
+          "approval": {
+            "path": "inputs/budget-shared-v1.json",
+            "sha256": "5b9dc685a455a53bb1e0128f472be493abbb69b67ab242d7b44238f73a5828a6"
+          }
+        }
+      },
+      "originalClaim": "shared-media/acceptance/supplied-lyrics/revision.json",
+      "backend": "ace-step-turbo",
+      "runtimeBuild": {
+        "cliSha256": "fc2a34c34afe812ff3fe0bea5f4ff7f80baeebe2e392321cb64b034f18cb35ba",
+        "resourceCatalogSha256": "1df76fe49c1f4555c7c36972d53a42df553cf62dc7faef2d0037b199e57bb06b",
+        "assemblies": {
+          "Action.Application.dll": "bb4cec5b1492ab99fcdb887fba17d7db1525528a4fcb5166fa721244b1fb650c",
+          "Action.Domain.dll": "bf26e95c65adb1ba5056225d3189c32f85c257c09ae13a9247970a11dde5b4c8",
+          "Action.Infrastructure.dll": "060c967c360bd3417741a07852fb4116c24946fb628eaa2613aa9da424895db3",
+          "AssetProduction.dll": "fbe61d2620388800bc92e10503c7774a60c22d4de65dd742dbdfdfd5d8270455",
+          "Bubo.Host.dll": "08defae919f9779abb1723adb978c3fe5bff8b7700ab0043fafd4d877f93971a",
+          "Media.Application.dll": "f83bbbf6e7f329adfd4460520b23d6fcbe37bb60a3728c4b3293869a705476ec",
+          "Media.Domain.dll": "4aa304a775a814bf90c5caf8b2eb6df7b808405e6875f96b7c492a7a6ab380df",
+          "Media.Infrastructure.dll": "c119e63ebf79caa46156a73f99c54bf23517c0b877e635ea8c08a709caa3cf03",
+          "Motion.Application.dll": "67c2e7182fb283cf336502e5eaff0024aba0aee7c3206c9892809a85c568b46c",
+          "Motion.Domain.dll": "4006d38278c0a0113e6dbe58078ec0192b3ad238479ee73a8356248471c713a7",
+          "Motion.Infrastructure.dll": "a33b616bca30eed79a4ba85a5f889a1a7822c2230bde9c955033c9c96e66982b",
+          "ProofToModel.Application.dll": "e10f65ad0e071dc7f57d942aabd05a0942d5a123931cf82f167fd4eb88940748",
+          "ProofToModel.Domain.dll": "90e64cfd779d0b1742c803de918238ea5592989b9380c0e3437d2032ed88f46c",
+          "ProofToModel.Infrastructure.dll": "3904170d832f2ed602b57a223d9df43382ecd10f8eefae9c28f3c328a4824eba",
+          "bubo.dll": "fc2a34c34afe812ff3fe0bea5f4ff7f80baeebe2e392321cb64b034f18cb35ba"
+        },
+        "launch": {
+          "bubo.deps.json": "5554a90aade976497162753d9fcfb72ae766c6073fedbb4314d7f071eadb5b40",
+          "bubo.runtimeconfig.json": "c230a317a54dd960bcbeb5f347f52e18dc665a26f7efda2159fced9a5ac7e097",
+          "bubo.exe": "108c078eeef9ef5ee35346da4a6e2a85ab8b8132fbb3a1a3551b48583544b5be"
+        }
+      },
+      "resourceCatalogSha256": "1df76fe49c1f4555c7c36972d53a42df553cf62dc7faef2d0037b199e57bb06b",
+      "catalogSha256": "460269bc5601f2fb7ede5f3ec255147b0c1a7674bc2f61fc5c551783e570ee5e",
+      "environmentSha256": "ebe0eb26fbae9ecfd3ccf4822fa369b8a7732ad67e541e614ecb5d481f2218ec",
+      "workerSourceSha256": "9fe3422351f3fc3f3e59098afe17510feee5144ae21d1259444593f069739c24",
+      "actualSettings": {
+        "device": "cuda:0",
+        "deviceName": "NVIDIA GeForce RTX 5080 Laptop GPU",
+        "precision": "bfloat16",
+        "offload": "none",
+        "componentPrecisions": [
+          "model:bfloat16",
+          "vae:bfloat16",
+          "text_encoder:bfloat16"
+        ],
+        "modelVersion": null,
+        "linkedLibraryCommit": null
+      },
+      "timing": {
+        "loadingSeconds": 32.54398640000727,
+        "unloadingSeconds": 0.22153189999517053,
+        "perOutputInferenceSeconds": [
+          14.659965300001204
+        ]
+      },
+      "cleanup": {
+        "mechanism": "torch._C._cuda_clearCublasWorkspaces",
+        "allocatedBeforeWorkspaceClearBytes": 8519680,
+        "reservedBeforeWorkspaceClearBytes": 7203717120,
+        "endingAllocatedBytes": 0,
+        "endingReservedBytes": 0
+      },
+      "modelLoads": 1,
+      "unloaded": true,
+      "output": {
+        "sha256": "44d1fee1cd021093ab10a5f7c1218b0ef7dc3172e6ae687e0375710ce3448587",
+        "bytes": 17280088,
+        "inferenceSeconds": 14.659965300001204,
+        "sampleRate": 48000,
+        "channels": 2,
+        "frames": 2160000,
+        "peak": 1.0625,
+        "rms": 0.10757812153890113,
+        "clippedFraction": 4.166666666666667e-06,
+        "silentFraction": 0.00014120370370370372
+      },
+      "settingsFile": "supplied-lyrics-revision.settings.json",
+      "settingsSha256": "37cb4252dd6d2cdc9209700702c92dea68aa2a664e9837eb2d2a4fe33c326404",
+      "humanReview": "User explicitly accepted final45-second four-line singing/usable-sound result for backend QA",
+      "promotion": false
+    }
+  ],
+  "failedOrRejectedOriginals": [
+    {
+      "case": "instrumental",
+      "sha256": "96afa7ba46cc25ef1b72376063b07444ff96a7766e27b5c14d96ad6fa0eef53a",
+      "verdict": "Generated audio but failed old unload assertion; claim remains consumed; not retroactively passed"
+    },
+    {
+      "case": "supplied-lyrics",
+      "sha256": "eedc015776ca5b85d6fb4e55e1a87a4f0c5de795761bc691f61ea8d23fae7e40",
+      "verdict": "Technical execution passed; user rejected because no singing was heard"
+    }
+  ],
+  "musicBudgetsExhausted": true,
+  "budgetRefunded": false,
+  "promotion": false,
+  "limits": "Backend QA only, no seamless-loop or runtime-asset acceptance. Raw FLOAT excursions above full scale are retained. Native Linux music and full fresh product provisioning are unverified. Original worker settings say humanReview=pending because they are immutable generation-time observations; this acceptance record and user-qa-review.json record subsequent human review."
+}
