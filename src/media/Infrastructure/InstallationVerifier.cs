@@ -154,7 +154,7 @@ public sealed class InstallationVerifier(IWorkspace workspace,AuditedResources r
         // A caller-authored receipt cannot expand loaded-module trust with self-hashed extras.
         // These roots have backend-specific model/archive/wheel or explicit native-bundle verification.
         // Notice directories never confer executable trust; only pinned notice files are admitted.
-        var exact=verifiedFiles.ToHashSet(OperatingSystem.IsWindows()?StringComparer.OrdinalIgnoreCase:StringComparer.Ordinal);
+        var exact=verifiedFiles.Select(path=>Path.GetFullPath(path,host.Root)).ToHashSet(OperatingSystem.IsWindows()?StringComparer.OrdinalIgnoreCase:StringComparer.Ordinal);
         foreach(var item in inventory)
         {
             var path=Path.GetFullPath(item.Path,host.Root);
