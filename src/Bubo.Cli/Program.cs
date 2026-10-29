@@ -38,6 +38,8 @@ try
     ValidateOperation(workflow, operation, options);
     var root = options.GetValueOrDefault("root") ?? throw new InvalidOperationException("Explicit --root required");
     var context = HostExecutionContext.Load(root, options.GetValueOrDefault("host-context") ?? throw new InvalidOperationException("Explicit --host-context required"));
+    if (context.InspectionOnly && workflow != "blender-inspection")
+        throw new InvalidOperationException("Inspection-only context cannot execute an asset workflow");
     if (options.TryGetValue("task", out var requestedTask) && requestedTask != context.TaskId)
         throw new InvalidOperationException("Task conflicts with host context");
     if (operation == "promote" && !context.AllowPromotion)
@@ -197,6 +199,9 @@ static void ValidateOperation(string workflow, string operation, Dictionary<stri
         _ => throw new InvalidOperationException("Unsupported workflow/operation")
     };
     common.UnionWith(specific);
+    // The retained v1 workflow requires an explicit diagnostic choice on every
+    // operation. Preserve that guard through the public versioned boundary.
+    if (workflow == "proof-to-model") common.Add("mode");
     foreach (var key in options.Keys)
         if (!common.Contains(key)) throw new InvalidOperationException("Unknown or inapplicable option: --" + key);
 }

@@ -188,6 +188,20 @@ Bad("duplicate-library", value => value["policy"]!["libraries"] = new JsonArray(
 Bad("malformed-library", value => value["policy"]!["libraries"] = new JsonArray("not-an-object"));
 
 var defaults = Make("optional-arrays-and-permissions");
+var inspection = Make("inspection-without-art-or-engine");
+inspection.Write(value => value["policy"] = new JsonObject
+{
+    ["purpose"] = "read-only-blender-inspection",
+    ["receipt"] = new JsonObject { ["path"] = "policy-receipt.json", ["sha256"] = inspection.PolicyHash }
+});
+var inspectionContext = inspection.Load();
+Check(inspectionContext.InspectionOnly && inspectionContext.Engine.Count == 0 && inspectionContext.Pipeline == "" && inspectionContext.StyleSha256 == "", "inspection purpose does not invent style or engine selections");
+inspectionContext.RequireReference("policy-receipt.json", "policy");
+Check(true, "inspection binds an exact current policy receipt");
+inspection.Write(value => value["policy"]!["receipt"]!["sha256"] = new string('0', 64));
+Reject(() => inspection.Load(), "inspection rejects stale policy receipt", "registered policy reference");
+inspection.Write(value => { value["policy"]!["receipt"]!["sha256"] = inspection.PolicyHash; value["permissions"]!["promotion"] = true; });
+Reject(() => inspection.Load(), "inspection cannot enable promotion", "cannot authorize");
 defaults.Write(value => { value.Remove("permissions"); value.Remove("references"); value.Remove("tools"); value["roots"]!.AsObject().Remove("inputs"); value["roots"]!.AsObject().Remove("outputs"); value["roots"]!.AsObject().Remove("tools"); value["policy"]!.AsObject().Remove("libraries"); value["policy"]!["engine"]!["outputScope"] = null; });
 var defaultContext = defaults.Load();
 Check(defaultContext.References.Count == 0 && defaultContext.Tools.Count == 0 && defaultContext.Libraries.Count == 0 && !defaultContext.AllowProvisioning && !defaultContext.AllowPromotion, "optional arrays are empty and permissions remain false");

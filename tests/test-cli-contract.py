@@ -55,6 +55,18 @@ def main():
     def write_context(): context_path.write_text(json.dumps(context,indent=2)+'\n',encoding='utf-8')
     write_context()
     common=['--api-version','1','--root',str(project),'--host-context',str(context_path)]
+    original_policy=context['policy']
+    context['roots']['state']='inspection-state'
+    context['policy']={'purpose':'read-only-blender-inspection','receipt':{'path':'policy.json','sha256':sha(policy)}}
+    write_context()
+    invoke(['proof-to-model','status',*common,'--manifest','state/old.json'],'Inspection-only context cannot execute an asset workflow')
+    invoke(['blender-inspection','inspect',*common,'--manifest','unregistered.json'],'matching registered host reference')
+    context['policy']['pipeline']='BLENDER'; write_context()
+    invoke(['blender-inspection','inspect',*common],'must not assert art or engine selections')
+    del context['policy']['pipeline']; context['permissions']['provisioning']=True; write_context()
+    invoke(['blender-inspection','inspect',*common],'cannot authorize provisioning or promotion')
+    context['permissions']['provisioning']=False; context['policy']=original_policy; context['roots']['state']='state'; write_context()
+    invoke(['proof-to-model','preprocess',*common,'--mode','single-view-diagnostic','--manifest','state/missing.json'],'Could not find')
     invoke(['model-to-action','init',*common,'--asset','owned','--version','v1','--manifest','state/custom.json'],'Action init requires its canonical manifest path')
     check(not (project/'state').exists() and not (project/'staging').exists(),'noncanonical action init rejects before any workflow write')
     invoke(['proof-to-model','setup',*common,'--execute'],'does not permit explicit provisioning')
