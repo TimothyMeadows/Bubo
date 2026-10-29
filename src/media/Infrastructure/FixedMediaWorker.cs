@@ -35,16 +35,25 @@ public sealed class FixedMediaWorker(IWorkspace workspace,INativeProcess process
             if(!probe)foreach(var item in request.Items){Text(writer,item.Id);Text(writer,item.Prompt);writer.Write((uint)item.Width!.Value);writer.Write((uint)item.Height!.Value);writer.Write(item.Seed);writer.Write((uint)item.Steps);}
             executable=installation.Worker;args=[job,result];
         }
-        else
+        else if(installation.Backend=="stable-audio-open")
         {
             var payload=new {schemaVersion="bubo-sfx-worker/v1",operation=probe?"probe":"generate",modelDirectory=installation.ModelDirectory,outputDirectory=native,cacheDirectory=cache,settings=request.Settings,
                 items=probe?[]:request.Items.Select(i=>new{i.Id,i.Prompt,i.NegativePrompt,i.Seed,i.Steps,i.Guidance,seconds=i.Seconds!.Value,i.LoopCandidate}).ToArray()};
             using var stream=new FileStream(job,FileMode.CreateNew,FileAccess.Write,FileShare.Read);JsonSerializer.Serialize(stream,payload,MediaJson.Options);
             executable=installation.Python!;args=["-I","-B","-X","utf8",installation.Worker,job,result];
         }
+        else if(installation.Backend=="ace-step-turbo")
+        {
+            var payload=new {schemaVersion="bubo-music-worker/v1",operation=probe?"probe":"generate",modelDirectory=installation.ModelDirectory,
+                sourceDirectory=installation.SourceDirectory??throw new InvalidOperationException("Pinned engine source required"),outputDirectory=native,cacheDirectory=cache,settings=request.Settings,
+                items=probe?[]:request.Items.Select(i=>new{i.Id,i.Prompt,i.Seed,i.Steps,i.Guidance,seconds=i.Seconds!.Value,i.LoopCandidate,i.Music}).ToArray()};
+            using var stream=new FileStream(job,FileMode.CreateNew,FileAccess.Write,FileShare.Read);JsonSerializer.Serialize(stream,payload,MediaJson.Options);
+            executable=installation.Python!;args=["-I","-B","-X","utf8",installation.Worker,job,result];
+        }
+        else throw new InvalidOperationException("Unknown fixed worker; no fallback");
         var inputs=installation.Files.Select(x=>new GpuInputIdentity(x.Path,x.Sha256)).Append(new(workspace.Relative(job),workspace.HashFile(job)))
             .Append(new(installation.ReceiptPath,installation.ReceiptSha256)).ToList();
-        if(installation.Backend=="stable-audio-open")inputs.Add(new(installation.Worker,workspace.HashFile(installation.Worker)));
+        if(installation.Backend is "stable-audio-open" or "ace-step-turbo")inputs.Add(new(installation.Worker,workspace.HashFile(installation.Worker)));
         inputs.AddRange(host.Tools.Where(x=>x.Kind=="platform-module").Select(x=>new GpuInputIdentity(x.Path,x.Sha256)));
         var environment=new Dictionary<string,string> { ["CUDA_VISIBLE_DEVICES"]="0",["CUDA_CACHE_PATH"]=Path.Combine(cache,"cuda"),["TEMP"]=Path.Combine(cache,"tmp"),["TMP"]=Path.Combine(cache,"tmp"),["TORCHINDUCTOR_CACHE_DIR"]=Path.Combine(cache,"inductor"),["TRITON_CACHE_DIR"]=Path.Combine(cache,"triton") };
         var spec=new GpuProcessSpec(executable,args,host.Root,workspace.ResolveWrite(attempt+"/worker.log"),host.TimeoutSeconds,host.MaxLogBytes,host.MaxPrivateBytes,environment,inputs,MaximumWaitSeconds:Math.Min(300,host.TimeoutSeconds));
@@ -58,7 +67,13 @@ public sealed class FixedMediaWorker(IWorkspace workspace,INativeProcess process
             foreach(var path in new[]{cache,Path.Combine(cache,"tmp"),Path.Combine(cache,"cuda"),Path.Combine(cache,"inductor"),Path.Combine(cache,"triton")})Directory.CreateDirectory(host.ResolveWritePath(path));
         });
         host.ValidateFresh();
-        return installation.Backend=="flux-schnell"?ReadImage(request,installation,result,native,output,probe):ReadSfx(request,installation,result,native,probe);
+        return installation.Backend switch
+        {
+            "flux-schnell"=>ReadImage(request,installation,result,native,output,probe),
+            "stable-audio-open"=>ReadAudio(request,installation,result,native,probe,false),
+            "ace-step-turbo"=>ReadAudio(request,installation,result,native,probe,true),
+            _=>throw new InvalidOperationException("Unknown fixed worker result")
+        };
     }
 
     internal WorkerBatchResult ReadImage(MediaRequest request,PreparedInstallation installation,string file,string native,string output,bool probe)
@@ -98,11 +113,21 @@ public sealed class FixedMediaWorker(IWorkspace workspace,INativeProcess process
         return new("bubo-flux-worker/v1",new("cuda:0",device,"q8_0","text-encoder-cpu",["diffusion-weight-storage:q8_0","other-component-storage:catalogued; compute precision not individually exposed"],uuid,version,commit,modules),loading,unloading,outputs.ToArray(),1,true);
     }
 
-    WorkerBatchResult ReadSfx(MediaRequest request,PreparedInstallation installation,string file,string native,bool probe)
+    internal WorkerBatchResult ReadAudio(MediaRequest request,PreparedInstallation installation,string file,string native,bool probe,bool music)
     {
+        var protocol=music?"bubo-music-worker/v1":"bubo-sfx-worker/v1";
         var value=JsonNode.Parse(MediaAdmission.ReadBounded(file))!.AsObject();
-        if(value["protocol"]?.GetValue<string>()!="bubo-sfx-worker/v1" || value["modelLoads"]?.GetValue<int>()!=1 || value["unloaded"]?.GetValue<bool>()!=true
+        if(value["protocol"]?.GetValue<string>()!=protocol || value["modelLoads"]?.GetValue<int>()!=1 || value["unloaded"]?.GetValue<bool>()!=true
             || value["networkAttempts"]?.GetValue<int>()!=0 || value["endingTorchAllocatedBytes"]?.GetValue<long>()!=0)throw new InvalidOperationException("SFX lifecycle/offline evidence differs");
+        if(music && (value["planningLmLoaded"]?.GetValue<bool>()!=false || value["sourceRevision"]?.GetValue<string>()!="ca1e85fe9430179831e6bc6be790c332190a3866"))
+            throw new InvalidOperationException("Music engine/planning-LM evidence differs");
+        WorkerCleanup? cleanup=null;
+        if(music)
+        {
+            cleanup=MediaJson.Read<WorkerCleanup>(Encoding.UTF8.GetBytes(value["cleanup"]!.ToJsonString()));
+            if(cleanup.Mechanism!="torch._C._cuda_clearCublasWorkspaces" || cleanup.AllocatedBeforeWorkspaceClearBytes<0 || cleanup.ReservedBeforeWorkspaceClearBytes<0
+                || cleanup.EndingAllocatedBytes!=0 || cleanup.EndingReservedBytes<0)throw new InvalidOperationException("Music workspace/model cleanup evidence differs");
+        }
         var actual=value["execution"]!.AsObject();
         var python=value["python"]!.AsObject();
         if(python["version"]?.GetValue<string>()!="3.12.16" || !Path.GetFullPath(python["executable"]!.GetValue<string>()).Equals(installation.Python,OperatingSystem.IsWindows()?StringComparison.OrdinalIgnoreCase:StringComparison.Ordinal)
@@ -117,13 +142,47 @@ public sealed class FixedMediaWorker(IWorkspace workspace,INativeProcess process
             var item=request.Items[i];var row=data[i]!.AsObject();
             if(row["id"]?.GetValue<string>()!=item.Id || row["path"]?.GetValue<string>()!=$"{i:000}.wav" || row["seed"]?.GetValue<long>()!=item.Seed
                 || row["steps"]?.GetValue<int>()!=item.Steps || row["guidance"]?.GetValue<double>()!=item.Guidance || row["loopReviewed"]?.GetValue<bool>()!=false)throw new InvalidOperationException("Actual SFX/request identity differs");
-            var path=workspace.Resolve(Path.Combine(native,$"{i:000}.wav"));var measurements=WaveInspection.Read(path,request.Budget.MaximumBytesPerOutput);
+            var path=workspace.Resolve(Path.Combine(native,$"{i:000}.wav"));var measurements=WaveInspection.Read(path,request.Budget.MaximumBytesPerOutput,music?48000:44100);
             if(Math.Abs(measurements.Frames-checked((long)Math.Round(item.Seconds!.Value*measurements.SampleRate,MidpointRounding.ToEven)))>1)throw new InvalidOperationException("Actual SFX duration differs");
+            FileIdentity? metadata=null;
+            if(music)
+            {
+                if(row["metadata"]?.GetValue<string>()!=$"{i:000}.settings.json" || row["scheduler"]?.GetValue<string>()!="ode/euler")throw new InvalidOperationException("Actual music metadata identity differs");
+                var meta=workspace.Resolve(Path.Combine(native,$"{i:000}.settings.json"));var observed=JsonNode.Parse(MediaAdmission.ReadBounded(meta))!.AsObject();
+                ValidateMusicMetadata(item,observed);metadata=new(workspace.Relative(meta),workspace.HashFile(meta));
+            }
             outputs.Add(new(item.Id,workspace.Relative(path),row["inferenceSeconds"]!.GetValue<double>(),null,null,measurements.SampleRate,measurements.Channels,measurements.Frames,measurements.Peak,measurements.Rms,measurements.ClippedFraction,measurements.SilentFraction,
-                row["seed"]!.GetValue<long>(),row["steps"]!.GetValue<int>(),row["guidance"]!.GetValue<double>(),row["scheduler"]!.GetValue<string>()));
+                row["seed"]!.GetValue<long>(),row["steps"]!.GetValue<int>(),row["guidance"]!.GetValue<double>(),row["scheduler"]!.GetValue<string>(),metadata));
         }
-        return new("bubo-sfx-worker/v1",new("cuda:0",actual["deviceName"]!.GetValue<string>(),request.Settings.Precision,"none",actual["componentPrecisions"]!.AsArray().Select(x=>x!.GetValue<string>()).ToArray(),actual["deviceUuid"]!.GetValue<string>(),LoadedModules:modules),
-            value["loadingSeconds"]!.GetValue<double>(),value["unloadingSeconds"]!.GetValue<double>(),outputs.ToArray(),1,true);
+        return new(protocol,new("cuda:0",actual["deviceName"]!.GetValue<string>(),request.Settings.Precision,"none",actual["componentPrecisions"]!.AsArray().Select(x=>x!.GetValue<string>()).ToArray(),actual["deviceUuid"]!.GetValue<string>(),LoadedModules:modules),
+            value["loadingSeconds"]!.GetValue<double>(),value["unloadingSeconds"]!.GetValue<double>(),outputs.ToArray(),1,true,cleanup);
+    }
+    internal static void ValidateMusicMetadata(GenerationItem item,JsonObject value)
+    {
+        var m=item.Music!;var p=value["params"]!.AsObject();var c=value["config"]!.AsObject();
+        if(value["protocol"]?.GetValue<string>()!="bubo-music-settings/v1" || value["sourceRevision"]?.GetValue<string>()!="ca1e85fe9430179831e6bc6be790c332190a3866"
+            || value["mode"]?.GetValue<string>()!=m.Mode || value["planningLmLoaded"]?.GetValue<bool>()!=false || value["lmMetadata"] is not null
+            || value["innerSeed"]?.GetValue<long>()!=item.Seed || value["normalization"]?.GetValue<bool>()!=false || value["cpuDecode"]?.GetValue<bool>()!=false
+            || value["actualOutputCount"]?.GetValue<int>()!=1 || value["sampleRate"]?.GetValue<int>()!=48000
+            || value["attention"]?.GetValue<string>()!="sdpa"
+            || p["caption"]?.GetValue<string>()!=item.Prompt || p["lyrics"]?.GetValue<string>()!=(m.Mode=="instrumental"?"[Instrumental]":m.Lyrics)
+            || p["instrumental"]?.GetValue<bool>()!=(m.Mode=="instrumental") || p["vocal_language"]?.GetValue<string>()!=m.VocalLanguage
+            || p["duration"]?.GetValue<double>()!=item.Seconds || p["seed"]?.GetValue<long>()!=item.Seed || p["inference_steps"]?.GetValue<int>()!=item.Steps
+            || p["guidance_scale"]?.GetValue<double>()!=1 || p["shift"]?.GetValue<double>()!=m.Shift || p["keyscale"]?.GetValue<string>()!=m.KeyScale
+            || p["timesignature"]?.GetValue<string>()!=m.TimeSignature || p["bpm"]?.GetValue<int>()!=m.Bpm
+            || p["task_type"]?.GetValue<string>()!="text2music" || p["infer_method"]?.GetValue<string>()!="ode" || p["sampler_mode"]?.GetValue<string>()!="euler"
+            || p["thinking"]?.GetValue<bool>()!=false || p["use_cot_metas"]?.GetValue<bool>()!=false || p["use_cot_caption"]?.GetValue<bool>()!=false
+            || p["use_cot_language"]?.GetValue<bool>()!=false || p["use_cot_lyrics"]?.GetValue<bool>()!=false || p["enable_normalization"]?.GetValue<bool>()!=false
+            || p["dcw_enabled"]?.GetValue<bool>()!=false || p["fade_in_duration"]?.GetValue<double>()!=0 || p["fade_out_duration"]?.GetValue<double>()!=0
+            || p["latent_shift"]?.GetValue<double>()!=0 || p["latent_rescale"]?.GetValue<double>()!=1 || p["reference_audio"] is not null || p["src_audio"] is not null
+            || p["audio_codes"]?.GetValue<string>()!="" || c["batch_size"]?.GetValue<int>()!=1 || c["allow_lm_batch"]?.GetValue<bool>()!=false
+            || c["use_random_seed"]?.GetValue<bool>()!=false || c["seeds"]?.AsArray().Count!=1 || c["seeds"]?[0]?.GetValue<long>()!=item.Seed)
+            throw new InvalidOperationException("Actual music settings/planning-LM/raw-amplitude evidence differs");
+        var conditioning=value["conditioning"]!.AsArray();
+        if(conditioning.Count!=2 || !conditioning.Select((x,i)=>x!["maximumTokens"]?.GetValue<int>()==(i==0?256:2048)
+            && x["tokenCount"]?.GetValue<int>() is >0 && x["tokenCount"]!.GetValue<int>()<=(i==0?256:2048)
+            && x["truncated"]?.GetValue<bool>()==false && !string.IsNullOrWhiteSpace(x["text"]?.GetValue<string>())).All(x=>x))
+            throw new InvalidOperationException("Music conditioning was truncated or lacks token-limit evidence");
     }
     internal void ValidateModules(PreparedInstallation installation,string[] modules)
     {

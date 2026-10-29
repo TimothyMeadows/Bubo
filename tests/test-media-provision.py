@@ -1,6 +1,6 @@
 """Owned adversarial installer fixtures. No network, software installation or model execution."""
 from pathlib import Path
-import hashlib,importlib.util,io,json,os,subprocess,sys,tarfile,tempfile
+import hashlib,importlib.util,io,json,os,subprocess,sys,tarfile,tempfile,zipfile
 from unittest.mock import patch
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -47,6 +47,20 @@ with tarfile.open(attack,'w:gz') as output:
     entry=tarfile.TarInfo('python/../../escaped');entry.size=1;output.addfile(entry,io.BytesIO(b'x'))
 denied(lambda:provision.extract(attack,install/'rejected'),'archive traversal rejected')
 check(not (root/'escaped').exists(),'rejected archive created no escaped file')
+
+source_zip=cache/'source.zip'
+with zipfile.ZipFile(source_zip,'w') as output:output.writestr('pin/engine.py',b'# OWNED source fixture; never executed\n')
+provision.extract_source(source_zip,install/'source','pin/')
+check((install/'source/engine.py').read_bytes()==b'# OWNED source fixture; never executed\n','fixed source ZIP extractor preserves exact upstream bytes')
+with zipfile.ZipFile(source_zip,'w') as output:output.writestr('pin/../escaped.py',b'# traversal')
+denied(lambda:provision.extract_source(source_zip,install/'bad-source','pin/'),'source ZIP traversal rejected')
+with zipfile.ZipFile(source_zip,'w') as output:
+    linked=zipfile.ZipInfo('pin/engine.py');linked.external_attr=0xA000<<16;output.writestr(linked,b'../outside')
+denied(lambda:provision.extract_source(source_zip,install/'linked-source','pin/'),'source ZIP symbolic link rejected')
+with zipfile.ZipFile(source_zip,'w') as output:
+    aliased=zipfile.ZipInfo('pin/placeholder');aliased.filename='pin/alias\\engine.py';output.writestr(aliased,b'# alias')
+with zipfile.ZipFile(source_zip) as archive_check:check('\\' in archive_check.infolist()[0].orig_filename,'adversarial ZIP fixture actually retains its backslash on Windows')
+denied(lambda:provision.extract_source(source_zip,install/'aliased-source','pin/'),'source ZIP backslash alias rejected')
 
 link=install/'linked'
 try:link.symlink_to(cache,target_is_directory=True)

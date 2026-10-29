@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Bubo.Media.Application;
 using Bubo.Media.Domain;
 using OpenCaw.AssetProduction;
@@ -37,7 +38,8 @@ public sealed class MediaProvision(IWorkspace workspace,AuditedResources resourc
         if(request.CudaCompiler is {} cudaCompiler && !Path.GetFullPath(cudaCompiler.Path,host.Root).Equals(Path.Combine(Path.GetFullPath(request.CudaRoot!),OperatingSystem.IsWindows()?"bin/nvcc.exe":"bin/nvcc"),OperatingSystem.IsWindows()?StringComparison.OrdinalIgnoreCase:StringComparison.Ordinal))throw new InvalidOperationException("Registered CUDA compiler must belong to the selected existing toolkit");
         var script=resources.Resolve("resources/media/provision.py");var catalog=resources.Resolve("resources/media/catalog.json");
         var platform=OperatingSystem.IsWindows()?"windows":OperatingSystem.IsLinux()?"linux":throw new PlatformNotSupportedException("Provisioning supports Windows/Linux only");
-        var environment=request.Backend=="stable-audio-open"?resources.Resolve("resources/media/environments/sfx-"+platform+".json"):null;
+        var definition=JsonNode.Parse(File.ReadAllBytes(catalog))!["backends"]!.AsArray().Single(x=>x!["id"]!.GetValue<string>()==request.Backend)!;
+        var environment=request.Backend is "stable-audio-open" or "ace-step-turbo"?resources.Resolve(definition["environments"]![platform]!.GetValue<string>()):null;
         var plan=new {schemaVersion="bubo-media-provision-plan/v1",request.Backend,platform,installationRoot=request.InstallationRoot,downloadRoot=request.DownloadRoot,
             catalogSha256=Workspace.Hash(catalog),environmentSha256=environment is null?null:Workspace.Hash(environment),installerSha256=Workspace.Hash(script),
             execute,networkAccess=execute,driverInstallation=false,licenseAcceptance=false,generation=false,promotion=false};
@@ -51,7 +53,8 @@ public sealed class MediaProvision(IWorkspace workspace,AuditedResources resourc
             catalog,catalogSha256=Workspace.Hash(catalog),environment,environmentSha256=environment is null?null:Workspace.Hash(environment),
             workerSource=resources.Resolve("resources/media/image/worker.cpp"),workerBuild=resources.Resolve("resources/media/image/worker.cmake"),
             sfxWorker=resources.Resolve("resources/media/sfx/worker.py"),
-            resourceIdentities=new[]{script,catalog,environment,resources.Resolve("resources/media/image/worker.cpp"),resources.Resolve("resources/media/image/worker.cmake"),resources.Resolve("resources/media/sfx/worker.py")}.OfType<string>().Select(x=>new{path=x,sha256=Workspace.Hash(x)}).ToArray(),
+            musicWorker=resources.Resolve("resources/media/music/worker.py"),
+            resourceIdentities=new[]{script,catalog,environment,resources.Resolve("resources/media/image/worker.cpp"),resources.Resolve("resources/media/image/worker.cmake"),resources.Resolve("resources/media/sfx/worker.py"),resources.Resolve("resources/media/music/worker.py")}.OfType<string>().Select(x=>new{path=x,sha256=Workspace.Hash(x)}).ToArray(),
             toolIdentities=tools.Select(x=>new{path=Path.GetFullPath(x.Path,host.Root),x.Sha256}).ToArray(),
             licenses=request.Licenses.Select(x=>new{path=host.ResolveReadPath(x.Path),x.Sha256}).ToArray(),
             git=request.Git is null?null:Path.GetFullPath(request.Git.Path,host.Root),cmake=request.Cmake is null?null:Path.GetFullPath(request.Cmake.Path,host.Root),

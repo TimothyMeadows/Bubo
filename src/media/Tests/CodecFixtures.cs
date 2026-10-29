@@ -25,10 +25,10 @@ static class CodecFixtures
         }
         Reject(()=>ImagePng.Write(raw,png,64,64,3),"staged image cannot be overwritten");
         File.WriteAllBytes(raw,pixels[..^1]);Reject(()=>ImagePng.Write(raw,Path.Combine(root,"partial.png"),64,64,3),"truncated native pixel buffer rejected");
-        string Wave(string name,float[] samples,bool oddTail=false,bool partialTail=false)
+        string Wave(string name,float[] samples,bool oddTail=false,bool partialTail=false,int rate=44100)
         {
             var path=Path.Combine(root,name);using var stream=new FileStream(path,FileMode.CreateNew);using var writer=new BinaryWriter(stream,Encoding.ASCII,true);
-            writer.Write(Encoding.ASCII.GetBytes("RIFF"));writer.Write(0u);writer.Write(Encoding.ASCII.GetBytes("WAVEfmt "));writer.Write(16u);writer.Write((ushort)3);writer.Write((ushort)2);writer.Write(44100u);writer.Write(352800u);writer.Write((ushort)8);writer.Write((ushort)32);
+            writer.Write(Encoding.ASCII.GetBytes("RIFF"));writer.Write(0u);writer.Write(Encoding.ASCII.GetBytes("WAVEfmt "));writer.Write(16u);writer.Write((ushort)3);writer.Write((ushort)2);writer.Write((uint)rate);writer.Write((uint)(rate*8));writer.Write((ushort)8);writer.Write((ushort)32);
             writer.Write(Encoding.ASCII.GetBytes("data"));writer.Write((uint)(samples.Length*4));foreach(var sample in samples)writer.Write(sample);
             if(oddTail){writer.Write(Encoding.ASCII.GetBytes("JUNK"));writer.Write(1u);writer.Write((byte)0);}
             if(partialTail)writer.Write((byte)0);
@@ -40,5 +40,10 @@ static class CodecFixtures
         Reject(()=>WaveInspection.Read(Wave("odd.wav",[0,0],oddTail:true),4096),"missing odd-chunk padding rejected");
         Reject(()=>WaveInspection.Read(Wave("partial.wav",[0,0],partialTail:true),4096),"trailing partial RIFF chunk rejected");
         Reject(()=>WaveInspection.Read(wave,20),"actual waveform byte budget enforced before samples");
+        var musicWave=Wave("native-music.wav",[0,.5f,-1,1.25f],rate:48000);
+        var musicMeasures=WaveInspection.Read(musicWave,4096,48000);
+        check(musicMeasures.SampleRate==48000 && musicMeasures.Frames==2 && musicMeasures.Peak==1.25 && musicMeasures.ClippedFraction==.5,"native48000Hz music keeps original float amplitude and independently measured frames");
+        Reject(()=>WaveInspection.Read(musicWave,4096),"SFX default rate still rejects unrequested48000Hz without resampling");
+        Reject(()=>WaveInspection.Read(wave,4096,48000),"music rate rejects unrequested44100Hz without resampling");
     }
 }

@@ -1,0 +1,45 @@
+{
+  "song": {
+    "recordedAt": "2026-10-29T20:55:32.178942+00:00",
+    "source": "Explicit user reply to request_user_input_async call_43db6a29af9848ee816a01173f10c478",
+    "question": "Please listen to the final45-second song revision. Does it now clearly sing these four lines, with usable sound throughout? Backend QA only; no asset promotion.",
+    "lyrics": [
+      "Morning light across the hill",
+      "Golden skies are bright and still",
+      "Step by step we find our way",
+      "Carrying a brand new day"
+    ],
+    "answer": "Accept for backend QA",
+    "path": ".opencaw/.cache/m3/staging/music-supplied-lyrics-revision/native/000.wav",
+    "sha256": "44d1fee1cd021093ab10a5f7c1218b0ef7dc3172e6ae687e0375710ce3448587",
+    "verdict": "accepted for backend singing/lyric and usable-sound QA",
+    "sourceRuntime": "da3afd20b66320681d212915da5010554e82c977",
+    "rawFloatPeak": 1.0625,
+    "fractionAtOrAboveFullScale": 4.166666666666667e-06,
+    "originalCandidateRejected": "No singing was heard",
+    "musicAttemptsRemaining": 0,
+    "budgetRefunded": false,
+    "promotion": false
+  },
+  "instrumental": {
+    "recordedAt": "2026-10-29T18:20:14.622797+00:00",
+    "status": "human musical-content review bound by exact audio-data identity; technical API result remains separate",
+    "originalReviewedFile": {
+      "path": ".opencaw/.cache/m3/staging/music-instrumental-candidate/native/000.wav",
+      "sha256": "96afa7ba46cc25ef1b72376063b07444ff96a7766e27b5c14d96ad6fa0eef53a"
+    },
+    "currentFile": {
+      "path": ".opencaw/.cache/m3/staging/music-instrumental-revision/native/000.wav",
+      "sha256": "a7c5614f60a02ece335c10da24dc0724ec32f02aa1dde85b3131d6033b1f8e8f"
+    },
+    "audioDataSha256": "216e6dd0b080c464137c07f30e560fa4f3d97ea5995a6a7a79ded31f6945cc18",
+    "formatAndSamplesByteIdentical": true,
+    "onlyDifferentContainerField": "ancillary PEAK timestamp",
+    "humanAnswer": "Content sounds good",
+    "questionCovered": "Complete20second gentle acoustic instrumental, no vocals and audible distortion feedback",
+    "rawPeak": 1.109375,
+    "fractionAtOrAboveFullScale": 0.00021197916666666666,
+    "limits": "FLOAT samples preserve raw over-full-scale excursions. User reported content good; no specific distortion complaint. This does not retroactively pass the old failed unload or grant asset promotion. Current technical API success is recorded separately.",
+    "promotion": false
+  }
+}

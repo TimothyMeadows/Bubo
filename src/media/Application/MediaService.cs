@@ -70,7 +70,7 @@ public sealed class MediaService(IWorkspace workspace,IInstallationVerifier inst
                 rights=admitted.Request.Rights,installation=admitted.Request.Installation,installation.CatalogSha256,installation.EnvironmentSha256,
                 installation.WorkerSha256,installation.WorkerSourceSha256,installation.ResourceCatalogSha256,runtimeBuild=runtimeIdentity,
                 backend=admitted.Request.Backend,requestedSettings=admitted.Request.Settings,actualSettings=result.Execution,
-                timing=new{result.LoadingSeconds,result.UnloadingSeconds,perOutputInferenceSeconds=result.Outputs.Select(x=>x.InferenceSeconds).ToArray()},result.ModelLoads,result.Unloaded,
+                timing=new{result.LoadingSeconds,result.UnloadingSeconds,perOutputInferenceSeconds=result.Outputs.Select(x=>x.InferenceSeconds).ToArray()},result.ModelLoads,result.Unloaded,result.Cleanup,
                 acceptanceClaim=claim,outputs,humanReview="pending",promotion=false,completedAt=DateTimeOffset.UtcNow};
             workspace.Save(state+"/manifest.json",manifest);return manifest;
         }
@@ -93,7 +93,7 @@ public sealed class MediaService(IWorkspace workspace,IInstallationVerifier inst
         if(result.Outputs.Length!=0 || result.ModelLoads!=1 || !result.Unloaded || !Finite(result.LoadingSeconds) || !Finite(result.UnloadingSeconds))
             throw new InvalidOperationException("Load/unload probe sampled or failed to unload");
         workspace.HostContext.ValidateFresh();_ = installations.Verify(request.Backend,request.Installation);
-        var receipt=new {schemaVersion="bubo-media-probe/v1",backend=request.Backend,result.Execution,result.LoadingSeconds,result.UnloadingSeconds,result.ModelLoads,result.Unloaded,
+        var receipt=new {schemaVersion="bubo-media-probe/v1",backend=request.Backend,result.Execution,result.LoadingSeconds,result.UnloadingSeconds,result.ModelLoads,result.Unloaded,result.Cleanup,
             installation.CatalogSha256,installation.EnvironmentSha256,installation.WorkerSha256,installation.WorkerSourceSha256,installation.ResourceCatalogSha256,runtimeBuild=runtimeIdentity,
             sourceRequestSha256=admitted.RequestSha256,samplingPerformed=false,acceptanceBudgetConsumed=false,promotion=false};
         workspace.Save(state+"/result.json",receipt);return receipt;
@@ -105,12 +105,15 @@ public sealed class MediaService(IWorkspace workspace,IInstallationVerifier inst
             || !Finite(result.LoadingSeconds) || !Finite(result.UnloadingSeconds) || result.Execution.Device!=request.Settings.Device
             || result.Execution.Precision!=request.Settings.Precision || result.Execution.Offload!=request.Settings.Offload || string.IsNullOrWhiteSpace(result.Execution.DeviceName))
             throw new InvalidOperationException("Worker result/lifecycle/settings differ from the finite request");
+        if(request.Backend=="ace-step-turbo" && (result.Cleanup is not {Mechanism:"torch._C._cuda_clearCublasWorkspaces",EndingAllocatedBytes:0} cleanup
+            || cleanup.AllocatedBeforeWorkspaceClearBytes<0 || cleanup.ReservedBeforeWorkspaceClearBytes<0 || cleanup.EndingReservedBytes<0))
+            throw new InvalidOperationException("Music result lacks current zero-allocation workspace cleanup evidence");
         for(var i=0;i<result.Outputs.Length;i++)
         {
             var actual=result.Outputs[i];var expected=request.Items[i];
             if(actual.Id!=expected.Id || !Finite(actual.InferenceSeconds) || actual.Seed!=expected.Seed || actual.Steps!=expected.Steps || actual.Guidance!=expected.Guidance || string.IsNullOrWhiteSpace(actual.Scheduler))throw new InvalidOperationException("Worker output identity/timing/actual sampling settings differ");
             if(request.Backend=="flux-schnell" && (actual.Width!=expected.Width || actual.Height!=expected.Height))throw new InvalidOperationException("Worker image dimensions differ");
-            if(request.Backend=="stable-audio-open" && (actual.SampleRate!=44100 || actual.Channels!=2 || actual.Frames is not >0 || actual.Peak is not >=0
+            if(request.Backend is "stable-audio-open" or "ace-step-turbo" && (actual.SampleRate!=(request.Backend=="ace-step-turbo"?48000:44100) || actual.Channels!=2 || actual.Frames is not >0 || actual.Peak is not >=0
                 || actual.Rms is not >=0 || actual.ClippedFraction is not >=0 or >1 || actual.SilentFraction is not >=0 or >1
                 || !Finite(actual.Peak.Value) || !Finite(actual.Rms.Value)))throw new InvalidOperationException("Invalid independently measured audio");
         }

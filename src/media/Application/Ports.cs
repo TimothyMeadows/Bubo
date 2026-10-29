@@ -1,4 +1,5 @@
 using Bubo.Media.Domain;
+using System.Text.Json.Serialization;
 
 namespace Bubo.Media.Application;
 
@@ -16,10 +17,13 @@ public interface IInstallationVerifier
 public sealed record PreparedInstallation(string Backend, string ReceiptPath, string ReceiptSha256, string Worker, string ModelDirectory,
     string? Python, IReadOnlyDictionary<string,string> Components, string CatalogSha256, string EnvironmentSha256,
     IReadOnlyList<Bubo.Media.Application.InstalledFile> Files,string? WorkerSha256=null,string? WorkerSourceSha256=null,string? ResourceCatalogSha256=null,
-    IReadOnlyList<string>? ImmutableRoots=null);
+    IReadOnlyList<string>? ImmutableRoots=null,string? SourceDirectory=null);
 public sealed record InstalledFile(string Path,string Sha256,long Bytes);
 
-public sealed record WorkerBatchResult(string Protocol, ObservedExecution Execution, double LoadingSeconds, double UnloadingSeconds, WorkerOutput[] Outputs, int ModelLoads, bool Unloaded);
+public sealed record WorkerBatchResult(string Protocol, ObservedExecution Execution, double LoadingSeconds, double UnloadingSeconds, WorkerOutput[] Outputs, int ModelLoads, bool Unloaded,WorkerCleanup? Cleanup=null);
+public sealed record WorkerCleanup([property:JsonRequired]string Mechanism,
+    [property:JsonRequired]long AllocatedBeforeWorkspaceClearBytes,[property:JsonRequired]long ReservedBeforeWorkspaceClearBytes,
+    [property:JsonRequired]long EndingAllocatedBytes,[property:JsonRequired]long EndingReservedBytes);
 public sealed record ObservedExecution(string Device, string DeviceName, string Precision, string Offload, string[] ComponentPrecisions,
     string? DeviceUuid = null,string? ModelVersion = null,string? LinkedLibraryCommit = null,string[]? LoadedModules = null);
 public sealed record WorkerOutput(string Id, string Path, double InferenceSeconds, int? Width, int? Height, int? SampleRate, int? Channels,

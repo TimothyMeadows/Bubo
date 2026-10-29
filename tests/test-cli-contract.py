@@ -38,7 +38,7 @@ def main():
             check(result.returncode==0,'public capabilities succeeds')
         return value
     capabilities=invoke(['capabilities','--api-version','1'])
-    check(capabilities['apiVersions']==[1] and {b['id'] for b in capabilities['mediaBackends']}=={'flux-schnell','stable-audio-open'},'API and implemented direct-media capability identities')
+    check(capabilities['apiVersions']==[1] and {b['id'] for b in capabilities['mediaBackends']}=={'flux-schnell','stable-audio-open','ace-step-turbo'},'API and implemented direct-media capability identities')
     check('media' in capabilities['workflows'] and all(b['maximumBatch']==4 for b in capabilities['mediaBackends']),'media workflow advertises finite backend batches')
     check(all(len(value)==64 for value in capabilities['build']['assemblies'].values()),'all shipped assemblies have build identities')
     invoke(['capabilities','--api-version','999'],'Explicit --api-version 1')

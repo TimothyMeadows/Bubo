@@ -1,0 +1,9 @@
+# Actual direct-music backend QA artifacts
+
+These are unchanged native48kHz stereo FLOAT WAV outputs and settings from actual complete public API executions at da3afd20b66320681d212915da5010554e82c977. ACE-Step1.5Turbo runs CUDA/bfloat16 with no planning LM, CoT, normalization or CPU model-decode fallback. acceptance.json binds original requests, claims, model/source/environment/build identities, exact output hashes, load/inference/unload times and measured zero-ending-allocation cleanup. Portable evidence omits absolute loaded-module paths and GPU UUID; original full manifests remain in the OpenCaw task145 evidence.
+
+The user accepted the20-second instrumental's musical content. Its successful technical revision has byte-identical format/sample data to the reviewed original; only the ancillary PEAK timestamp differs. The original run failed its old unload check and remains failed. Raw peak1.109375 and0.0211979% at/above full scale are retained; no normalization or loop claim.
+
+The first24-second song passed execution but was rejected because no singing was heard. The user explicitly accepted this final45-second revision in response to the question covering clear singing of all four supplied lines and usable sound throughout. Raw peak1.0625 and0.000416667% at/above full scale are retained. See user-qa-review.json. Original generation-time settings retain their pending review marker; subsequent review is recorded separately.
+
+Both music candidate+revision allowances are exhausted under the original shared six-case budget. No failed claim was refunded and no additional inference was run. These are non-runtime QA fixtures, with no runtime asset promotion or identity-bearing voice reference. Native evidence is Windows CUDA only; Linux dependencies are pinned, while native Linux model execution and full fresh product provisioning remain unverified.
