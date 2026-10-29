@@ -1,0 +1,52 @@
+name: Standalone runtime
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  runtime:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: 10.0.x
+      - name: Build and publish standalone CLI
+        if: runner.os != 'Windows'
+        run: bash scripts/build.sh Release
+      - name: Build and publish standalone CLI
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./scripts/build.ps1 -Configuration Release
+      - name: Executable regression fixtures
+        if: runner.os != 'Windows'
+        run: bash scripts/test.sh Release
+      - name: Executable regression fixtures
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./scripts/test.ps1 -Configuration Release
+      - name: Archive complete prebuilt runtime
+        shell: bash
+        run: tar -czf "artifacts/bubo-${RUNNER_OS}-${GITHUB_SHA}.tar.gz" -C artifacts/bubo .
+      - name: Verify distributable resources, notices and executable mode
+        shell: bash
+        run: |
+          if [[ "$RUNNER_OS" == Windows ]]; then
+            python tests/test-package.py --archive "artifacts/bubo-${RUNNER_OS}-${GITHUB_SHA}.tar.gz" --os "$RUNNER_OS"
+          else
+            python3 tests/test-package.py --archive "artifacts/bubo-${RUNNER_OS}-${GITHUB_SHA}.tar.gz" --os "$RUNNER_OS"
+          fi
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: bubo-${{ runner.os }}-${{ github.sha }}
+          path: artifacts/bubo-${{ runner.os }}-${{ github.sha }}.tar.gz
+          if-no-files-found: error
+          retention-days: 14

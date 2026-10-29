@@ -1,0 +1,11 @@
+* text=auto eol=lf
+*.png binary
+*.glb binary
+*.blend binary
+*.gguf binary
+resources/proof-to-model/blender/common.py text eol=crlf
+resources/proof-to-model/blender/finish.py text eol=crlf
+resources/proof-to-model/blender/review.py text eol=crlf
+resources/proof-to-model/blender/rigid_finish.py text eol=crlf
+resources/proof-to-model/blender/rigid_source_topology.py text eol=crlf
+resources/blender/inspect-blender-scene.py text eol=crlf

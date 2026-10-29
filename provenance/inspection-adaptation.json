@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "sourcePath": "commands/lib/inspect-blender-scene.py",
+    "destinationPath": "resources/blender/inspect-blender-scene.py",
+    "sourceGitBlob": "ff64db1c4542f4664d30abd2e58f48ab03ae495b",
+    "sourceSha256": "a7b748f7e17ec9f84c09dfc88950f051bd056b5ebd2789f8968a528fb2936383",
+    "bytes": 13451
+  },
+  "adaptedSha256": "8f3cac7498fc4e9245eb78205080d83c14fc38279684c6cb05635ce46d2fdf71",
+  "reason": "Actual read-only inspection failed for objects linked to scene master collections. Include every scene master, retain ordinary collection IDs/names, give masters deterministic collision-safe owning-scene-qualified names required by the v1 consumer, and bind membership/parents by actual Blender datablock identity. Explain transient VIEWER/render buffers as informational findings, not nonexistent file-backed image dependencies.",
+  "scope": "Standalone scene inspector only. The 14 fixed production Blender workflow scripts remain byte-identical to their original source ledger.",
+  "regression": "tests/test-blender-inspection-native.py; original isolated engineering fixture with nested and two duplicate-named scene master collections."
+}

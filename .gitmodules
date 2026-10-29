@@ -1,4 +1,0 @@
-[submodule ".opencaw"]
-	path = .opencaw
-	url = https://github.com/TimothyMeadows/OpenCaw
-	branch = main

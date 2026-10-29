@@ -1,0 +1,1215 @@
+{
+  "schemaVersion": 1,
+  "sourceRepository": "https://github.com/TimothyMeadows/OpenCaw",
+  "sourceRevision": "4c1082942c3c5e7d3260a057663c4ee497b31084",
+  "previousBuboRevision": "f597fcab07f0dc3e1c4709f23fae4a028cf04373",
+  "importedDotnetProjects": 16,
+  "fixedBlenderScripts": 14,
+  "notes": "Source hashes bind original working-tree bytes at a clean baseline; Git blob IDs separately bind canonical tracked content. Later adaptations retain these immutable import identities.",
+  "files": [
+    {
+      "sourcePath": ".styles/.pipelines/proof-to-model/CONSTRAINED_LOD_CONTRACT.md",
+      "destinationPath": "resources/proof-to-model/CONSTRAINED_LOD_CONTRACT.md",
+      "sourceGitBlob": "d0d61eb99d58bc841f124daf4b6db1c5d6f14221",
+      "sourceSha256": "4df78a22fbaa93a03d535bf2322d6ca31079ba641ae48ddff29021144c443e52",
+      "bytes": 7064
+    },
+    {
+      "sourcePath": ".styles/.pipelines/proof-to-model/LICENSES.md",
+      "destinationPath": "resources/proof-to-model/LICENSES.md",
+      "sourceGitBlob": "d83585138d69e622a24fc12aad9d5d1fa2c40116",
+      "sourceSha256": "571f408759db1887da4da3b4bb1460be35768b647cb0a390a8ecc0a8ab4d9601",
+      "bytes": 3084
+    },
+    {
+      "sourcePath": ".styles/.pipelines/proof-to-model/NORMAL_EXPORT_CONTRACT.md",
+      "destinationPath": "resources/proof-to-model/NORMAL_EXPORT_CONTRACT.md",
+      "sourceGitBlob": "96ef9c9de561288d61447e0df3e1e707c67b7759",
+      "sourceSha256": "cfdd003a8718c0669b14152401922695ee324aab15a30419e33a3521a22606eb",
+      "bytes": 3450
+    },
+    {
+      "sourcePath": ".styles/.pipelines/proof-to-model/NORMAL_IMPORT_CONTRACT.md",
+      "destinationPath": "resources/proof-to-model/NORMAL_IMPORT_CONTRACT.md",
+      "sourceGitBlob": "5100418070e83fb8fad4c29169b7f0defcc52e5f",
+      "sourceSha256": "01a00e1f4be3c6bfa96fcb52d40fa8bf90276e73a9059740fe3bb4907a8bea3a",
+      "bytes": 4125
+    },
+    {
+      "sourcePath": ".styles/.pipelines/proof-to-model/RIGID_PARTS.md",
+      "destinationPath": "resources/proof-to-model/RIGID_PARTS.md",
+      "sourceGitBlob": "e4961d49cc738f790241f5dd5e94703da3f64e09",
+      "sourceSha256": "e9b4c33a56184ae7bf9d662a84c056e20605de63848ff7759d22569548b76472",
+      "bytes": 15002
+    },
+    {
+      "sourcePath": ".styles/.pipelines/proof-to-model/TRIANGLE_ATLAS_CONTRACT.md",
+      "destinationPath": "resources/proof-to-model/TRIANGLE_ATLAS_CONTRACT.md",
+      "sourceGitBlob": "35834e99e23cf3730554f1ad97446812ba9c804c",
+      "sourceSha256": "7673c2b64dd9b287152643bc643c6cd4c4d3813a5aba8340fc07c052cdec8583",
+      "bytes": 3231
+    },
+    {
+      "sourcePath": ".styles/.pipelines/proof-to-model/blender/README.md",
+      "destinationPath": "resources/proof-to-model/blender/README.md",
+      "sourceGitBlob": "880ee0db75507885c7b2e6fa7f3e3eb431c72fdf",
+      "sourceSha256": "55b9f0d56edbf62a662c25dda75bd2fdf10284d849e7e6b3659504e744547d71",
+      "bytes": 13206
+    },
+    {
+      "sourcePath": ".styles/.pipelines/proof-to-model/blender/common.py",
+      "destinationPath": "resources/proof-to-model/blender/common.py",
+      "sourceGitBlob": "6ea7c49072fc6c2d42bebeb1d31e7d1e6715af43",
+      "sourceSha256": "deadcdb3cf60795fd886c1e955f1117eb6f3a924b1405e35af10519dd7970cba",
+      "bytes": 13112
+    },
+    {
+      "sourcePath": ".styles/.pipelines/proof-to-model/blender/finish.py",
+      "destinationPath": "resources/proof-to-model/blender/finish.py",
+      "sourceGitBlob": "55e63a3140c6f8dd93c9087d00a3813633ad55c1",
+      "sourceSha256": "52b8a633841719eb08bb97ede1e306557bb5a645e1e6fda9457fddbde48c84ed",
+      "bytes": 120100
+    },
+    {
+      "sourcePath": ".styles/.pipelines/proof-to-model/blender/review.py",
+      "destinationPath": "resources/proof-to-model/blender/review.py",
+      "sourceGitBlob": "4689f54d896ef93a2836bdc520534845ad84a3c6",
+      "sourceSha256": "3ef6432d15b3b9b8f27de9b483b2bd4520a1bc7ce9de688218c9329984bf81b6",
+      "bytes": 14722
+    },
+    {
+      "sourcePath": ".styles/.pipelines/proof-to-model/blender/rigid_finish.py",
+      "destinationPath": "resources/proof-to-model/blender/rigid_finish.py",
+      "sourceGitBlob": "47e0d4864858e2abe37ea5a19ff33410283afb74",
+      "sourceSha256": "4c417bc190f5f378a0310a338c2c213e05711f370bf6f11f5841bbf7acea9776",
+      "bytes": 361182
+    },
+    {
+      "sourcePath": ".styles/.pipelines/proof-to-model/blender/rigid_source_topology.py",
+      "destinationPath": "resources/proof-to-model/blender/rigid_source_topology.py",
+      "sourceGitBlob": "479cf24027593064624c79dea1d234e25b501af4",
+      "sourceSha256": "53591a96227ca5e0a9f8843373ae58786d8870390551050f5f4cd16eac8f6d31",
+      "bytes": 37152
+    },
+    {
+      "sourcePath": ".styles/.pipelines/proof-to-model/classification.schema.json",
+      "destinationPath": "resources/proof-to-model/classification.schema.json",
+      "sourceGitBlob": "f39290c13a463637bd6c641b15c7d9adb5afa2b7",
+      "sourceSha256": "37bda50d50e46485b579a3f41c2d9a4c550546b1b48d0ca969940b1e57c1b3f0",
+      "bytes": 13570
+    },
+    {
+      "sourcePath": ".styles/.pipelines/proof-to-model/finish-budget.schema.json",
+      "destinationPath": "resources/proof-to-model/finish-budget.schema.json",
+      "sourceGitBlob": "1ecb8aaf6bbe8b9d5812445f5201b907ccbf61bd",
+      "sourceSha256": "082355d81f36ebbe0e6f35c8c3f9d45d4eb729da361a70ddfd3ca3de11551607",
+      "bytes": 1787
+    },
+    {
+      "sourcePath": ".styles/.pipelines/proof-to-model/finishing-settings.schema.json",
+      "destinationPath": "resources/proof-to-model/finishing-settings.schema.json",
+      "sourceGitBlob": "fe03f78e709b3559e10b1ecb1746bfc671deed11",
+      "sourceSha256": "2774269fab8fc3ea64c34803ac17b93af10c9c938cf87d4ffe718fcdf9aa97d0",
+      "bytes": 17368
+    },
+    {
+      "sourcePath": ".styles/.pipelines/proof-to-model/manifest.schema.json",
+      "destinationPath": "resources/proof-to-model/manifest.schema.json",
+      "sourceGitBlob": "72e2eb5431054dd2afff6506fafb0e075c97a891",
+      "sourceSha256": "d788d39486dd2ae386d315609492c77eff8027d2fc5bcab74063847d79c85377",
+      "bytes": 2720
+    },
+    {
+      "sourcePath": ".styles/.pipelines/proof-to-model/proof-set.schema.json",
+      "destinationPath": "resources/proof-to-model/proof-set.schema.json",
+      "sourceGitBlob": "8e3df89b66ae45bacb8bbedb19ad4300d2160b84",
+      "sourceSha256": "daaa8f9b93f410223c8e76ecca3ef50026ceb9d882cdcb61bbc32a81bed69f5d",
+      "bytes": 7713
+    },
+    {
+      "sourcePath": ".styles/.pipelines/proof-to-model/recipes/static-prop.json",
+      "destinationPath": "resources/proof-to-model/recipes/static-prop.json",
+      "sourceGitBlob": "a516c3ef61b6708c67bc8a2bc728331ed6c9020d",
+      "sourceSha256": "9e5826e63e787f8093bc7775c76722bac99a66af2140e279552d1b72a8c0fefb",
+      "bytes": 434
+    },
+    {
+      "sourcePath": ".styles/.pipelines/proof-to-model/rigid-handoff.schema.json",
+      "destinationPath": "resources/proof-to-model/rigid-handoff.schema.json",
+      "sourceGitBlob": "79c4e7a998f900d3f56bcc502dbc559810200b0a",
+      "sourceSha256": "c828299c60cbaeaa38d2480ae21028e1e8a9e384a05585a5a34a2b8f12e88de4",
+      "bytes": 10790
+    },
+    {
+      "sourcePath": ".styles/.pipelines/proof-to-model/rigid-source-topology.schema.json",
+      "destinationPath": "resources/proof-to-model/rigid-source-topology.schema.json",
+      "sourceGitBlob": "581b859522bef074844e96dc62299987d6c93885",
+      "sourceSha256": "712e080cc1da4095eff2719afc14a9b0d87395097e0e8d5da7e41fa011fd03e4",
+      "bytes": 1896
+    },
+    {
+      "sourcePath": ".styles/.pipelines/proof-to-model/source-set.schema.json",
+      "destinationPath": "resources/proof-to-model/source-set.schema.json",
+      "sourceGitBlob": "3e8a644e380d94ea7de5db898da0c93bad2eaa83",
+      "sourceSha256": "4acec020196773a5a29e4779936389cdf5ae7543da1fa8d75ab3db429c9fd7c6",
+      "bytes": 1435
+    },
+    {
+      "sourcePath": ".styles/.pipelines/proof-to-model/toolchain.json",
+      "destinationPath": "resources/proof-to-model/toolchain.json",
+      "sourceGitBlob": "38ac2d23e680657a3ecda465e5f66554f5fd7438",
+      "sourceSha256": "c1a0ca5663763f5fa56ebd32f3093bf76e192d35b202e5054b509ca5f65d15c8",
+      "bytes": 12949
+    },
+    {
+      "sourcePath": ".styles/.pipelines/proof-to-model/toolchain.single-view-diagnostic.json",
+      "destinationPath": "resources/proof-to-model/toolchain.single-view-diagnostic.json",
+      "sourceGitBlob": "96b408f332b3ecd25da2cacf0de5b37427370303",
+      "sourceSha256": "d59e1bcd4654ee065e8759a7dd2f5547928ee2e6ab366685f21485d20a943d20",
+      "bytes": 12630
+    },
+    {
+      "sourcePath": ".styles/.workflows/model-to-action/action-package.schema.json",
+      "destinationPath": "resources/model-to-action/action-package.schema.json",
+      "sourceGitBlob": "744aec1f8b91b9d3a8bc14f45cf2182142b08436",
+      "sourceSha256": "ecc96cf481a3425c9f0ab9b32dce2f096f88d149517674225be6e9a494f88b71",
+      "bytes": 17746
+    },
+    {
+      "sourcePath": ".styles/.workflows/model-to-action/action-recipe.schema.json",
+      "destinationPath": "resources/model-to-action/action-recipe.schema.json",
+      "sourceGitBlob": "b70db826ed07b8d84e52dd6b158dbf5a6346ba64",
+      "sourceSha256": "4eaf3c15ed85a07cd35993afdfa7954c30e60dd24612fc7cb8121f2303cd32a8",
+      "bytes": 22408
+    },
+    {
+      "sourcePath": ".styles/.workflows/model-to-action/blender/.gitignore",
+      "destinationPath": "resources/model-to-action/blender/.gitignore",
+      "sourceGitBlob": "43ae0e2a6c6d8fca34872506ca0f2e64194fec7c",
+      "sourceSha256": "cac0352c070b86662c081841692dd52ecb3be2803ad3c12866c77d6a6ae90c57",
+      "bytes": 25
+    },
+    {
+      "sourcePath": ".styles/.workflows/model-to-action/blender/README.md",
+      "destinationPath": "resources/model-to-action/blender/README.md",
+      "sourceGitBlob": "5c30d8231c846247e604b64cd50a5098f03c4a4e",
+      "sourceSha256": "4bf8bbb3d09db8d28d4828670357e8ec4e3b82eb33f8ba8f39ae3472cc20858b",
+      "bytes": 9242
+    },
+    {
+      "sourcePath": ".styles/.workflows/model-to-action/blender/action.py",
+      "destinationPath": "resources/model-to-action/blender/action.py",
+      "sourceGitBlob": "c74a2d7503cdba57d777593b2e138f6e65c29d18",
+      "sourceSha256": "fd2f759ff60be7137970aa56f33abeb8153a3ca8e8bf6b018e8db46601a093b8",
+      "bytes": 2631
+    },
+    {
+      "sourcePath": ".styles/.workflows/model-to-action/blender/composition.py",
+      "destinationPath": "resources/model-to-action/blender/composition.py",
+      "sourceGitBlob": "7d58809b08ecbe8fbaaf7eb6eeee5ac49d6159dd",
+      "sourceSha256": "d374f6b834c8b50984af2aff73607e14a033617e75a182708e9b4097b2e17e02",
+      "bytes": 36847
+    },
+    {
+      "sourcePath": ".styles/.workflows/model-to-action/blender/core.py",
+      "destinationPath": "resources/model-to-action/blender/core.py",
+      "sourceGitBlob": "2d6c3440f674a3a04ee3e7170fc803617e137aed",
+      "sourceSha256": "69b3e106ccccc02b3a23a017aa2ef160b790dfb32cf8a43e5ce74de6cc3db52c",
+      "bytes": 19292
+    },
+    {
+      "sourcePath": ".styles/.workflows/model-to-action/blender/review.py",
+      "destinationPath": "resources/model-to-action/blender/review.py",
+      "sourceGitBlob": "542983c3e28f4b5de1f6bd7295e7e127254fa14f",
+      "sourceSha256": "c1cbfd317340d685814f8de26e909e1a4341cbece7dc67b49636ca8f3f05f54b",
+      "bytes": 11946
+    },
+    {
+      "sourcePath": ".styles/.workflows/model-to-action/blender/scripts.json",
+      "destinationPath": "resources/model-to-action/blender/scripts.json",
+      "sourceGitBlob": "af682c9dda4de7db263d11c2984885e244c9ad94",
+      "sourceSha256": "7f8b448b3399b09b87e993dddf1c2f387c5871e0c4af3580e71b14c62d232d1b",
+      "bytes": 486
+    },
+    {
+      "sourcePath": ".styles/.workflows/model-to-action/blender/verification.py",
+      "destinationPath": "resources/model-to-action/blender/verification.py",
+      "sourceGitBlob": "4fa7ec26de389ad20909a6a23c12b367b5188806",
+      "sourceSha256": "dd3f4ebda063c8af13b15098fae33cc61e9e9139664366effb3ec55020254b05",
+      "bytes": 12943
+    },
+    {
+      "sourcePath": ".styles/.workflows/model-to-action/engines/README.md",
+      "destinationPath": "resources/model-to-action/engines/README.md",
+      "sourceGitBlob": "1c3d047983871493bd3ac1927a51c3429b7d0af2",
+      "sourceSha256": "093a31ac78de6dfbcc65819d223eae8d355a4ca711765fc43c9ab7f2f92e39c3",
+      "bytes": 6703
+    },
+    {
+      "sourcePath": ".styles/.workflows/model-to-action/engines/threejs-action.mjs",
+      "destinationPath": "resources/model-to-action/engines/threejs-action.mjs",
+      "sourceGitBlob": "2a07f0f9de97edbb5ba34e583addee372a928fa8",
+      "sourceSha256": "912816c68e0393ba67feb9e83adf069baf78486375fdde058f4cb1b4d5903f8a",
+      "bytes": 27463
+    },
+    {
+      "sourcePath": ".styles/.workflows/model-to-action/manifest.schema.json",
+      "destinationPath": "resources/model-to-action/manifest.schema.json",
+      "sourceGitBlob": "fbcafa44d48231f9c5a4c99d4bdc1db5a8d688c3",
+      "sourceSha256": "c5a05b4dc960800ac65327d85decca5b76bcd3e311d147f7c652d102cafbb872",
+      "bytes": 10067
+    },
+    {
+      "sourcePath": ".styles/.workflows/model-to-action/recipes/README.md",
+      "destinationPath": "resources/model-to-action/recipes/README.md",
+      "sourceGitBlob": "cde49e53352f0606fca6ffb2e4d1417659662430",
+      "sourceSha256": "8774b99abf0674f24a012bf4877e7463fa2d9340ab90ffeb2b8d631a7327323a",
+      "bytes": 1463
+    },
+    {
+      "sourcePath": ".styles/.workflows/model-to-action/recipes/dance-combo-cast.example.json",
+      "destinationPath": "resources/model-to-action/recipes/dance-combo-cast.example.json",
+      "sourceGitBlob": "05187442141ea1431894d7102acd2597201d7c5d",
+      "sourceSha256": "7f26803eb9ad6908db25b092825741c2cbd102f58f6a88dd0d34443c68b0db5b",
+      "bytes": 4259
+    },
+    {
+      "sourcePath": ".styles/.workflows/model-to-animation/blender/.gitignore",
+      "destinationPath": "resources/model-to-animation/blender/.gitignore",
+      "sourceGitBlob": "43ae0e2a6c6d8fca34872506ca0f2e64194fec7c",
+      "sourceSha256": "cac0352c070b86662c081841692dd52ecb3be2803ad3c12866c77d6a6ae90c57",
+      "bytes": 25
+    },
+    {
+      "sourcePath": ".styles/.workflows/model-to-animation/blender/README.md",
+      "destinationPath": "resources/model-to-animation/blender/README.md",
+      "sourceGitBlob": "8197385f2853f6490460795d0dcfd7841d23edfd",
+      "sourceSha256": "a4f527aa480850f1f896ff434bb1ac91f1e773cc50e283b9f6024b463f182a03",
+      "bytes": 7739
+    },
+    {
+      "sourcePath": ".styles/.workflows/model-to-animation/blender/authoring.py",
+      "destinationPath": "resources/model-to-animation/blender/authoring.py",
+      "sourceGitBlob": "715c2846b38c9b4c2f3ae6ee86ce8f47fc506dd1",
+      "sourceSha256": "7237df9522ef7d1b0a895892ba9347db0f6e092059517d5027514184f07e07f4",
+      "bytes": 36840
+    },
+    {
+      "sourcePath": ".styles/.workflows/model-to-animation/blender/core.py",
+      "destinationPath": "resources/model-to-animation/blender/core.py",
+      "sourceGitBlob": "7bddfb5b9df751d1785abf6341ed24b3c42b7337",
+      "sourceSha256": "9c77a1349afba6046937c34af8e179d0e01d84ded41fe0b865a62aa0efa0f857",
+      "bytes": 20504
+    },
+    {
+      "sourcePath": ".styles/.workflows/model-to-animation/blender/motion.py",
+      "destinationPath": "resources/model-to-animation/blender/motion.py",
+      "sourceGitBlob": "3e57cac511ec312172a31a2eb0c91a722456f400",
+      "sourceSha256": "a1b8a12f6feda71d76ce6364794551b6b5d5d014a4463c41e2cdcbda6030429a",
+      "bytes": 3238
+    },
+    {
+      "sourcePath": ".styles/.workflows/model-to-animation/blender/review.py",
+      "destinationPath": "resources/model-to-animation/blender/review.py",
+      "sourceGitBlob": "3198b8373692a3b38618b60e8b020bf431acd01a",
+      "sourceSha256": "6b552522ac389732d83a3d1ec4838133f539d3c385b57b1081d6fea5cae76385",
+      "bytes": 12383
+    },
+    {
+      "sourcePath": ".styles/.workflows/model-to-animation/blender/scripts.json",
+      "destinationPath": "resources/model-to-animation/blender/scripts.json",
+      "sourceGitBlob": "4bddc15031ec81d1310f390d36cedec12b0ef4b2",
+      "sourceSha256": "79f5530c9eee0b6761a340c18f8b3cdafcf04bb20d638f1386d13599c9a59917",
+      "bytes": 392
+    },
+    {
+      "sourcePath": ".styles/.workflows/model-to-animation/engines/README.md",
+      "destinationPath": "resources/model-to-animation/engines/README.md",
+      "sourceGitBlob": "6897b245c533322360d41a853710aaff0cdd4963",
+      "sourceSha256": "b7be1fb1f4340bc8cb46a9031f967fbf3d636c664e17eee9944a098bc46502cb",
+      "bytes": 7877
+    },
+    {
+      "sourcePath": ".styles/.workflows/model-to-animation/engines/threejs-motion.mjs",
+      "destinationPath": "resources/model-to-animation/engines/threejs-motion.mjs",
+      "sourceGitBlob": "52b693d4f91317662185ccdb645b0588658337f1",
+      "sourceSha256": "e3a9d088b58791b935a4b1d0f69eaf15a3523aec75d15a77c3b4a0cfd3d6ae4f",
+      "bytes": 32484
+    },
+    {
+      "sourcePath": ".styles/.workflows/model-to-animation/manifest.schema.json",
+      "destinationPath": "resources/model-to-animation/manifest.schema.json",
+      "sourceGitBlob": "dde581b6af79c0e3047989a5c902fa7237f44d3a",
+      "sourceSha256": "1a00153261e34d4a17effca412712a57e28e7e7f390d01a32c174e29e1a04fdc",
+      "bytes": 5891
+    },
+    {
+      "sourcePath": ".styles/.workflows/model-to-animation/motion-package.schema.json",
+      "destinationPath": "resources/model-to-animation/motion-package.schema.json",
+      "sourceGitBlob": "f804adbc4e21401b762aedf1ed1fabdd8fc7c1f0",
+      "sourceSha256": "2783d6d8a3e0be5102abd908f1830c53f9cb9a04b61387395ce44e7d7f9222c3",
+      "bytes": 15028
+    },
+    {
+      "sourcePath": ".styles/.workflows/model-to-animation/recipe.schema.json",
+      "destinationPath": "resources/model-to-animation/recipe.schema.json",
+      "sourceGitBlob": "b563b9ca34c3c5e9f529d3e9c33474c6d63bb5ed",
+      "sourceSha256": "1e8407c46fd4e9a7afbe71905a8f3965d68264afe4d81544ff387c2d3cc002d1",
+      "bytes": 24927
+    },
+    {
+      "sourcePath": ".styles/.workflows/model-to-animation/recipes/README.md",
+      "destinationPath": "resources/model-to-animation/recipes/README.md",
+      "sourceGitBlob": "e1e2c9da17b4244e37e1734e1f7d790fd27e0869",
+      "sourceSha256": "3d606d24d816a8fe58ebc4059ff39d39e4c34f4721497acb4e04333d29a6f7a8",
+      "bytes": 1188
+    },
+    {
+      "sourcePath": ".styles/.workflows/model-to-animation/recipes/articulated-car.example.json",
+      "destinationPath": "resources/model-to-animation/recipes/articulated-car.example.json",
+      "sourceGitBlob": "96511ecc6caecac42a5ffb10558c0d1dbda1a9b1",
+      "sourceSha256": "9121f8592e12ef01074dbad48cf9f2d69b3bfdd61d02343cb25bba0ed60083d9",
+      "bytes": 5006
+    },
+    {
+      "sourcePath": ".styles/.workflows/model-to-animation/recipes/humanoid.example.json",
+      "destinationPath": "resources/model-to-animation/recipes/humanoid.example.json",
+      "sourceGitBlob": "ad6ff4d13794b00cb5d8c872b1e2337b8d9fad52",
+      "sourceSha256": "880f51ad15e783454ba1633f62eedd4c287b28f22613ea7214cd04224406d643",
+      "bytes": 16906
+    },
+    {
+      "sourcePath": ".styles/.workflows/model-to-animation/recipes/rigid-ship.example.json",
+      "destinationPath": "resources/model-to-animation/recipes/rigid-ship.example.json",
+      "sourceGitBlob": "8ba0492580f90f07feefe64f60b0abedc37ac208",
+      "sourceSha256": "ee3a78733426b5e6c5216d94988489ba0236273ffe9c5c77364d78a336bae179",
+      "bytes": 7794
+    },
+    {
+      "sourcePath": "commands/lib/asset-production/.gitignore",
+      "destinationPath": "src/runtime/asset-production/.gitignore",
+      "sourceGitBlob": "cd42ee34e873b4ddf17cdeeed2e6c0d4e094c62b",
+      "sourceSha256": "79914b5e84e1a58b12d9e874ea343e2d131dcdaaf0a3bacf01210219fc679d13",
+      "bytes": 12
+    },
+    {
+      "sourcePath": "commands/lib/asset-production/AssetProduction.csproj",
+      "destinationPath": "src/runtime/asset-production/AssetProduction.csproj",
+      "sourceGitBlob": "0c58328106f8cf9d46f13416405579f7d48335a9",
+      "sourceSha256": "221f7fa070326f4af6b6f961030bff2d1b3b961261cdf5c4c9575bdc900ce451",
+      "bytes": 235
+    },
+    {
+      "sourcePath": "commands/lib/asset-production/AuditJournal.cs",
+      "destinationPath": "src/runtime/asset-production/AuditJournal.cs",
+      "sourceGitBlob": "779ad799d19dc083ac7c3cb0efdd08861ad26375",
+      "sourceSha256": "27aafa73fb22d0aaff3814d582ad3d2f2816b9c257dd0a743e0331c94ea5c5fa",
+      "bytes": 669
+    },
+    {
+      "sourcePath": "commands/lib/asset-production/CanonicalEngineContext.cs",
+      "destinationPath": "src/runtime/asset-production/CanonicalEngineContext.cs",
+      "sourceGitBlob": "04a6a7553405e9c12b969f8520f40a36b5eac64d",
+      "sourceSha256": "58a7daae5bcdb56935df8ae37ae27051e184640d0af5cf85356877a741f60e41",
+      "bytes": 2398
+    },
+    {
+      "sourcePath": "commands/lib/asset-production/NativeProcess.cs",
+      "destinationPath": "src/runtime/asset-production/NativeProcess.cs",
+      "sourceGitBlob": "cb88daa03be0cbae1e527842779ebd84a076f72b",
+      "sourceSha256": "9e4ed91ea4cd80da863a761f10a6af0935489ede063676ac3985a365d7a889e4",
+      "bytes": 6456
+    },
+    {
+      "sourcePath": "commands/lib/asset-production/OwnedProcessTree.cs",
+      "destinationPath": "src/runtime/asset-production/OwnedProcessTree.cs",
+      "sourceGitBlob": "3b534b2535dd0c5e7c4e2649cc373c1fa2930982",
+      "sourceSha256": "ac8e0360a1f80b2e785f0277cf46d6922158ffaf30581b98fbfd49062fe11be1",
+      "bytes": 3412
+    },
+    {
+      "sourcePath": "commands/lib/asset-production/Ports.cs",
+      "destinationPath": "src/runtime/asset-production/Ports.cs",
+      "sourceGitBlob": "ab3d032055cd6c1dd25f626b421f07b13df4ab0a",
+      "sourceSha256": "8e6c87b5a24ba41b475aaec7090ae22b73b12cd4bcbb708cd839d24575eec2ac",
+      "bytes": 1080
+    },
+    {
+      "sourcePath": "commands/lib/asset-production/README.md",
+      "destinationPath": "src/runtime/asset-production/README.md",
+      "sourceGitBlob": "e1f4d4e386d397d20a2e2eda13548cc0189460d8",
+      "sourceSha256": "395f103ecb77336b7ecef6be7889f13b944f8c7866a7799d8fe0074ed90316cc",
+      "bytes": 1616
+    },
+    {
+      "sourcePath": "commands/lib/asset-production/Workspace.cs",
+      "destinationPath": "src/runtime/asset-production/Workspace.cs",
+      "sourceGitBlob": "665668c9463a23d2421e2a84b658213233f6c178",
+      "sourceSha256": "d39b4da7f9d83747934057d97427c90c97703a1a844fde6c817931ec4c680784",
+      "bytes": 3094
+    },
+    {
+      "sourcePath": "commands/lib/inspect-blender-scene.py",
+      "destinationPath": "resources/blender/inspect-blender-scene.py",
+      "sourceGitBlob": "ff64db1c4542f4664d30abd2e58f48ab03ae495b",
+      "sourceSha256": "a7b748f7e17ec9f84c09dfc88950f051bd056b5ebd2789f8968a528fb2936383",
+      "bytes": 13451
+    },
+    {
+      "sourcePath": "commands/lib/model-to-action/.editorconfig",
+      "destinationPath": "src/runtime/model-to-action/.editorconfig",
+      "sourceGitBlob": "10c2702c3852f74b11ad040814ece6e909189672",
+      "sourceSha256": "083f6f5eff5d41b7cea2cd5593b33974c1b9e3ad734b973aa8f8ef66df47f940",
+      "bytes": 180
+    },
+    {
+      "sourcePath": "commands/lib/model-to-action/.gitignore",
+      "destinationPath": "src/runtime/model-to-action/.gitignore",
+      "sourceGitBlob": "cd42ee34e873b4ddf17cdeeed2e6c0d4e094c62b",
+      "sourceSha256": "79914b5e84e1a58b12d9e874ea343e2d131dcdaaf0a3bacf01210219fc679d13",
+      "bytes": 12
+    },
+    {
+      "sourcePath": "commands/lib/model-to-action/Application/Acceptance.cs",
+      "destinationPath": "src/runtime/model-to-action/Application/Acceptance.cs",
+      "sourceGitBlob": "6bf3e60528d1f138e66ddc1c5a284cd3b23e0978",
+      "sourceSha256": "f48418ff508fa5213aaaa8b1164b4831cc3a9e0511e190a80705a7973bd766cc",
+      "bytes": 7522
+    },
+    {
+      "sourcePath": "commands/lib/model-to-action/Application/Action.Application.csproj",
+      "destinationPath": "src/runtime/model-to-action/Application/Action.Application.csproj",
+      "sourceGitBlob": "26e16d77f50bb9d8a57a172513184a5a2e608485",
+      "sourceSha256": "25d8dbada94b131393ca5c11b81b04cfd6384a4e6320e2a34baf679205bb539f",
+      "bytes": 393
+    },
+    {
+      "sourcePath": "commands/lib/model-to-action/Application/Compiler.cs",
+      "destinationPath": "src/runtime/model-to-action/Application/Compiler.cs",
+      "sourceGitBlob": "ebdf5334441672a7908809a726129c553d0a50bc",
+      "sourceSha256": "2cf23ed9b489708b50134d7833f8b5b430d0b222c561cac8deaef132047c2a84",
+      "bytes": 16369
+    },
+    {
+      "sourcePath": "commands/lib/model-to-action/Application/Pipeline.cs",
+      "destinationPath": "src/runtime/model-to-action/Application/Pipeline.cs",
+      "sourceGitBlob": "04877a6d6d5fccc6edf103ee6d097c14c75cb818",
+      "sourceSha256": "77389b0ee14eb7aa0a95c68e3e5f18a3cec9694af94b40b4619cb7b44722fcd8",
+      "bytes": 14554
+    },
+    {
+      "sourcePath": "commands/lib/model-to-action/Application/Ports.cs",
+      "destinationPath": "src/runtime/model-to-action/Application/Ports.cs",
+      "sourceGitBlob": "ef5418b5e75956d261e6066c1e703de393f64584",
+      "sourceSha256": "b3f385c9d95821034c55cb99af333746a6df82ec7c49df6474639e32e11dbe1c",
+      "bytes": 171
+    },
+    {
+      "sourcePath": "commands/lib/model-to-action/Application/Stages.cs",
+      "destinationPath": "src/runtime/model-to-action/Application/Stages.cs",
+      "sourceGitBlob": "427ed49c79a11f65858406fa7966812333f799ee",
+      "sourceSha256": "8aae02257b491682ae6afde09ce440321de67a8043d4b2e93b3c375c1a084ad2",
+      "bytes": 21552
+    },
+    {
+      "sourcePath": "commands/lib/model-to-action/Application/Validation.cs",
+      "destinationPath": "src/runtime/model-to-action/Application/Validation.cs",
+      "sourceGitBlob": "67184ed01cc56d769b43d19ef3f180faf2bad5a4",
+      "sourceSha256": "8f75c9d133f7e3f445aacfb65f02d0f76022a829705212e55f82cd59e3e118a0",
+      "bytes": 9013
+    },
+    {
+      "sourcePath": "commands/lib/model-to-action/Cli/Program.cs",
+      "destinationPath": "src/runtime/model-to-action/Cli/Program.cs",
+      "sourceGitBlob": "ebce6403ec6ee14ef9bd456eeaa5decc9418308a",
+      "sourceSha256": "eefe2c5ffc8048fdc9185d3a8581b6fafc17466cc9338c5acaf073b178ef9859",
+      "bytes": 3164
+    },
+    {
+      "sourcePath": "commands/lib/model-to-action/Domain/Action.Domain.csproj",
+      "destinationPath": "src/runtime/model-to-action/Domain/Action.Domain.csproj",
+      "sourceGitBlob": "0c58328106f8cf9d46f13416405579f7d48335a9",
+      "sourceSha256": "221f7fa070326f4af6b6f961030bff2d1b3b961261cdf5c4c9575bdc900ce451",
+      "bytes": 235
+    },
+    {
+      "sourcePath": "commands/lib/model-to-action/Domain/Contracts.cs",
+      "destinationPath": "src/runtime/model-to-action/Domain/Contracts.cs",
+      "sourceGitBlob": "5d1c7a7a830f028e3c38ab7b09f565930dc1d5da",
+      "sourceSha256": "98316c721149a17492a92b965194c766705878700077bb36761f1e18995936d1",
+      "bytes": 2224
+    },
+    {
+      "sourcePath": "commands/lib/model-to-action/Infrastructure/Action.Infrastructure.csproj",
+      "destinationPath": "src/runtime/model-to-action/Infrastructure/Action.Infrastructure.csproj",
+      "sourceGitBlob": "0c9c86f92a73d998d777efad414b8774bb09003e",
+      "sourceSha256": "b4cd710e2860ecd775d451321642dd25bd8797ee67c6c2d5e5edace93602bd62",
+      "bytes": 328
+    },
+    {
+      "sourcePath": "commands/lib/model-to-action/Infrastructure/EngineResolver.cs",
+      "destinationPath": "src/runtime/model-to-action/Infrastructure/EngineResolver.cs",
+      "sourceGitBlob": "fddc43af8e035282da91a841e1a18680525c8516",
+      "sourceSha256": "06e5db1877f221c05d906aae43481b7ab608a927787d01baf7b7f329d324efb5",
+      "bytes": 440
+    },
+    {
+      "sourcePath": "commands/lib/model-to-action/ModelToAction.csproj",
+      "destinationPath": "src/runtime/model-to-action/ModelToAction.csproj",
+      "sourceGitBlob": "3d5d99626b94a8499f4a12f9d6043ba8d98e199e",
+      "sourceSha256": "686557378abd3dc3fd0a5a5ed47997289d31868f4dbe2f4358e0a9a485ad60a0",
+      "bytes": 450
+    },
+    {
+      "sourcePath": "commands/lib/model-to-action/README.md",
+      "destinationPath": "src/runtime/model-to-action/README.md",
+      "sourceGitBlob": "2dd809a20904d38a80ff54a7be2c0484427d678b",
+      "sourceSha256": "07bfc3eea0e2b5c6c6a6e330bd07660e047be37b559d323bdf2fe001bc503959",
+      "bytes": 5043
+    },
+    {
+      "sourcePath": "commands/lib/model-to-action/Tests/Program.cs",
+      "destinationPath": "src/runtime/model-to-action/Tests/Program.cs",
+      "sourceGitBlob": "f85f9c9176859c3c1ffd36a7c26ed14f373d5b3d",
+      "sourceSha256": "a3ded089cca356e1214e4374031f8c67495033eb8307307f1180d45faccf7e99",
+      "bytes": 37554
+    },
+    {
+      "sourcePath": "commands/lib/model-to-action/Tests/RuntimeTests.csproj",
+      "destinationPath": "src/runtime/model-to-action/Tests/RuntimeTests.csproj",
+      "sourceGitBlob": "9a3adc29817266506d2fb976d3f36c65feb44397",
+      "sourceSha256": "b1bf52599a3a77bb552cc6d696ad302a8417d35a995a2c7cca4cbe9b79841064",
+      "bytes": 339
+    },
+    {
+      "sourcePath": "commands/lib/model-to-animation/.editorconfig",
+      "destinationPath": "src/runtime/model-to-animation/.editorconfig",
+      "sourceGitBlob": "10c2702c3852f74b11ad040814ece6e909189672",
+      "sourceSha256": "083f6f5eff5d41b7cea2cd5593b33974c1b9e3ad734b973aa8f8ef66df47f940",
+      "bytes": 180
+    },
+    {
+      "sourcePath": "commands/lib/model-to-animation/.gitignore",
+      "destinationPath": "src/runtime/model-to-animation/.gitignore",
+      "sourceGitBlob": "59672943c32a52e16f76fa78c2c296786e6f37ca",
+      "sourceSha256": "640ab1048d07d97c10c851efc926ccb7fc962bc635b0538eb119e72334e6d50a",
+      "bytes": 18
+    },
+    {
+      "sourcePath": "commands/lib/model-to-animation/Application/Acceptance.cs",
+      "destinationPath": "src/runtime/model-to-animation/Application/Acceptance.cs",
+      "sourceGitBlob": "19fecb3753a1449ebc86b9f8fab0fe5417f00089",
+      "sourceSha256": "c418f68a2271ecf5de498a49ff6b954440bd6a1c546e37b23ba3599010f1806c",
+      "bytes": 7705
+    },
+    {
+      "sourcePath": "commands/lib/model-to-animation/Application/Motion.Application.csproj",
+      "destinationPath": "src/runtime/model-to-animation/Application/Motion.Application.csproj",
+      "sourceGitBlob": "429328333c77beb92e4e774b6c18cabe257c7cc8",
+      "sourceSha256": "d51f5fe5094d0ffb1ae7a8ee1e0dd334d975f28b372919b9dca60410ef31cb78",
+      "bytes": 393
+    },
+    {
+      "sourcePath": "commands/lib/model-to-animation/Application/Pipeline.cs",
+      "destinationPath": "src/runtime/model-to-animation/Application/Pipeline.cs",
+      "sourceGitBlob": "9d0463d1773eee1e41bb94a57e1400fbd5008107",
+      "sourceSha256": "387414eb39d1b15101ed5f38ee85c66d82ec1183ded178e1ecdf53a8fac8d179",
+      "bytes": 16297
+    },
+    {
+      "sourcePath": "commands/lib/model-to-animation/Application/Ports.cs",
+      "destinationPath": "src/runtime/model-to-animation/Application/Ports.cs",
+      "sourceGitBlob": "3fc7521636f6b4ba0974edc6ea0a0c24e253dfac",
+      "sourceSha256": "fa86835293485f55f47959868cdbb5dc0887cee132d0b57f63c10bf5f42f3ae3",
+      "bytes": 183
+    },
+    {
+      "sourcePath": "commands/lib/model-to-animation/Application/Stages.cs",
+      "destinationPath": "src/runtime/model-to-animation/Application/Stages.cs",
+      "sourceGitBlob": "74265547dbec083b3f03c8e914b165418998285f",
+      "sourceSha256": "0b6e3fb2d78645eac80b3bb8949d560885c2090dbcb8a7090f83e4735fbf16cc",
+      "bytes": 23990
+    },
+    {
+      "sourcePath": "commands/lib/model-to-animation/Application/Validation.cs",
+      "destinationPath": "src/runtime/model-to-animation/Application/Validation.cs",
+      "sourceGitBlob": "9da7d686aabe3dd91a1fc20e021e82cc93714a4d",
+      "sourceSha256": "b04f2b1cb91b178f9452b29a3dd4846f75ba9984fcedab0fecf2ba259173164a",
+      "bytes": 11790
+    },
+    {
+      "sourcePath": "commands/lib/model-to-animation/Cli/Program.cs",
+      "destinationPath": "src/runtime/model-to-animation/Cli/Program.cs",
+      "sourceGitBlob": "e0ad8aa6bc7be75fde10afe52d52c50d89cbafbc",
+      "sourceSha256": "0d87d42d4cdfb14f854abdb542fe1e41285bb1dcbaab491b5987c1d1e609520b",
+      "bytes": 4135
+    },
+    {
+      "sourcePath": "commands/lib/model-to-animation/Domain/Contracts.cs",
+      "destinationPath": "src/runtime/model-to-animation/Domain/Contracts.cs",
+      "sourceGitBlob": "e3f8edb33f7d74b3fd83ed6b84beb76835b405c4",
+      "sourceSha256": "bef6ab7126c5986942899f741ee7610bb9e03a82fa5330122f9884f193307935",
+      "bytes": 2254
+    },
+    {
+      "sourcePath": "commands/lib/model-to-animation/Domain/Motion.Domain.csproj",
+      "destinationPath": "src/runtime/model-to-animation/Domain/Motion.Domain.csproj",
+      "sourceGitBlob": "0c58328106f8cf9d46f13416405579f7d48335a9",
+      "sourceSha256": "221f7fa070326f4af6b6f961030bff2d1b3b961261cdf5c4c9575bdc900ce451",
+      "bytes": 235
+    },
+    {
+      "sourcePath": "commands/lib/model-to-animation/Infrastructure/CanonicalEngineResolver.cs",
+      "destinationPath": "src/runtime/model-to-animation/Infrastructure/CanonicalEngineResolver.cs",
+      "sourceGitBlob": "577808e5cecff115012da3088ffe082d0d7f9eb7",
+      "sourceSha256": "449900573663963356ec7f76da726cbd9665a21e5211a0c6786ed6e43773a07c",
+      "bytes": 632
+    },
+    {
+      "sourcePath": "commands/lib/model-to-animation/Infrastructure/Motion.Infrastructure.csproj",
+      "destinationPath": "src/runtime/model-to-animation/Infrastructure/Motion.Infrastructure.csproj",
+      "sourceGitBlob": "acfd49effbe056f2c7ce0d7e02f28d9b22e9d0d4",
+      "sourceSha256": "d361b9c1d87e2f9adadbb02a40e9cfb5c74559c4e9d3f11f53affbb8ac289962",
+      "bytes": 328
+    },
+    {
+      "sourcePath": "commands/lib/model-to-animation/ModelToAnimation.csproj",
+      "destinationPath": "src/runtime/model-to-animation/ModelToAnimation.csproj",
+      "sourceGitBlob": "f767c2403e6554ac6e7dae6d413475167d878a75",
+      "sourceSha256": "8ac82003ee9d84ae09a10988bbae6fa0c5bad9cbc26ed3a0236d80de03bd4df4",
+      "bytes": 450
+    },
+    {
+      "sourcePath": "commands/lib/model-to-animation/README.md",
+      "destinationPath": "src/runtime/model-to-animation/README.md",
+      "sourceGitBlob": "c1ea2fcb7202fdc259ebfb3f17f71ec5f3c3d995",
+      "sourceSha256": "649e5ccbe4c93055ccde6635785432721d636c1197874e1b48a9f10cf519e74d",
+      "bytes": 7303
+    },
+    {
+      "sourcePath": "commands/lib/model-to-animation/Tests/Program.cs",
+      "destinationPath": "src/runtime/model-to-animation/Tests/Program.cs",
+      "sourceGitBlob": "aeddf1ceb804177bcc9058990d5d2d0a6cb3f00f",
+      "sourceSha256": "0155add009670b747ff3209f739e2f401307fc5f7d801b25ebe5bc2db16b244f",
+      "bytes": 31018
+    },
+    {
+      "sourcePath": "commands/lib/model-to-animation/Tests/RuntimeTests.csproj",
+      "destinationPath": "src/runtime/model-to-animation/Tests/RuntimeTests.csproj",
+      "sourceGitBlob": "39af64d0a1366ecbf8ae01b4ab2edba2fee0aa0e",
+      "sourceSha256": "024d2faa8097cc8e93e1f87a60935eaa6d18fc4d41c10aea515507465118d7ca",
+      "bytes": 342
+    },
+    {
+      "sourcePath": "commands/lib/proof-to-model/.editorconfig",
+      "destinationPath": "src/runtime/proof-to-model/.editorconfig",
+      "sourceGitBlob": "c5e1acc221ad661f430f6b889fb304b53de78e07",
+      "sourceSha256": "9c9249634c78dc8f8a0151f503ba11752d3b6b9bca2d2d8f2c64b60e80f4212c",
+      "bytes": 155
+    },
+    {
+      "sourcePath": "commands/lib/proof-to-model/.gitignore",
+      "destinationPath": "src/runtime/proof-to-model/.gitignore",
+      "sourceGitBlob": "e958062c9745ee34cf6b6b6afdf86eee5ca3e8e0",
+      "sourceSha256": "9bd665237cd0c240df6760925bdadc9112783af7951bf14b90bbb3e7c995d2f7",
+      "bytes": 36
+    },
+    {
+      "sourcePath": "commands/lib/proof-to-model/Application/MultiViewPipeline.cs",
+      "destinationPath": "src/runtime/proof-to-model/Application/MultiViewPipeline.cs",
+      "sourceGitBlob": "c09ee494495cb19deb57a477a29d80e2ebdbfe61",
+      "sourceSha256": "bafcb6bf5926e0f61d1e6131ba24f4f80ca7a74e7f57d578fdd457ce11204dca",
+      "bytes": 17734
+    },
+    {
+      "sourcePath": "commands/lib/proof-to-model/Application/MultiViewReuse.cs",
+      "destinationPath": "src/runtime/proof-to-model/Application/MultiViewReuse.cs",
+      "sourceGitBlob": "6ebf871bc06504b24d2e306246f9a43aeb72af23",
+      "sourceSha256": "c5a7e101bb30736c5cd39f120388fc586ed56801b4cc4e05e520bd6df1e09737",
+      "bytes": 19726
+    },
+    {
+      "sourcePath": "commands/lib/proof-to-model/Application/Pipeline.cs",
+      "destinationPath": "src/runtime/proof-to-model/Application/Pipeline.cs",
+      "sourceGitBlob": "f94af502e315f7038645991f31485aeee69ee95b",
+      "sourceSha256": "fd9c7e5bed17129d37abd4ae7f8dc4eda43e7c614c3f26f812695aea6b055a08",
+      "bytes": 80228
+    },
+    {
+      "sourcePath": "commands/lib/proof-to-model/Application/Ports.cs",
+      "destinationPath": "src/runtime/proof-to-model/Application/Ports.cs",
+      "sourceGitBlob": "525c66e21bd7e0543d2750aadd2237165ad5e268",
+      "sourceSha256": "12af90c85c582f48a44288fc435e8eb9050d6aab3ccfda0b3ea72b09e3a3fcb3",
+      "bytes": 657
+    },
+    {
+      "sourcePath": "commands/lib/proof-to-model/Application/ProofPreparation.cs",
+      "destinationPath": "src/runtime/proof-to-model/Application/ProofPreparation.cs",
+      "sourceGitBlob": "3bae83b52876ec78adf5b941f3f3a30634548899",
+      "sourceSha256": "41dbc1d20dc4e567922e371885ab6c6e2a27cbe429b2c38a8af6961be714e0f4",
+      "bytes": 52258
+    },
+    {
+      "sourcePath": "commands/lib/proof-to-model/Application/ProofToModel.Application.csproj",
+      "destinationPath": "src/runtime/proof-to-model/Application/ProofToModel.Application.csproj",
+      "sourceGitBlob": "dbf62a9f8bf6d534ea464c6840d44eca123f7562",
+      "sourceSha256": "d09ed8e4f6d1648a4349287e3763751d922d45731707981682433a753ee80054",
+      "bytes": 401
+    },
+    {
+      "sourcePath": "commands/lib/proof-to-model/Application/RigidFinishing.cs",
+      "destinationPath": "src/runtime/proof-to-model/Application/RigidFinishing.cs",
+      "sourceGitBlob": "bc39e02e7e5fc179634414a2436d7b3da420cbad",
+      "sourceSha256": "ecfbb9bed5d9f1aa568edc884203128ad8c52a12717452ee15f3552f4cc90417",
+      "bytes": 30311
+    },
+    {
+      "sourcePath": "commands/lib/proof-to-model/Application/StageRegistry.cs",
+      "destinationPath": "src/runtime/proof-to-model/Application/StageRegistry.cs",
+      "sourceGitBlob": "b096b46bc6ff513e4d28cb2abf1552be704730b0",
+      "sourceSha256": "ead4a07f40103eb7d8b18bf10d228d17c78bff29f10140a2f117df75a6fb7557",
+      "bytes": 688
+    },
+    {
+      "sourcePath": "commands/lib/proof-to-model/Cli/Program.cs",
+      "destinationPath": "src/runtime/proof-to-model/Cli/Program.cs",
+      "sourceGitBlob": "332141f6f8c03266c95e06fb64ebb91a75dac6ba",
+      "sourceSha256": "1115f368e6953feb0bafeec505dbd6bcd8e32353b2e48dd25a7bca72419937c1",
+      "bytes": 4183
+    },
+    {
+      "sourcePath": "commands/lib/proof-to-model/Domain/AlphaMatte.cs",
+      "destinationPath": "src/runtime/proof-to-model/Domain/AlphaMatte.cs",
+      "sourceGitBlob": "1b1079ed0107bc927a806cdbb2ca414ae1914f97",
+      "sourceSha256": "39bcf30d3cf6f4da68f18e33d5c8976662fc36a141169328c113e0252f2ec696",
+      "bytes": 128
+    },
+    {
+      "sourcePath": "commands/lib/proof-to-model/Domain/Compatibility.cs",
+      "destinationPath": "src/runtime/proof-to-model/Domain/Compatibility.cs",
+      "sourceGitBlob": "91b8baf7e7dd084beaed16fdc5eb8a7a6eae0375",
+      "sourceSha256": "7ac0028e70248ae7e744799310e835221788ba69361b8ef430124efd4be369cc",
+      "bytes": 1376
+    },
+    {
+      "sourcePath": "commands/lib/proof-to-model/Domain/Contracts.cs",
+      "destinationPath": "src/runtime/proof-to-model/Domain/Contracts.cs",
+      "sourceGitBlob": "52e3788bf48b1dafa204d2837d253207d37dbab3",
+      "sourceSha256": "fae01eb120335fc62b520f9e2c1a60736e979b8bef90a9c4f867819024709e44",
+      "bytes": 2162
+    },
+    {
+      "sourcePath": "commands/lib/proof-to-model/Domain/FinishAttemptBudget.cs",
+      "destinationPath": "src/runtime/proof-to-model/Domain/FinishAttemptBudget.cs",
+      "sourceGitBlob": "96f9481f004abf23672fdf9c97abf05bf329cb40",
+      "sourceSha256": "69009a4336e2c44c2382637c45935ebeddd83a6989c84ab8a11fe35bc5a3754d",
+      "bytes": 6142
+    },
+    {
+      "sourcePath": "commands/lib/proof-to-model/Domain/FinishingSettings.cs",
+      "destinationPath": "src/runtime/proof-to-model/Domain/FinishingSettings.cs",
+      "sourceGitBlob": "b4285785e448e517953382755c4df88458b17df7",
+      "sourceSha256": "5aa5790193e28184cc169b5ea5b4177370548ea926308040934ae593f57cd476",
+      "bytes": 21296
+    },
+    {
+      "sourcePath": "commands/lib/proof-to-model/Domain/MultiViewGeometry.cs",
+      "destinationPath": "src/runtime/proof-to-model/Domain/MultiViewGeometry.cs",
+      "sourceGitBlob": "a92eb0925efba220f565579158961b482177e100",
+      "sourceSha256": "14434967b7406eeec6b30537252d86426e8ce91a745855239eafbdb54060426a",
+      "bytes": 7298
+    },
+    {
+      "sourcePath": "commands/lib/proof-to-model/Domain/ProofToModel.Domain.csproj",
+      "destinationPath": "src/runtime/proof-to-model/Domain/ProofToModel.Domain.csproj",
+      "sourceGitBlob": "0c58328106f8cf9d46f13416405579f7d48335a9",
+      "sourceSha256": "221f7fa070326f4af6b6f961030bff2d1b3b961261cdf5c4c9575bdc900ce451",
+      "bytes": 235
+    },
+    {
+      "sourcePath": "commands/lib/proof-to-model/Domain/RigidHandoff.cs",
+      "destinationPath": "src/runtime/proof-to-model/Domain/RigidHandoff.cs",
+      "sourceGitBlob": "78f6a3707be16a347f9f0d1ea4ef4974a4adc6d6",
+      "sourceSha256": "b098c507acc499a26956218f8d0363bd66c2aa617dc8726525114b426faf40b8",
+      "bytes": 14284
+    },
+    {
+      "sourcePath": "commands/lib/proof-to-model/Domain/RigidSourceTopology.cs",
+      "destinationPath": "src/runtime/proof-to-model/Domain/RigidSourceTopology.cs",
+      "sourceGitBlob": "be49d2b079f1de71e8f47d48d2e0c1deb4d33b59",
+      "sourceSha256": "77a094129a57cd6233a35472ebf344a95365c127ce3f54111b7a5c41ba8b8f53",
+      "bytes": 5032
+    },
+    {
+      "sourcePath": "commands/lib/proof-to-model/Infrastructure/AlphaProcessor.cs",
+      "destinationPath": "src/runtime/proof-to-model/Infrastructure/AlphaProcessor.cs",
+      "sourceGitBlob": "b9525e1c945d165bf9b40cf282cab6d0528f4dbe",
+      "sourceSha256": "acebb31c9381056b72bf271a2baaf95a2b2c0425f542c27144ba46d1f6d84a2c",
+      "bytes": 460
+    },
+    {
+      "sourcePath": "commands/lib/proof-to-model/Infrastructure/NativeProcess.cs",
+      "destinationPath": "src/runtime/proof-to-model/Infrastructure/NativeProcess.cs",
+      "sourceGitBlob": "c3bf18389624ba60adcda76acdc084cc194234d8",
+      "sourceSha256": "e0478b0b5544c166a0fe30d930d6227dd7df8e3f4a86ebab23204683bc7a17fe",
+      "bytes": 265
+    },
+    {
+      "sourcePath": "commands/lib/proof-to-model/Infrastructure/PngAlpha.cs",
+      "destinationPath": "src/runtime/proof-to-model/Infrastructure/PngAlpha.cs",
+      "sourceGitBlob": "b9f9e346ae01ab4dee8058e2d0b54882df0f9569",
+      "sourceSha256": "83434cc00d47871c8fae53adc262b4d89beb2096e106a6e704ab91c1e63fce38",
+      "bytes": 5059
+    },
+    {
+      "sourcePath": "commands/lib/proof-to-model/Infrastructure/ProofToModel.Infrastructure.csproj",
+      "destinationPath": "src/runtime/proof-to-model/Infrastructure/ProofToModel.Infrastructure.csproj",
+      "sourceGitBlob": "6b3c4d25c221acf0bcc53cd526c46ac0195ea198",
+      "sourceSha256": "f24e15b71c5787463fc44f8918b7967904894b3178037cae5727651014cc20a1",
+      "bytes": 335
+    },
+    {
+      "sourcePath": "commands/lib/proof-to-model/Infrastructure/RgbaPng.cs",
+      "destinationPath": "src/runtime/proof-to-model/Infrastructure/RgbaPng.cs",
+      "sourceGitBlob": "78113337f9ab2329ee3c73f8d666d4295563214c",
+      "sourceSha256": "309d790408261c900be271005a91d6fbefbe5e6a03ce9f9e0785f33949ff0f4e",
+      "bytes": 10639
+    },
+    {
+      "sourcePath": "commands/lib/proof-to-model/Infrastructure/Workspace.cs",
+      "destinationPath": "src/runtime/proof-to-model/Infrastructure/Workspace.cs",
+      "sourceGitBlob": "121bb8d62632135aa7f7911c06c72d668063293e",
+      "sourceSha256": "7c68c3d035969909444eeb2f3d6e45183999a77aae78cb8ea74cc577ddad15e7",
+      "bytes": 284
+    },
+    {
+      "sourcePath": "commands/lib/proof-to-model/ProofToModel.csproj",
+      "destinationPath": "src/runtime/proof-to-model/ProofToModel.csproj",
+      "sourceGitBlob": "041c87b5f806eee2992e7cea8ccbbf9c2b27ef8e",
+      "sourceSha256": "16d8700d275493fd6cfac733196c6791a00f00869772cd7aeffc8f86ab29ae70",
+      "bytes": 483
+    },
+    {
+      "sourcePath": "commands/lib/proof-to-model/README.md",
+      "destinationPath": "src/runtime/proof-to-model/README.md",
+      "sourceGitBlob": "411e770e33171b3c503dc09ddf851b40c95d454c",
+      "sourceSha256": "25b7bba272ede744895244b8ff172cbd90a5aaa2036fab3387bf5fca4ee19664",
+      "bytes": 26477
+    },
+    {
+      "sourcePath": "commands/lib/proof-to-model/REUSE.md",
+      "destinationPath": "src/runtime/proof-to-model/REUSE.md",
+      "sourceGitBlob": "1c54c1f4420100628368b8ccd96527b9b12b3c08",
+      "sourceSha256": "ed06ffa198a19decabd3f14cca32da94911a7915efe1466ca6434b5b262e6cac",
+      "bytes": 4289
+    },
+    {
+      "sourcePath": "commands/lib/proof-to-model/Tests/CompatibilityTests.cs",
+      "destinationPath": "src/runtime/proof-to-model/Tests/CompatibilityTests.cs",
+      "sourceGitBlob": "b6f101d5e7ee2d9b403a3ba224c12be99f05349c",
+      "sourceSha256": "a159fbc23c6248aa1cd4a8d90e69665e20fce81a4b646cb29d8f16409b1bf6d4",
+      "bytes": 1525
+    },
+    {
+      "sourcePath": "commands/lib/proof-to-model/Tests/ExtendedTests.cs",
+      "destinationPath": "src/runtime/proof-to-model/Tests/ExtendedTests.cs",
+      "sourceGitBlob": "8b41835e2423fef292574265e11508fde83c368d",
+      "sourceSha256": "96ba34140ed0dfc58a282a692f9af2307d69d7a9ebd746d9c14eb75a315dacc2",
+      "bytes": 7969
+    },
+    {
+      "sourcePath": "commands/lib/proof-to-model/Tests/FinishAttemptBudgetTests.cs",
+      "destinationPath": "src/runtime/proof-to-model/Tests/FinishAttemptBudgetTests.cs",
+      "sourceGitBlob": "0cadf313b417544b0cf7cbb5363fe54383e3df5d",
+      "sourceSha256": "f1d891c90cae02cf86c7e27f53e0213bfa82957ffd9109855fff37b5fe53203c",
+      "bytes": 25432
+    },
+    {
+      "sourcePath": "commands/lib/proof-to-model/Tests/FinishingSettingsTests.cs",
+      "destinationPath": "src/runtime/proof-to-model/Tests/FinishingSettingsTests.cs",
+      "sourceGitBlob": "765ba4305bc48269f54e361cee34f500e82a394e",
+      "sourceSha256": "c5e73e9b28779b2b00829a3698e06954f6982c666edd534ac367401cdab4116d",
+      "bytes": 53932
+    },
+    {
+      "sourcePath": "commands/lib/proof-to-model/Tests/MultiViewGeometryTests.cs",
+      "destinationPath": "src/runtime/proof-to-model/Tests/MultiViewGeometryTests.cs",
+      "sourceGitBlob": "33acb24222939df28cc99995a8ead47f349f147e",
+      "sourceSha256": "7d3a9bc2f542b27db96b32ef1d5e3e331940c84998e53f2bcdee672da8e2ecdb",
+      "bytes": 16629
+    },
+    {
+      "sourcePath": "commands/lib/proof-to-model/Tests/MultiViewPipelineTests.cs",
+      "destinationPath": "src/runtime/proof-to-model/Tests/MultiViewPipelineTests.cs",
+      "sourceGitBlob": "ab669045679c75c9934baf4c3e3b8887b92b8566",
+      "sourceSha256": "bb2612a916af4062b47d2a4f49652e0818c907ce5dc81e951423a05fa7587d7b",
+      "bytes": 23179
+    },
+    {
+      "sourcePath": "commands/lib/proof-to-model/Tests/MultiViewReuseTests.cs",
+      "destinationPath": "src/runtime/proof-to-model/Tests/MultiViewReuseTests.cs",
+      "sourceGitBlob": "a843120bd6291023308bf196547674038997e768",
+      "sourceSha256": "47445f0ce7269d146a67d6dbacbaf484fe503ece62c682ede6006c08536518bb",
+      "bytes": 20202
+    },
+    {
+      "sourcePath": "commands/lib/proof-to-model/Tests/PolicyTests.cs",
+      "destinationPath": "src/runtime/proof-to-model/Tests/PolicyTests.cs",
+      "sourceGitBlob": "4b8bc20372cfa5ef8eb059f579269e45c5e20ac0",
+      "sourceSha256": "a5771123f4bfbf3f683fffda1550d243b3dbc6d456d96c2433cd0b9d86420064",
+      "bytes": 17694
+    },
+    {
+      "sourcePath": "commands/lib/proof-to-model/Tests/PreparationTests.cs",
+      "destinationPath": "src/runtime/proof-to-model/Tests/PreparationTests.cs",
+      "sourceGitBlob": "346fb3130be0105effb94464b55ca81748fbac66",
+      "sourceSha256": "cff4edc8968d85d7d6098a1251ad3f9d3cf6c73ffe8ed54a1102a8067f3762e2",
+      "bytes": 30518
+    },
+    {
+      "sourcePath": "commands/lib/proof-to-model/Tests/Program.cs",
+      "destinationPath": "src/runtime/proof-to-model/Tests/Program.cs",
+      "sourceGitBlob": "8af068fb130027be7c4f42c91497f8c17b2d1261",
+      "sourceSha256": "67be2d42a6459dea632561c4090ebabf6ab492af74d3edac9e529529d43de18a",
+      "bytes": 8849
+    },
+    {
+      "sourcePath": "commands/lib/proof-to-model/Tests/RigidFinishingTests.cs",
+      "destinationPath": "src/runtime/proof-to-model/Tests/RigidFinishingTests.cs",
+      "sourceGitBlob": "8b95ed2070d35ee1d09479536729d1761dbdb021",
+      "sourceSha256": "e1286464ef019323b925f628d13fe32db163d3b54e898f77cb6deb4f50b60f99",
+      "bytes": 100862
+    },
+    {
+      "sourcePath": "commands/lib/proof-to-model/Tests/RuntimeTests.csproj",
+      "destinationPath": "src/runtime/proof-to-model/Tests/RuntimeTests.csproj",
+      "sourceGitBlob": "16aceabbfb38731d23387816b32dfcf3338ea599",
+      "sourceSha256": "a665a2e4a9d8a280837f4abe576d810bba660afd02ce3e874d4b0cc48352f587",
+      "bytes": 339
+    },
+    {
+      "sourcePath": "commands/lib/proof-to-model/vendor/bubo/IAgentTool.cs",
+      "destinationPath": "src/runtime/proof-to-model/vendor/bubo/IAgentTool.cs",
+      "sourceGitBlob": "1d062c8151164e651c1fd3e1cc4ebcdd6437d1bf",
+      "sourceSha256": "a0b94217a4697abb02cd25adf3215a298549b5281ce5b7224ea88af69c35c334",
+      "bytes": 234
+    },
+    {
+      "sourcePath": "commands/lib/proof-to-model/vendor/bubo/IMPORT.json",
+      "destinationPath": "src/runtime/proof-to-model/vendor/bubo/IMPORT.json",
+      "sourceGitBlob": "6662a30711385451f7ea29b55329d2968b72d02f",
+      "sourceSha256": "e36bc6905a682e8e458fedcf96f9b422f4373a437b114580019dfa9fe0d33f79",
+      "bytes": 5550
+    },
+    {
+      "sourcePath": "commands/lib/proof-to-model/vendor/bubo/IWorkspaceGuard.cs",
+      "destinationPath": "src/runtime/proof-to-model/vendor/bubo/IWorkspaceGuard.cs",
+      "sourceGitBlob": "7ed15628f3f5927be9cd7856d8c830781c63139f",
+      "sourceSha256": "1af494fa0f7d86f0cf133bf28c9bebc8d074b95fd8daecb0a993cc45e43e9eb7",
+      "bytes": 213
+    },
+    {
+      "sourcePath": "commands/lib/proof-to-model/vendor/bubo/LICENSE",
+      "destinationPath": "src/runtime/proof-to-model/vendor/bubo/LICENSE",
+      "sourceGitBlob": "7b24d8633293f02663c3286c31b103a73875b5ab",
+      "sourceSha256": "626f5a39ebbdfdd5f9088880fd99ad71d9f9de42049edf0e06fb79780cf5a315",
+      "bytes": 1098
+    },
+    {
+      "sourcePath": "commands/lib/proof-to-model/vendor/bubo/ToolRegistry.cs",
+      "destinationPath": "src/runtime/proof-to-model/vendor/bubo/ToolRegistry.cs",
+      "sourceGitBlob": "b3b887193c44a594b4fc500e7ea32b8c106e7fe5",
+      "sourceSha256": "84db871da3e8627e1f0aee1dfefdee466bf48bf3e5b762f662e387eb9fafd229",
+      "bytes": 1969
+    },
+    {
+      "sourcePath": "commands/lib/proof-to-model/vendor/bubo/ToolRequest.cs",
+      "destinationPath": "src/runtime/proof-to-model/vendor/bubo/ToolRequest.cs",
+      "sourceGitBlob": "6a5802d039bb47795a3aa18d45ca2530cb2600ec",
+      "sourceSha256": "f62f3353bc2294e055c1e65442df6ed27072de7b1cd5149f1d13d54ea7df5062",
+      "bytes": 332
+    },
+    {
+      "sourcePath": "commands/lib/proof-to-model/vendor/bubo/ToolResult.cs",
+      "destinationPath": "src/runtime/proof-to-model/vendor/bubo/ToolResult.cs",
+      "sourceGitBlob": "86f04750c2974b539bdb1a4db5d72feb0445b14d",
+      "sourceSha256": "510d10f63563392df10bed9278cd15f52115e44a5d7b58cea16e253fd24a3399",
+      "bytes": 291
+    },
+    {
+      "sourcePath": "commands/lib/proof-to-model/vendor/bubo/TranscriptEvent.cs",
+      "destinationPath": "src/runtime/proof-to-model/vendor/bubo/TranscriptEvent.cs",
+      "sourceGitBlob": "4aa512e9faf1a3bbb07ae48e360bd2b6462523d5",
+      "sourceSha256": "c2fab28aa0d328c80cb8c47170677c65264413e32d62ec5b825670a158240ccd",
+      "bytes": 404
+    },
+    {
+      "sourcePath": "commands/lib/proof-to-model/vendor/bubo/WorkspaceGuard.cs",
+      "destinationPath": "src/runtime/proof-to-model/vendor/bubo/WorkspaceGuard.cs",
+      "sourceGitBlob": "0579ee813b0c1bd8e7b53c837f8e12a09337dfdd",
+      "sourceSha256": "5e848c873bc45a80ac808ee04073a8360640ebf35c361fd9cabc5c5ad9231b3b",
+      "bytes": 5348
+    },
+    {
+      "sourcePath": "commands/lib/proof-to-model/vendor/bubo/WorkspaceGuardTests.cs",
+      "destinationPath": "src/runtime/proof-to-model/vendor/bubo/WorkspaceGuardTests.cs",
+      "sourceGitBlob": "077293469ab7b71d57e4a3f7a42a420c9e9b24ca",
+      "sourceSha256": "c4d54ee6e50645f441ee16dc58620a364779b9e86639dbc726544010d1ad7929",
+      "bytes": 3387
+    },
+    {
+      "sourcePath": "tests/fixtures/model-action/README.md",
+      "destinationPath": "tests/fixtures/model-action/README.md",
+      "sourceGitBlob": "b09ff2dc36d2fb37c1c601a6723d93176673a04d",
+      "sourceSha256": "3613e2e394ac4963880512f4c56ab295997e46c1f2802f6a3697b806a897e2d8",
+      "bytes": 1706
+    },
+    {
+      "sourcePath": "tests/fixtures/model-action/create_assets.py",
+      "destinationPath": "tests/fixtures/model-action/create_assets.py",
+      "sourceGitBlob": "27d4419009cad84182e7d464b6bbae7cba3365f7",
+      "sourceSha256": "2452cc1c6593563d2b55dd61ce3fb7c28decfb623338798b2dfcc8f0e4410090",
+      "bytes": 12737
+    },
+    {
+      "sourcePath": "tests/fixtures/model-animation/create_assets.py",
+      "destinationPath": "tests/fixtures/model-animation/create_assets.py",
+      "sourceGitBlob": "9b104967107435a110d0559940d5920f0840a495",
+      "sourceSha256": "e7577eea86660fcd07980d2492963cdce11a4c03364f4e72a8bfea346b9bbadc",
+      "bytes": 11388
+    },
+    {
+      "sourcePath": "tests/proof_model_contact_lod_controls.py",
+      "destinationPath": "tests/proof_model_contact_lod_controls.py",
+      "sourceGitBlob": "dd479055db1a2027e44ee83fea56a14ff48d932a",
+      "sourceSha256": "d9c249b0fb4fac0dec842185cc65c667ab6fd8eea7b8354ec96e08265c037e56",
+      "bytes": 53118
+    },
+    {
+      "sourcePath": "tests/proof_model_locked_lod_controls.py",
+      "destinationPath": "tests/proof_model_locked_lod_controls.py",
+      "sourceGitBlob": "f6c4ce28fd3bf083b421438da96ddb19afbc6c9a",
+      "sourceSha256": "26d00c4788005d2ad808623d89604add76c9076dcac204ac620a9707c182bec3",
+      "bytes": 22219
+    },
+    {
+      "sourcePath": "tests/proof_model_source_topology_controls.py",
+      "destinationPath": "tests/proof_model_source_topology_controls.py",
+      "sourceGitBlob": "488dc0b01908e9033adaf9a0cd532e076bb3030d",
+      "sourceSha256": "ff383a420b78f0417201b93072a876b3109935ebf5aa0a173802280433957549",
+      "bytes": 30853
+    },
+    {
+      "sourcePath": "tests/test-model-action-blender.py",
+      "destinationPath": "tests/test-model-action-blender.py",
+      "sourceGitBlob": "a6c65b9403dfe41293737d64478a3ecc2c51d367",
+      "sourceSha256": "0d5c8fad8ec3e00799156a1e0acc860ce4b633023241a60967cc83f42cc04638",
+      "bytes": 33739
+    },
+    {
+      "sourcePath": "tests/test-model-action-engine.cjs",
+      "destinationPath": "tests/test-model-action-engine.cjs",
+      "sourceGitBlob": "c497c4180617b1ff78622901ef3912f3c7fe777e",
+      "sourceSha256": "5a574248e3edebc5c5bee1fa57bf1407b6d9796f181142e2eb7ea57e19741d6d",
+      "bytes": 45494
+    },
+    {
+      "sourcePath": "tests/test-model-action-engine.py",
+      "destinationPath": "tests/test-model-action-engine.py",
+      "sourceGitBlob": "184a4cfbd4a3f0dfdc6f8f0461740177ad2dba5b",
+      "sourceSha256": "5eeece128708a0549e40de77460c8caf9048839e6d064cea754d2e83487ded08",
+      "bytes": 5797
+    },
+    {
+      "sourcePath": "tests/test-model-action-native-integration.py",
+      "destinationPath": "tests/test-model-action-native-integration.py",
+      "sourceGitBlob": "0dff5f30bd156e154b009c84b69a391e0ca577af",
+      "sourceSha256": "0f44473440e0ece8f8fe38f53f0a72ea7440641919e7e65ba754f27f7be5823b",
+      "bytes": 12852
+    },
+    {
+      "sourcePath": "tests/test-model-animation-blender.py",
+      "destinationPath": "tests/test-model-animation-blender.py",
+      "sourceGitBlob": "e1c1d8fa91a706308f282f7d3851a28c7f05f3c4",
+      "sourceSha256": "64924888c3d16134093944be7d505b855c2e51faff545fd4529ac0809576dc7c",
+      "bytes": 22308
+    },
+    {
+      "sourcePath": "tests/test-model-animation-engine.cjs",
+      "destinationPath": "tests/test-model-animation-engine.cjs",
+      "sourceGitBlob": "680ce60266a209dd7dc198f2f3095e4e2b704aa8",
+      "sourceSha256": "39b16a10d9b9d5bc5909eda889873c9806ca8617d1add6be0954d40c900f5291",
+      "bytes": 54050
+    },
+    {
+      "sourcePath": "tests/test-model-animation-engine.py",
+      "destinationPath": "tests/test-model-animation-engine.py",
+      "sourceGitBlob": "a6b381e064446f25d3183d41f538b8717c9cc676",
+      "sourceSha256": "e406d87d0e1944babc5dc22681bb2286e43fb31e377dd22f14972b27d917ecbb",
+      "bytes": 5664
+    },
+    {
+      "sourcePath": "tests/test-model-animation-native-integration.py",
+      "destinationPath": "tests/test-model-animation-native-integration.py",
+      "sourceGitBlob": "a6c459dba59159522256f75cb776e98395368655",
+      "sourceSha256": "be570c1d733e271cf23fdb86020f91b94480a47f26c003dae4762920704fcb41",
+      "bytes": 17699
+    },
+    {
+      "sourcePath": "tests/test-model-motion-quaternion-continuity.py",
+      "destinationPath": "tests/test-model-motion-quaternion-continuity.py",
+      "sourceGitBlob": "69304e977e9e09113c3fbca35d427321d15c60ae",
+      "sourceSha256": "779d50ac86ef352428f98b049a8f13d4be351c5b69a436f3f36d21f4cc807264",
+      "bytes": 16252
+    },
+    {
+      "sourcePath": "tests/test-model-to-action.sh",
+      "destinationPath": "tests/test-model-to-action.sh",
+      "sourceGitBlob": "6ef7c936f360cb04cf04853a6670bf658f427baf",
+      "sourceSha256": "be5f32b0817abab35291905ad6f740c5ef9cc320e43d79562ba24b67d123b32d",
+      "bytes": 607
+    },
+    {
+      "sourcePath": "tests/test-model-to-animation.sh",
+      "destinationPath": "tests/test-model-to-animation.sh",
+      "sourceGitBlob": "f73d42eec930bcf96198b4a80346bbefb0ca7697",
+      "sourceSha256": "b5ec6e3eb502ac25f280585beda51f3f55352800514e93aea78de988901f7bc6",
+      "bytes": 613
+    },
+    {
+      "sourcePath": "tests/test-proof-model-bake-status.py",
+      "destinationPath": "tests/test-proof-model-bake-status.py",
+      "sourceGitBlob": "e557b295785da5f2efb3d37baeed7c9b8a6a7244",
+      "sourceSha256": "c776987eaf62c2c7f7e84cd427cf45cf794015b29465aac8f5badbadd1180bfa",
+      "bytes": 14260
+    },
+    {
+      "sourcePath": "tests/test-proof-model-blender.py",
+      "destinationPath": "tests/test-proof-model-blender.py",
+      "sourceGitBlob": "05ec9d334a45e0d70317653936201b8d5c7cdb8c",
+      "sourceSha256": "eaf7c3b0c400e61eade3813fc9fc7f0fe1e9d2dc0f1ec3e95190830b46f140ac",
+      "bytes": 126341
+    },
+    {
+      "sourcePath": "tests/test-proof-model-native-integration.py",
+      "destinationPath": "tests/test-proof-model-native-integration.py",
+      "sourceGitBlob": "fdbb6303bb71f246448d75af5a1c69592497bcd7",
+      "sourceSha256": "9770ef5e1d4fdb6c8c7818bf2fc9ebe3e63ff26e1fc69e51ce5be092fb1c3f37",
+      "bytes": 22905
+    },
+    {
+      "sourcePath": "tests/test-proof-model-rigid-blender.py",
+      "destinationPath": "tests/test-proof-model-rigid-blender.py",
+      "sourceGitBlob": "fb7c6d68cc0ad031340cbf528d17d9b5f88834cf",
+      "sourceSha256": "472ed9b10677451a59992d3cbead7bb8b26b83b34d5b4180b8ec3a5666c19355",
+      "bytes": 153197
+    },
+    {
+      "sourcePath": "tests/test-proof-to-model.sh",
+      "destinationPath": "tests/test-proof-to-model.sh",
+      "sourceGitBlob": "caa78c88d99a118c8a5571a81fc1f4f8d9815174",
+      "sourceSha256": "66302046b286e3a3a80a3cf39c5321eefe4d07ce610d4c6e0ab6391dd7251e0f",
+      "bytes": 213
+    }
+  ]
+}

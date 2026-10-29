@@ -1,36 +1,11 @@
-# ARCHITECTURE.md
+# Bubo architecture
 
-This file is the canonical architecture contract for this repository.
+Bubo targets .NET 10 and uses inward dependencies: CLI -> infrastructure/application -> domain. Shared AssetProduction contains workspace guards, hashing, atomic persistence, locking, audit and bounded native process ownership. The Bubo.Host library validates the versioned caller context without depending on any workflow or OpenCaw installation.
 
-Generated from OpenCaw architecture templates:
-- DOTNET
-- PLAYWRIGHT
-- DOTNET_ASPIRE
-- MARKDOWN
-- DOCKER
+The three extracted workflow trees retain their original domain, application, infrastructure and executable fixture projects. Their OpenCaw namespaces and exported motion/action schema identifiers preserve source and package compatibility; they do not imply a host dependency. Audited execution resources live under resources/, separate from host policy.
 
----
+The bubo entrypoint composes validated host context, constrained workspace/process ports and workflow services. It never interprets host instruction documents or calls an engine selector. References point to exact local files and hashes; native tools are explicitly selected existing executables. These cooperative guards and owned-process controls are not an OS sandbox.
 
-This document intentionally stays concise by referencing selected templates.
+Runtime resources, scripts, model/tool selections, ancestry and exported packages are hash-bound. Algorithms and model selections remain those of the extraction baseline in provenance/opencaw-extraction.json. Setup/build and production execution are separate; production invokes an explicitly built CLI and downloads nothing.
 
-## Read Template Instructions
-
-Read `./.opencaw/.architecture/DOTNET.md` instructions
-Read `./.opencaw/.architecture/PLAYWRIGHT.md` instructions
-Read `./.opencaw/.architecture/DOTNET_ASPIRE.md` instructions
-Read `./.opencaw/.architecture/MARKDOWN.md` instructions
-Read `./.opencaw/.architecture/DOCKER.md` instructions
-
-Add repository-specific architecture instructions below these read directives.
-
-## Repository-Specific Notes
-
-- Docker expectations are governed by `./.opencaw/.architecture/DOCKER.md`. Keep image construction, runtime configuration, and deployment concerns separate when adding or changing container assets.
-- Bubo targets .NET 8 LTS. All production projects use `net8.0`; `global.json` permits newer installed SDKs only through roll-forward.
-- The runtime is file-driven in v1: `INPUT.md` or inline Markdown in, Markdown report to stdout, with Bubo-owned review sidecars under `.ai/artifacts`.
-- Runtime startup initializes OpenCaw from the workspace `.opencaw` submodule before reading `INPUT.md`; host project memory remains under `.ai` and must not be written into the OpenCaw baseline.
-- All file and command tools must pass through `WorkspaceGuard` or an equivalent sandbox-root check before touching the filesystem.
-- Docker is the required execution sandbox for agent-driven command execution. Network access must be explicit, and `none` is the default policy.
-- Local inference uses direct llama.cpp interop through managed wrappers and RID native assets. Do not introduce a dependency on host-installed `llama-cli`, `llama-server`, Ollama, or a long-running llama service.
-- Cloud inference is isolated behind the same inference abstractions and currently targets non-interactive `codex-cli`.
-- `bubo-actions` fixtures are deterministic validation inputs; they are not a substitute for the future planner/coder model loop.
+No web framework, Docker, agent/provider coding loop, automatic human approval or automatic asset promotion is part of this runtime. Execution fixtures label simulated inference/approval separately from actual Blender and presentation evidence.
