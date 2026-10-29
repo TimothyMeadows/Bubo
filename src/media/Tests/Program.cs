@@ -87,6 +87,32 @@ Denied(()=>(audio with { Acceptance=new("image","candidate",identity) }).Validat
 Denied(()=>(request with { Acceptance=new("image","third-attempt",identity) }).Validate(image),"unapproved acceptance attempt kind");
 Denied(()=>(request with { Acceptance=new("image","candidate",identity),Items=[item,item with { Id="two" }] }).Validate(image),"acceptance batch cannot consume multiple candidates");
 (request with { Acceptance=new("image","candidate",identity) }).Validate(image);Check(true,"one matching acceptance attempt admitted for later ledger enforcement");
+var musicCapability=MediaCapabilities.Require("ace-step-turbo");
+var musicRequest=request with
+{
+    Backend="ace-step-turbo",Settings=new("cuda:0","bfloat16","none"),Budget=request.Budget with{MaximumAudioSeconds=600},
+    Items=[item with{Prompt="Original piano and percussion",Width=null,Height=null,Seconds=12,Steps=8,Music=new("instrumental","","unknown",120,"C major","4",3)}],
+    Acceptance=new("instrumental","candidate",identity)
+};
+musicRequest.Validate(musicCapability);Check(true,"music instrumental binds the shared instrumental case without lyrics or planning controls");
+var song=musicRequest with{Items=[musicRequest.Items[0] with{Music=musicRequest.Items[0].Music! with{Mode="supplied-lyrics",Lyrics="Bright bells ring\nWhile we sing",VocalLanguage="en"}}],Acceptance=new("supplied-lyrics","candidate",identity)};
+song.Validate(musicCapability);Check(true,"supplied song retains explicit caller lyrics and its distinct shared case");
+Denied(()=>(musicRequest with{Acceptance=new("supplied-lyrics","candidate",identity)}).Validate(musicCapability),"instrumental cannot spend the supplied-lyrics allowance");
+Denied(()=>(song with{Acceptance=new("instrumental","candidate",identity)}).Validate(musicCapability),"supplied song cannot spend the instrumental allowance");
+Denied(()=>(musicRequest with{Items=[musicRequest.Items[0] with{Music=null}]}).Validate(musicCapability),"music mode cannot be inferred from absent options");
+Denied(()=>(song with{Items=[song.Items[0] with{Music=song.Items[0].Music! with{Lyrics=" "}}]}).Validate(musicCapability),"singing cannot invent missing caller lyrics");
+Denied(()=>(musicRequest with{Items=[musicRequest.Items[0] with{Music=musicRequest.Items[0].Music! with{Lyrics="unexpected words"}}]}).Validate(musicCapability),"instrumental cannot silently ignore supplied lyrics");
+Denied(()=>(request with{Items=[item with{Music=musicRequest.Items[0].Music}]}).Validate(image),"image cannot silently ignore music options");
+Denied(()=>(audio with{Items=[audio.Items[0] with{Music=musicRequest.Items[0].Music}]}).Validate(sfx),"SFX cannot silently ignore music options");
+Denied(()=>(musicRequest with{Items=[musicRequest.Items[0] with{Guidance=7}]}).Validate(musicCapability),"Turbo cannot accept ineffective CFG guidance");
+Denied(()=>(musicRequest with{Items=[musicRequest.Items[0] with{NegativePrompt="unused"}]}).Validate(musicCapability),"Turbo cannot accept an ineffective negative prompt");
+Denied(()=>(musicRequest with{Items=[musicRequest.Items[0] with{Seconds=9}]}).Validate(musicCapability),"music duration below the selected model minimum rejected");
+Denied(()=>(musicRequest with{Items=[musicRequest.Items[0] with{Seconds=601}]}).Validate(musicCapability),"music duration above bounded maximum rejected");
+Denied(()=>(musicRequest with{Items=[musicRequest.Items[0] with{Seconds=12.1}]}).Validate(musicCapability),"music cannot silently round unsupported fractional duration");
+Denied(()=>(song with{Items=[song.Items[0] with{Music=song.Items[0].Music! with{VocalLanguage="zz"}}]}).Validate(musicCapability),"unsupported music language cannot silently fall back");
+Denied(()=>(musicRequest with{Items=[musicRequest.Items[0] with{Seed=long.MaxValue}]}).Validate(musicCapability),"music seed outside the supported exact integer range rejected");
+var musicJson=JsonSerializer.Serialize(musicRequest,MediaJson.Options);
+Denied(()=>MediaJson.Read<MediaRequest>(Encoding.UTF8.GetBytes(musicJson.Replace("\"mode\":", "\"planningLm\":true,\"mode\":"))),"caller cannot enable an unregistered planning-LM setting");
 
 var root=Path.Combine(AppContext.BaseDirectory,"test-fixtures","media-host-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(root);
 File.WriteAllText(Path.Combine(root,"media.json"),"owned test media policy; not user acceptance");

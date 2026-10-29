@@ -16,7 +16,7 @@ public interface IInstallationVerifier
 public sealed record PreparedInstallation(string Backend, string ReceiptPath, string ReceiptSha256, string Worker, string ModelDirectory,
     string? Python, IReadOnlyDictionary<string,string> Components, string CatalogSha256, string EnvironmentSha256,
     IReadOnlyList<Bubo.Media.Application.InstalledFile> Files,string? WorkerSha256=null,string? WorkerSourceSha256=null,string? ResourceCatalogSha256=null,
-    IReadOnlyList<string>? ImmutableRoots=null);
+    IReadOnlyList<string>? ImmutableRoots=null,string? SourceDirectory=null);
 public sealed record InstalledFile(string Path,string Sha256,long Bytes);
 
 public sealed record WorkerBatchResult(string Protocol, ObservedExecution Execution, double LoadingSeconds, double UnloadingSeconds, WorkerOutput[] Outputs, int ModelLoads, bool Unloaded);

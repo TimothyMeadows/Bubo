@@ -42,6 +42,7 @@ static class ApplicationFixtures
         var first=Make("first-task","first");var admitted=first.Admission.Read("inputs/request.json");
         check(admitted.Request.Task=="first-task" && admitted.OutputDirectory=="staging/first","actual admission binds scoped rights and fresh non-runtime output");
         check(!Directory.Exists(Path.Combine(root,"state")) && !Directory.Exists(Path.Combine(root,"staging")),"admission performs no state/output writes");
+        MusicFixtures.Run(first.Workspace.HostContext!,check);
         var bad=Make("bad-runtime","bad-runtime",output:"runtime");Denied(()=>bad.Admission.Read("inputs/request.json"),"runtime output rejected despite broader host write permission");
         bad=Make("bad-style","bad-style",style:false);Denied(()=>bad.Admission.Read("inputs/request.json"),"image cannot omit actual style policy");
         bad=Make("bad-shared","bad-shared",shared:false);Denied(()=>bad.Admission.Read("inputs/request.json"),"acceptance cannot reset into a per-task default ledger");

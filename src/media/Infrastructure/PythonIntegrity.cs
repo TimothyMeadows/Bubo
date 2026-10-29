@@ -39,7 +39,8 @@ internal static class PythonIntegrity
             if(expectedBase.TryGetValue(target,out var hash)){expectedBase.Add(path,hash);links.Remove(path);}
         if(links.Count>0)throw new InvalidOperationException("Unresolved/cyclic Python archive links; materialize safe pinned targets during explicit setup");
         // An explicitly pinned app-local CRT update is the sole allowed modification to the base archive.
-        var runtimeFiles=windows?catalog["windowsRuntime"]!["files"]!.AsArray().OfType<JsonObject>().Where(x=>x["backends"]!.AsArray().Any(b=>b!.GetValue<string>()=="stable-audio-open")).ToArray():[];
+        var backend=spec["backend"]!.GetValue<string>();
+        var runtimeFiles=windows?catalog["windowsRuntime"]!["files"]!.AsArray().OfType<JsonObject>().Where(x=>x["backends"]!.AsArray().Any(b=>b!.GetValue<string>()==backend)).ToArray():[];
         foreach(var value in runtimeFiles)expectedBase[value["path"]!.GetValue<string>()]=value["sha256"]!.GetValue<string>();
         foreach(var (relative,hash) in expectedBase)
         {

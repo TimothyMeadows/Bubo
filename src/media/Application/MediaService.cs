@@ -110,7 +110,7 @@ public sealed class MediaService(IWorkspace workspace,IInstallationVerifier inst
             var actual=result.Outputs[i];var expected=request.Items[i];
             if(actual.Id!=expected.Id || !Finite(actual.InferenceSeconds) || actual.Seed!=expected.Seed || actual.Steps!=expected.Steps || actual.Guidance!=expected.Guidance || string.IsNullOrWhiteSpace(actual.Scheduler))throw new InvalidOperationException("Worker output identity/timing/actual sampling settings differ");
             if(request.Backend=="flux-schnell" && (actual.Width!=expected.Width || actual.Height!=expected.Height))throw new InvalidOperationException("Worker image dimensions differ");
-            if(request.Backend=="stable-audio-open" && (actual.SampleRate!=44100 || actual.Channels!=2 || actual.Frames is not >0 || actual.Peak is not >=0
+            if(request.Backend is "stable-audio-open" or "ace-step-turbo" && (actual.SampleRate!=(request.Backend=="ace-step-turbo"?48000:44100) || actual.Channels!=2 || actual.Frames is not >0 || actual.Peak is not >=0
                 || actual.Rms is not >=0 || actual.ClippedFraction is not >=0 or >1 || actual.SilentFraction is not >=0 or >1
                 || !Finite(actual.Peak.Value) || !Finite(actual.Rms.Value)))throw new InvalidOperationException("Invalid independently measured audio");
         }

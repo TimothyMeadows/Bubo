@@ -1,0 +1,6 @@
+ACE-Step 1.5 source revision ca1e85fe9430179831e6bc6be790c332190a3866
+Project source and selected model weights: MIT.
+Turbo configuration/modeling code carries Apache-2.0 headers; the complete pinned source tree and notices are retained during setup.
+Qwen3-Embedding-0.6B: Apache-2.0; original revision97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3; HF ACE mirror weights have identical SHA256.
+Bubo StrictDecodeMixin adapts generate_music_decode.py from this source: removes unconditional peak normalization and CPU decode fallback; preserves raw amplitude.
+Optional planning LM, UI/server, training, quantization and DCW are excluded. Selected direct-profile dependencies are separately wheel-pinned; this is not the full upstream application environment.

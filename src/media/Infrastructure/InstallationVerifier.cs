@@ -31,6 +31,7 @@ public sealed class InstallationVerifier(IWorkspace workspace,AuditedResources r
         if(!Directory.Exists(model))throw new InvalidOperationException("Pinned local model directory is missing");
         var expected=definition["files"]!.AsArray().OfType<JsonObject>().ToArray();
         var components=new Dictionary<string,string>(StringComparer.Ordinal);var inventory=new Dictionary<string,InstalledFile>(StringComparer.Ordinal);
+        var verifiedRoots=new List<string>{model};var verifiedFiles=new List<string>();
         foreach(var value in receipt["files"]?.AsArray()??throw new InvalidOperationException("Complete installed file inventory required"))
         {
             var item=value!.AsObject();var path=Text(item,"path");var hash=Text(item,"sha256");var size=item["bytes"]!.GetValue<long>();
@@ -74,11 +75,15 @@ public sealed class InstallationVerifier(IWorkspace workspace,AuditedResources r
             {
                 var path=workspace.Relative(Path.Combine(notices,Text(item,"path")));
                 if(!inventory.TryGetValue(path,out var actual)||actual.Sha256!=Text(item,"sha256")||actual.Bytes!=item["bytes"]!.GetValue<long>())throw new InvalidOperationException("Pinned runtime license notice missing/changed");
+                verifiedFiles.Add(host.ResolveReadPath(path));
             }
         }
-        string? python=null;string worker;string environmentHash;
-        if(backend=="stable-audio-open")
+        string? python=null;string? sourceDirectory=null;string worker;string environmentHash;
+        if(backend is "stable-audio-open" or "ace-step-turbo")
         {
+            if(receipt["nativeRuntimeRoot"] is not null || receipt["nativeWorker"] is not null
+                || backend=="stable-audio-open" && (receipt["sourceRoot"] is not null || receipt["sourceArchive"] is not null))
+                throw new InvalidOperationException("Python receipt cannot invent unverified native/source roots");
             var pythonRecord=receipt["python"]!.AsObject();python=Path.GetFullPath(Text(pythonRecord,"path"),host.Root);host.EnsureToolAllowed(python);
             if(host.HashToolFile(python)!=Text(pythonRecord,"sha256") || Text(pythonRecord,"version")!="3.12.16")throw new InvalidOperationException("Pinned Python3.12.16 identity differs");
             worker=resources.Resolve(Text(definition,"workerSource"));
@@ -96,6 +101,16 @@ public sealed class InstallationVerifier(IWorkspace workspace,AuditedResources r
             if(!inventory.ContainsKey(workspace.Relative(archive)))throw new InvalidOperationException("Base runtime archive is not inventoried");
             var runtime=catalog["pythonRuntimes"]![platform=="windows"?"x86_64-pc-windows-msvc":"x86_64-unknown-linux-gnu"]!.AsObject();
             PythonIntegrity.Verify(host,environment,pythonBase,wheelhouse,archive,envSpec,runtime,catalog,observed);
+            verifiedRoots.AddRange([environment,pythonBase,wheelhouse]);verifiedFiles.Add(archive);
+            if(backend=="ace-step-turbo")
+            {
+                sourceDirectory=host.ResolveReadPath(Text(receipt,"sourceRoot"));
+                var sourceArchive=host.ResolveReadPath(Text(receipt,"sourceArchive"));
+                VerifyInventoryRoot(host,sourceDirectory,inventory);
+                if(!inventory.ContainsKey(workspace.Relative(sourceArchive)))throw new InvalidOperationException("Engine source archive is not inventoried");
+                EngineSourceIntegrity.Verify(host,sourceDirectory,sourceArchive,definition["source"]!.AsObject(),observed);
+                verifiedRoots.Add(sourceDirectory);verifiedFiles.Add(sourceArchive);
+            }
             var config=Path.Combine(environment,"pyvenv.cfg");
             if(!File.Exists(config))throw new InvalidOperationException("Isolated Python environment configuration missing");
             var settings=File.ReadLines(config).Where(x=>x.Contains('=')).Select(x=>x.Split('=',2)).ToDictionary(x=>x[0].Trim(),x=>x[1].Trim(),StringComparer.OrdinalIgnoreCase);
@@ -109,10 +124,13 @@ public sealed class InstallationVerifier(IWorkspace workspace,AuditedResources r
         }
         else if(backend=="flux-schnell")
         {
+            if(new[]{"environmentRoot","pythonBaseRoot","wheelhouseRoot","pythonArchive","sourceRoot","sourceArchive","python"}.Any(key=>receipt[key] is not null))
+                throw new InvalidOperationException("Native receipt cannot invent unverified Python/source roots");
             var native=receipt["nativeWorker"]!.AsObject();worker=Path.GetFullPath(Text(native,"path"),host.Root);host.EnsureToolAllowed(worker);
             var bundle=host.ResolveReadPath(Text(receipt,"nativeRuntimeRoot"));
             if(!Path.GetDirectoryName(worker)!.Equals(bundle,OperatingSystem.IsWindows()?StringComparison.OrdinalIgnoreCase:StringComparison.Ordinal))throw new InvalidOperationException("Worker must be directly beside its inventoried runtime dependencies");
             VerifyInventoryRoot(host,bundle,inventory);
+            verifiedRoots.Add(bundle);
             if(OperatingSystem.IsWindows())foreach(var item in catalog["windowsRuntime"]!["files"]!.AsArray().OfType<JsonObject>().Where(x=>x["backends"]!.AsArray().Any(b=>b!.GetValue<string>()==backend)))
             {
                 var path=host.ResolveReadPath(Path.Combine(bundle,Text(item,"path")));
@@ -126,10 +144,23 @@ public sealed class InstallationVerifier(IWorkspace workspace,AuditedResources r
             environmentHash=Digest(inventory.Values.Where(x=>!MediaAdmission.Within(Path.GetFullPath(x.Path,host.Root),model)));
         }
         else throw new InvalidOperationException("Backend not implemented");
-        var immutableRoots=new List<string>{model};
-        foreach(var key in new[]{"nativeRuntimeRoot","pythonBaseRoot","environmentRoot","wheelhouseRoot","pythonArchive","noticeDirectory"})
-            if(receipt[key] is JsonValue value && value.TryGetValue<string>(out var path))immutableRoots.Add(host.ResolveReadPath(path));
-        return new(backend,identity.Path,identity.Sha256,worker,model,python,components,catalogHash,environmentHash,inventory.Values.ToArray(),Workspace.Hash(worker),resources.Hash(Text(definition,"workerSource")),resources.CatalogSha256,immutableRoots);
+        RequireInventoryNamespace(host,inventory.Values,verifiedRoots,verifiedFiles);
+        var immutableRoots=verifiedRoots.Concat(verifiedFiles).ToList();
+        if(receipt["noticeDirectory"] is JsonValue noticeRoot)immutableRoots.Add(host.ResolveReadPath(noticeRoot.GetValue<string>()));
+        return new(backend,identity.Path,identity.Sha256,worker,model,python,components,catalogHash,environmentHash,inventory.Values.ToArray(),Workspace.Hash(worker),resources.Hash(Text(definition,"workerSource")),resources.CatalogSha256,immutableRoots,sourceDirectory);
+    }
+    internal static void RequireInventoryNamespace(HostExecutionContext host,IEnumerable<InstalledFile> inventory,IReadOnlyCollection<string> verifiedRoots,IReadOnlyCollection<string> verifiedFiles)
+    {
+        // A caller-authored receipt cannot expand loaded-module trust with self-hashed extras.
+        // These roots have backend-specific model/archive/wheel or explicit native-bundle verification.
+        // Notice directories never confer executable trust; only pinned notice files are admitted.
+        var exact=verifiedFiles.ToHashSet(OperatingSystem.IsWindows()?StringComparer.OrdinalIgnoreCase:StringComparer.Ordinal);
+        foreach(var item in inventory)
+        {
+            var path=Path.GetFullPath(item.Path,host.Root);
+            if(!exact.Contains(path) && !verifiedRoots.Any(root=>MediaAdmission.Within(path,root)))
+                throw new InvalidOperationException("Inventory contains a file outside verified backend roots/archives/notices: "+item.Path);
+        }
     }
     static void VerifyEnvironment(HostExecutionContext host,string root,IReadOnlyDictionary<string,InstalledFile> inventory,JsonObject spec)
     {

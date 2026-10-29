@@ -19,7 +19,7 @@ def main():
             assert name in members,'Missing package file: '+name
             return archive.extractfile(members[name]).read()
         def sha(name): return hashlib.sha256(read(name)).hexdigest()
-        for name in ('LICENSE','README.md','ARCHITECTURE.md','CONTRIBUTING.md','docs/MEDIA.md','resources/media/catalog.json','resources/media/provision.py','resources/media/image/worker.cpp','resources/media/sfx/worker.py','provenance/opencaw-extraction.json','provenance/inspection-adaptation.json','notices/bubo/LICENSE','notices/bubo/IMPORT.json','notices/bubo/REUSE.md'):
+        for name in ('LICENSE','README.md','ARCHITECTURE.md','CONTRIBUTING.md','docs/MEDIA.md','resources/media/catalog.json','resources/media/provision.py','resources/media/image/worker.cpp','resources/media/sfx/worker.py','resources/media/music/worker.py','resources/media/environments/music-windows.json','resources/media/environments/music-linux.json','resources/media/notices/ACE-Step-LICENSE.txt','provenance/opencaw-extraction.json','provenance/inspection-adaptation.json','notices/bubo/LICENSE','notices/bubo/IMPORT.json','notices/bubo/REUSE.md'):
             assert read(name),'Empty notice/document: '+name
         receipt=json.loads(read('build-info.json'))
         build=receipt['capabilities']['build']

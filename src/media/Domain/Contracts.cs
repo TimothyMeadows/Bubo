@@ -39,7 +39,8 @@ public sealed record MediaRequest
             if (!ids.Add(item.Id)) throw Invalid("Duplicate batch item identity");
         }
         if (Items.Length > Budget.MaximumOutputs) throw Invalid("Batch exceeds declared output count");
-        Acceptance?.Validate(capability.Modality, Items.Length);
+        var acceptanceCase=capability.Modality=="music"?Items[0].Music!.Mode:capability.Modality;
+        Acceptance?.Validate(acceptanceCase, Items.Length);
     }
 
     public static void Identity(string value, string name)
@@ -78,7 +79,7 @@ public sealed record OutputBudget(int MaximumOutputs, long MaximumBytesPerOutput
     {
         if (MaximumOutputs is < 1 or > 4 || MaximumBytesPerOutput is < 1024 or > 268435456
             || MaximumTotalBytes < MaximumBytesPerOutput || MaximumTotalBytes > 1073741824
-            || MaximumPixels is < 4096 or > 4194304 || !double.IsFinite(MaximumAudioSeconds) || MaximumAudioSeconds is < 0.25 or > 47)
+            || MaximumPixels is < 4096 or > 4194304 || !double.IsFinite(MaximumAudioSeconds) || MaximumAudioSeconds is < 0.25 or > 600)
             throw new InvalidOperationException("Finite explicit output budgets exceed supported limits");
     }
 }
@@ -96,6 +97,7 @@ public sealed record GenerationItem
     public int? Height { get; init; }
     public double? Seconds { get; init; }
     public bool LoopCandidate { get; init; }
+    public MusicOptions? Music { get; init; }
 
     public void Validate(string modality, OutputBudget budget)
     {
@@ -103,6 +105,8 @@ public sealed record GenerationItem
         if (string.IsNullOrWhiteSpace(Prompt) || Prompt.Length > 4096 || NegativePrompt is null || NegativePrompt.Length > 4096
             || Prompt.Contains('\0') || NegativePrompt.Contains('\0') || Seed < 0 || !double.IsFinite(Guidance))
             throw new InvalidOperationException("Prompt, negative prompt, explicit nonnegative seed and finite guidance are required");
+        if(modality!="music" && Music is not null)
+            throw new InvalidOperationException("Music options cannot be silently ignored by another modality");
         switch (modality)
         {
             case "image":
@@ -116,8 +120,33 @@ public sealed record GenerationItem
                     || Width is not null || Height is not null || Steps is < 1 or > 200 || Guidance is < 1 or > 12 || (Guidance<=1 && NegativePrompt.Length!=0))
                     throw new InvalidOperationException("Stable Audio requires bounded duration,1..200steps and guidance1..12; image dimensions are unsupported");
                 break;
+            case "music":
+                if(Music is null || Prompt.Length>512 || Seconds is not { } duration || !double.IsFinite(duration) || duration is <10 or >600 || duration!=Math.Truncate(duration)
+                    || duration>budget.MaximumAudioSeconds || Width is not null || Height is not null || NegativePrompt.Length!=0
+                    || Steps is <1 or >8 || Guidance!=1 || Seed>int.MaxValue)
+                    throw new InvalidOperationException("ACE-Step Turbo requires explicit music mode, bounded caption/whole-second duration,1..8steps,guidance1 and a nonnegative int32 seed; image/negative-prompt controls are unsupported");
+                Music.Validate();
+                break;
             default: throw new InvalidOperationException("This backend modality is not implemented");
         }
+    }
+}
+
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
+public sealed record MusicOptions(string Mode,string Lyrics,string VocalLanguage,int? Bpm,string KeyScale,string TimeSignature,double Shift)
+{
+    static readonly HashSet<string> Languages=new("ar az bg bn ca cs da de el en es fa fi fr he hi hr ht hu id is it ja ko la lt ms ne nl no pa pl pt ro ru sa sk sr sv sw ta te th tl tr uk ur vi yue zh unknown".Split(' '),StringComparer.Ordinal);
+    public void Validate()
+    {
+        if(Mode is not ("instrumental" or "supplied-lyrics") || Lyrics is null || Lyrics.Length>4096 || Lyrics.Contains('\0')
+            || VocalLanguage is null || KeyScale is null || TimeSignature is null || !double.IsFinite(Shift) || Shift is <1 or >5
+            || Bpm is { } bpm && bpm is <30 or >300)
+            throw new InvalidOperationException("Explicit bounded music mode,lyrics,language,metadata and shift are required");
+        if(Mode=="instrumental" ? Lyrics.Length!=0 || VocalLanguage!="unknown" : string.IsNullOrWhiteSpace(Lyrics) || VocalLanguage=="unknown" || !Languages.Contains(VocalLanguage))
+            throw new InvalidOperationException("Instrumental requires empty supplied lyrics and unknown language; singing requires actual supplied lyrics and an explicit language code");
+        if(KeyScale!="" && !Regex.IsMatch(KeyScale,"^[A-G](#|b)? (major|minor)$",RegexOptions.CultureInvariant|RegexOptions.IgnoreCase)
+            || TimeSignature is not ("" or "2" or "3" or "4" or "6"))
+            throw new InvalidOperationException("Unsupported explicit music key or time signature");
     }
 }
 
@@ -129,7 +158,7 @@ public sealed record AcceptanceAttempt(string Case, string Kind, FileIdentity Ap
     {
         Approval.Validate();
         if (!Cases.Contains(Case, StringComparer.Ordinal) || Kind is not ("candidate" or "revision") || outputs != 1 || Case != modality)
-            throw new InvalidOperationException("Acceptance must select the matching case, one output and candidate/revision; later modalities are not yet implemented");
+            throw new InvalidOperationException("Acceptance must select the matching case, one output and candidate/revision");
     }
 }
 
@@ -140,7 +169,8 @@ public static class MediaCapabilities
     public static IReadOnlyList<BackendCapability> Implemented { get; } = Array.AsReadOnly(new[]
     {
         new BackendCapability("flux-schnell", "image", ["cuda:0"], ["q8_0"], ["text-encoder-cpu"], 4, "bubo-flux-worker/v1"),
-        new BackendCapability("stable-audio-open", "sfx", ["cuda:0"], ["float16", "float32"], ["none"], 4, "bubo-sfx-worker/v1")
+        new BackendCapability("stable-audio-open", "sfx", ["cuda:0"], ["float16", "float32"], ["none"], 4, "bubo-sfx-worker/v1"),
+        new BackendCapability("ace-step-turbo", "music", ["cuda:0"], ["bfloat16"], ["none"], 4, "bubo-music-worker/v1")
     });
     public static BackendCapability Require(string id) => Implemented.SingleOrDefault(x => x.Id == id)
         ?? throw new InvalidOperationException("Unknown or unimplemented media backend; no provider fallback");

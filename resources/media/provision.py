@@ -1,6 +1,6 @@
 """Fixed, explicitly authorized media installer. Never called by generation workers."""
 from pathlib import Path
-import hashlib,json,os,platform,shutil,subprocess,sys,tarfile,urllib.request,urllib.parse
+import hashlib,json,os,platform,shutil,subprocess,sys,tarfile,urllib.request,urllib.parse,zipfile
 TOOLS={}
 CHILD_ENV=None
 PROJECT=None
@@ -123,6 +123,17 @@ def create_environment(python,environment,base,state,clean):
     run([executable,'-I','-B','-c',code,wheel,'--isolated','install','--no-index','--find-links',bundled,'--only-binary=:all:','--require-hashes','--no-deps','--no-compile','--prefix',environment,'-r',requirements],clean)
     return executable
 
+def extract_source(archive,destination,prefix):
+    destination=owned(destination);destination.mkdir(parents=True,exist_ok=False);names=set();total=0
+    with zipfile.ZipFile(owned(archive)) as source:
+        for entry in source.infolist():
+            require(entry.filename.startswith(prefix),'Unexpected source ZIP root');relative=entry.filename[len(prefix):]
+            if not relative or entry.is_dir():continue
+            require('\\' not in relative and all(x not in ('','.','..') for x in relative.split('/')) and ((entry.external_attr>>16)&0xF000)!=0xA000,'Unsafe source ZIP entry')
+            target=safe(destination,relative);key=os.path.normcase(str(target));require(key not in names and len(names)<5000,'Duplicate/unbounded source entries');names.add(key)
+            total+=entry.file_size;require(total<=268435456,'Source expansion exceeds256MiB');target.parent.mkdir(parents=True,exist_ok=True)
+            with source.open(entry) as stream,target.open('xb') as output:shutil.copyfileobj(stream,output)
+
 def main():
     global TOOLS,CHILD_ENV,PROJECT,OWNED
     require(len(sys.argv)==4,'Usage: provision.py JOB.json RESULT.json JOB_SHA256')
@@ -138,7 +149,8 @@ def main():
         require(digest(identity['path'])==identity['sha256'],'License evidence changed');evidence=read(identity['path'])
         require(evidence['schemaVersion']=='bubo-media-license-evidence/v1' and evidence['accepted'] is True and backend['id'] in evidence['backends'],'Applicable user license evidence required');accepted.update(evidence['licenseIds'])
     required={x['license'] for x in backend['files']}
-    if backend['id']=='stable-audio-open':required.add('Python-2.0')
+    if backend['id'] in ('stable-audio-open','ace-step-turbo'):required.add('Python-2.0')
+    if backend['id']=='ace-step-turbo':required.add(backend['source']['license'])
     if os.name=='nt':required.update(x['license'] for x in catalog['windowsRuntime']['files'] if backend['id'] in x['backends'])
     require(required<=accepted,'Selected model/Python/runtime license evidence is incomplete; no terms accepted by setup')
     install=Path(job['installRoot']);downloads=Path(job['downloadRoot']);require(not install.exists(),'Fresh installation identity required');require(install.is_absolute() and downloads.is_absolute(),'Absolute owned roots required')
@@ -150,9 +162,13 @@ def main():
     CHILD_ENV.update(GIT_CONFIG_COUNT='4',GIT_CONFIG_KEY_0='core.hooksPath',GIT_CONFIG_VALUE_0=str(empty_config),GIT_CONFIG_KEY_1='init.templateDir',GIT_CONFIG_VALUE_1=str(empty_config),GIT_CONFIG_KEY_2='protocol.allow',GIT_CONFIG_VALUE_2='never',GIT_CONFIG_KEY_3='protocol.https.allow',GIT_CONFIG_VALUE_3='always',GIT_TERMINAL_PROMPT='0')
     for component in backend['files']:
         remote=component.get('sourcePath',component['path'])
-        url='https://huggingface.co/'+component['repository']+'/resolve/'+component['revision']+'/'+urllib.parse.quote(remote,safe='/')
+        url=component.get('url') or 'https://huggingface.co/'+component['repository']+'/resolve/'+component['revision']+'/'+urllib.parse.quote(remote,safe='/')
         cached=downloads/component['sha256'];download(url,cached,component['sha256'],component['bytes']);target=safe(models,component['path']);copy(cached,target)
-    if backend['id']=='stable-audio-open':
+    if backend['id'] in ('stable-audio-open','ace-step-turbo'):
+        source=source_archive=None
+        if backend['id']=='ace-step-turbo':
+            pin=backend['source'];source_archive=downloads/pin['archiveSha256'];download(pin['archiveUrl'],source_archive,pin['archiveSha256'],pin['archiveBytes'])
+            source=install/'source';extract_source(source_archive,source,pin['archiveRootPrefix'])
         require(digest(job['environment'])==job['environmentSha256'],'Environment lock changed');spec=read(job['environment']);runtime=catalog['pythonRuntimes']['x86_64-pc-windows-msvc' if windows else 'x86_64-unknown-linux-gnu']
         archive=downloads/runtime['sha256'];download(runtime['url'],archive,runtime['sha256'],runtime['bytes']);base=install/'python';extract(archive,base)
         python=base/('python.exe' if windows else 'bin/python3.12');environment=install/'environment';wheels=install/'wheels';wheels.mkdir()
@@ -174,9 +190,11 @@ def main():
             copy_crt(job,catalog,[base,scripts],backend['id'])
         fresh_resources(job);doctor_env=clean.copy();doctor_env['CUDA_VISIBLE_DEVICES']=''
         doctor_cache=owned(install/'cache/doctor');doctor_cache.mkdir(parents=True,exist_ok=True)
-        run([executable,'-I','-B','-X','utf8',job['sfxWorker'],'--doctor',models,doctor_cache,owned(install/'metadata-preflight.json')],doctor_env)
+        if backend['id']=='stable-audio-open':run([executable,'-I','-B','-X','utf8',job['sfxWorker'],'--doctor',models,doctor_cache,owned(install/'metadata-preflight.json')],doctor_env)
+        else:run([executable,'-I','-B','-X','utf8',job['musicWorker'],'--doctor',models,source,doctor_cache,owned(install/'metadata-preflight.json')],doctor_env)
         details={'modelDirectory':str(models),'pythonBaseRoot':str(base),'environmentRoot':str(environment),'wheelhouseRoot':str(wheels),'pythonArchive':str(archive),'python':str(executable),'noticeDirectory':str(install/'notices') if windows else None}
-    else:
+        if source is not None:details.update(sourceRoot=str(source),sourceArchive=str(source_archive))
+    elif backend['id']=='flux-schnell':
         source=install/'source';git=job['git'];cmake=job['cmake'];pin=backend['source']
         run([git,'clone','--filter=blob:none','--no-checkout',pin['repository'],source]);run([git,'-C',source,'-c','core.longpaths=true','checkout','--detach',pin['revision']])
         run([git,'-C',source,'-c','core.longpaths=true','submodule','update','--init','ggml']);run([git,'-C',source/'ggml','-c','core.longpaths=true','submodule','update','--init','src/ggml-cuda/vendors/cutlass'])
@@ -205,6 +223,7 @@ def main():
         else:
             raise RuntimeError('Linux native DLL closure has not been validated; build is preserved for explicit inspection/registration, no complete installation claim')
         details={'modelDirectory':str(models),'nativeRuntimeRoot':str(bundle),'worker':str(bundle/worker.name),'sourceRevision':pin['revision'],'noticeDirectory':str(install/'notices') if windows else None}
+    else:raise RuntimeError('Unknown provisioning backend; no fallback')
     result=no_links(sys.argv[2]);require(result==no_links(job['resultPath']) and PROJECT in result.parents,'Setup result identity escaped its bound project path')
     with result.open('x',encoding='utf-8') as output:json.dump({'schemaVersion':'bubo-media-provision-worker-result/v1','status':'installed-pending-registration','backend':backend['id'],'paths':details,'generation':False,'licenseAcceptance':False,'promotion':False},output,indent=2);output.write('\n')
 

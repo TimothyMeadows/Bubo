@@ -17,4 +17,6 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Public CLI contract checks failed.' }
     python -X utf8 tests/test-media-provision.py
     if ($LASTEXITCODE -ne 0) { throw 'Fixed media provisioning contract checks failed.' }
+    python -X utf8 tests/test-music-worker.py
+    if ($LASTEXITCODE -ne 0) { throw 'Fixed music worker contract checks failed.' }
 } finally { Pop-Location; $env:TEMP=$buboPreviousTemp; $env:TMP=$buboPreviousTmp }
