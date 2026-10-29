@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "bubo-user-qa-review/v1",
+  "recordedAt": "2026-10-29T14:36:04.121380+00:00",
+  "source": "Explicit user answers to the two pending session questions",
+  "reviews": [
+    {
+      "case": "image",
+      "requestId": "image-revision",
+      "outputSha256": "c14a3cf6872073ce8f933b619f2553dee3b2fecf4255b759e217e9655ce55c92",
+      "decision": "Accept for QA with misses documented",
+      "scope": "backend QA with partial prompt adherence",
+      "documentedMisses": [
+        "faces image-left rather than requested right",
+        "eye retains dial/glyph markings"
+      ],
+      "visibilityLimit": "far wing largely occluded",
+      "accepted": true
+    },
+    {
+      "case": "sfx",
+      "requestId": "sfx-candidate",
+      "outputSha256": "156cc78394c504c4b5e365b2a0bb1a789e4628998c85aa94a72259e1f12945ca",
+      "decision": "Accept for backend QA",
+      "scope": "Listening/content review of requested metallic latch click/clunk and short spring rattle without speech/music",
+      "accepted": true
+    }
+  ],
+  "humanRuntimeAcceptance": false,
+  "assetPromotion": false,
+  "additionalGenerationAuthorized": false
+}

@@ -278,7 +278,7 @@
           "sha256": "df406b41557d4441eaee5333e5b004b9183f74322ea5ebb2160e0bec86f7fee2"
         }
       },
-      "review": "human-QA-review-pending",
+      "review": "accepted-for-backend-QA-with-documented-misses",
       "promotion": false
     },
     {
@@ -415,7 +415,7 @@
         "scheduler": "CosineDPMSolverMultistepScheduler",
         "nativeMetadata": null
       },
-      "review": "human-QA-review-pending",
+      "review": "accepted-for-backend-QA",
       "promotion": false
     }
   ],
@@ -435,12 +435,16 @@
   "imageReview": {
     "primary": "usable coherent owl; direction and eye dial/glyphs miss prompt",
     "independent": "usable backend QA output with partial adherence; far wing occluded; no obvious malformed anatomy or pixels",
-    "human": "pending"
+    "human": "accepted-for-backend-QA-with-documented-misses"
   },
   "sfxReview": {
     "independentMeasurement": "4seconds44100Hz stereo float, peak0.9345703125,RMS0.0218328578,zero clipping,finite samples",
-    "humanListening": "pending",
+    "humanListening": "accepted-for-backend-QA",
     "loop": "not-requested"
   },
-  "promotion": false
+  "promotion": false,
+  "userQaReview": {
+    "file": "user-qa-review.json",
+    "sha256": "9bd66446caa5bc58f30fa7f14c3a5be49aa479f441a4b911690303814afbb0cd"
+  }
 }
