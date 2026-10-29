@@ -11,7 +11,7 @@ namespace OpenCaw.AssetProduction;
 
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed record GpuGuardianJob(string SchemaVersion,string Id,string Root,string ContextPath,string ContextSha256,int ClientPid,
-    long ClientStartUtcTicks,GpuProcessSpec Process);
+    long ClientStartIdentity,GpuProcessSpec Process);
 public sealed record GpuGuardianOutcome(string SchemaVersion,string Id,string Status,bool NativeRetired,string? Error);
 
 /// <summary>A short-lived process owns both the global lease and its native descendants.</summary>
@@ -28,7 +28,7 @@ public static class GpuGuardian
         var id=Guid.NewGuid().ToString("N");var state=context.StateRoot+"/gpu-guardian/"+id;
         var jobPath=state+"/job.json";
         using var self=Process.GetCurrentProcess();
-        var job=new GpuGuardianJob(Protocol,id,context.Root,context.ContextPath,context.ContextSha256,self.Id,self.StartTime.ToUniversalTime().Ticks,spec);
+        var job=new GpuGuardianJob(Protocol,id,context.Root,context.ContextPath,context.ContextSha256,self.Id,StartIdentity(self),spec);
         Validate(context,job,cancellation:cancellation);
         workspace.Save(jobPath,job);
         var jobSha=workspace.HashProjectFile(jobPath);
@@ -283,8 +283,20 @@ public static class GpuGuardian
         if(ParentPid()!=job.ClientPid)throw new InvalidOperationException("Guardian must be a direct child of its bound Bubo apphost");
         using var parent=Process.GetProcessById(job.ClientPid);
         var image=parent.MainModule?.FileName ?? throw new InvalidOperationException("Client image unavailable");
-        if(parent.HasExited || parent.StartTime.ToUniversalTime().Ticks!=job.ClientStartUtcTicks || !Path.GetFullPath(image).Equals(Apphost(),OperatingSystem.IsWindows()?StringComparison.OrdinalIgnoreCase:StringComparison.Ordinal))
+        if(parent.HasExited || StartIdentity(parent)!=job.ClientStartIdentity || !Path.GetFullPath(image).Equals(Apphost(),OperatingSystem.IsWindows()?StringComparison.OrdinalIgnoreCase:StringComparison.Ordinal))
             throw new InvalidOperationException("Guardian client identity changed or is not the same built apphost");
+    }
+    static long StartIdentity(Process process)
+    {
+        if(!OperatingSystem.IsLinux())return process.StartTime.ToUniversalTime().Ticks;
+        // Linux Process.StartTime uses a boot-time estimate cached separately by
+        // each .NET process. Bind the kernel start counter, not derived UTC time.
+        var stat=File.ReadAllText("/proc/"+process.Id+"/stat");
+        var end=stat.LastIndexOf(')');
+        var fields=end>=0?stat[(end+1)..].Split(' ',StringSplitOptions.RemoveEmptyEntries):[];
+        if(fields.Length<=19 || !long.TryParse(fields[19],System.Globalization.NumberStyles.None,System.Globalization.CultureInfo.InvariantCulture,out var start) || start<=0)
+            throw new InvalidOperationException("Cannot verify guardian client kernel start identity");
+        return start;
     }
     static async Task Emit(GpuGuardianOutcome value)=>await Console.Out.WriteLineAsync(JsonSerializer.Serialize(value,Json));
     static async Task<string> ReadLine(TextReader input,CancellationToken cancellation)

@@ -85,10 +85,15 @@ static class GpuGuardianFixtures
         var a=new HostNativeProcess(one,new NativeProcess());var b=new HostNativeProcess(two,new NativeProcess());
         using var firstCancel=new CancellationTokenSource();
         var first=a.RunGpu(Spec(one,"hold","first"),firstCancel.Token);
-        await Wait(()=>File.Exists(Path.Combine(one.Root,"state/first/child.pid")));
-        Check(Alive(Pid(one.Root,"first","native.pid")) && Alive(Pid(one.Root,"first","child.pid")),"guardian starts real owned parent and descendant fixtures");
         try
         {
+            await Wait(()=>first.IsCompleted || File.Exists(Path.Combine(one.Root,"state/first/child.pid")));
+            if(first.IsCompleted)
+            {
+                await first;
+                throw new InvalidOperationException("Owned guardian fixture completed before child startup");
+            }
+            Check(Alive(Pid(one.Root,"first","native.pid")) && Alive(Pid(one.Root,"first","child.pid")),"guardian starts real owned parent and descendant fixtures");
             using var waitingCancel=new CancellationTokenSource();var callback=false;
             var waiting=b.RunGpu(Spec(two,"touch","waiting"),waitingCancel.Token,_=>{callback=true;return Task.CompletedTask;});
             await Task.Delay(250);
