@@ -83,7 +83,7 @@ static class ApplicationFixtures
         else Console.WriteLine("Windows platform-module audit fixtures not run on this platform");
         var adapter=Make("adapter-numbered","adapter-numbered",acceptance:false);
         AdapterFixtures.Run(adapter.Workspace,adapter.Request,new ReceiptFixture().Verify("flux-schnell",adapter.Request.Installation),check);
-        foreach(var (label,protectedPath) in new[]{("output","staging"),("state","state/overlap-state"),("ledger","shared-media")})
+        foreach(var (label,protectedPath) in new[]{("output","staging"),("state","state/overlap-state"),("guardian","state/overlap-guardian/gpu-guardian"),("ledger","shared-media")})
         {
             var overlapping=Make("overlap-"+label,"overlap-"+label);
             var before=Directory.GetFiles(root,"*",SearchOption.AllDirectories).ToDictionary(path=>path,File.ReadAllBytes);

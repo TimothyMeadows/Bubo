@@ -69,7 +69,7 @@ public sealed class MediaAdmission(IWorkspace workspace)
     {
         var immutable=(installation.ImmutableRoots??[installation.ModelDirectory]).Append(installation.Worker).Append(installation.ReceiptPath)
             .Select(path=>Path.GetFullPath(path,Context.Root)).ToArray();
-        foreach(var path in mutablePaths)
+        foreach(var path in mutablePaths.Append(Context.StateRoot))
         {
             var full=Context.ResolveWritePath(path);
             if(immutable.Any(root=>Within(full,root)||Within(root,full)))
