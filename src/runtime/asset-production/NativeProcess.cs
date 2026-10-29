@@ -3,6 +3,7 @@ namespace OpenCaw.AssetProduction;
 
 public class NativeProcess : INativeProcess
 {
+    public bool LastRetirementConfirmed { get; private set; } = true;
     public bool SupportsPrivateMemoryLimit => OperatingSystem.IsWindows() && Environment.Is64BitProcess;
     public Task Run(string executable, IEnumerable<string> arguments, string cwd, string log, int seconds, CancellationToken cancellation = default, long maximumLogBytes = 16777216, IReadOnlyDictionary<string, string>? environment = null)
         => RunCore(executable, arguments, cwd, log, seconds, null, cancellation, maximumLogBytes, environment);
@@ -17,6 +18,8 @@ public class NativeProcess : INativeProcess
     }
     async Task RunCore(string executable, IEnumerable<string> arguments, string cwd, string log, int seconds, long? maximumPrivateBytes, CancellationToken cancellation, long maximumLogBytes, IReadOnlyDictionary<string, string>? environment)
     {
+        LastRetirementConfirmed=true;
+        cancellation.ThrowIfCancellationRequested();
         if (seconds < 1 || seconds > 86400)
             throw new InvalidOperationException("Deadline must be 1..86400 seconds");
         if (maximumLogBytes < 1024 || maximumLogBytes > 1073741824)
@@ -24,7 +27,7 @@ public class NativeProcess : INativeProcess
         var processGroup = OperatingSystem.IsLinux() && File.Exists("/usr/bin/setsid");
         if (!OperatingSystem.IsWindows() && !processGroup)
             throw new PlatformNotSupportedException("Owned native process cleanup requires Windows jobs or Linux /usr/bin/setsid; this platform is blocked before launch. No OS sandbox is implied.");
-        var info = new ProcessStartInfo(processGroup ? "/usr/bin/setsid" : executable) { WorkingDirectory = cwd, UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true, CreateNoWindow = true };
+        var info = new ProcessStartInfo(processGroup ? "/usr/bin/setsid" : executable) { WorkingDirectory = cwd, UseShellExecute = false, RedirectStandardInput = true, RedirectStandardOutput = true, RedirectStandardError = true, CreateNoWindow = true };
         if (processGroup)
             info.ArgumentList.Add(executable);
         foreach (var argument in arguments)
@@ -35,11 +38,15 @@ public class NativeProcess : INativeProcess
         Directory.CreateDirectory(Path.GetDirectoryName(log)!);
         await using var writer = new StreamWriter(new FileStream(log, FileMode.CreateNew, FileAccess.Write, FileShare.Read));
         using var process = new Process { StartInfo = info };
+        cancellation.ThrowIfCancellationRequested();
         if (!process.Start())
             throw new InvalidOperationException("Native process could not start");
+        LastRetirementConfirmed=false;
         OwnedProcessTree lifetime;
         try
         {
+            // Fixed batch tools must not inherit or consume a guardian control pipe.
+            process.StandardInput.Close();
             lifetime = new OwnedProcessTree(process, maximumPrivateBytes);
         }
         catch { if (!process.HasExited) process.Kill(true); await process.WaitForExitAsync(); throw; }
@@ -89,11 +96,13 @@ public class NativeProcess : INativeProcess
         {
             var exit = process.WaitForExitAsync(deadline.Token);
             await await Task.WhenAny(exit, failed.Task);
+            await owned.Retire(process,processGroup);
+            LastRetirementConfirmed=true;
             await Task.WhenAll(output, error).WaitAsync(deadline.Token);
             if (process.ExitCode != 0)
                 throw new InvalidOperationException($"Native process exited {process.ExitCode}; see {log}");
         }
-        catch { owned.Dispose(); if (processGroup) OwnedProcessTree.kill(-process.Id, 9); if (!process.HasExited) process.Kill(entireProcessTree: true); deadline.Cancel(); await process.WaitForExitAsync(); try { await Task.WhenAll(output, error); } catch (Exception) { } throw; }
-        finally { if (processGroup) OwnedProcessTree.kill(-process.Id, 9); }
+        catch { if (processGroup) OwnedProcessTree.kill(-process.Id, 9); if (!process.HasExited) process.Kill(entireProcessTree: true); deadline.Cancel(); await process.WaitForExitAsync(); try { await Task.WhenAll(output, error); } catch (Exception) { } throw; }
+        finally { await owned.Retire(process,processGroup); LastRetirementConfirmed=true; }
     }
 }

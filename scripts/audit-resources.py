@@ -10,6 +10,8 @@ expected=re.search(r'ExpectedSha256 = "([a-f0-9]{64})"', (ROOT/'src/Bubo.Cli/Run
 assert hashlib.sha256(catalog.read_bytes()).hexdigest()==expected, 'Audited catalog changed; review source and update its compiled identity explicitly.'
 value=json.loads(catalog.read_text(encoding='utf-8'))
 assert value['schemaVersion']==1 and value['files']
+actual={path.relative_to(ROOT).as_posix() for path in (ROOT/'resources').rglob('*') if path.is_file() and path!=catalog and '__pycache__' not in path.parts and path.suffix!='.pyc'}
+assert actual==set(value['files']), 'Resource inventory has missing/unreviewed additions; review and register exact bytes explicitly.'
 for relative,digest in value['files'].items():
     path=ROOT/relative
     assert path.resolve().is_relative_to((ROOT/'resources').resolve()) and not path.is_symlink(), 'Resource escape/link: '+relative

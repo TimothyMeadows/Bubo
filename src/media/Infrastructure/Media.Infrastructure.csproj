@@ -1,0 +1,4 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup><ProjectReference Include="../Application/Media.Application.csproj" /></ItemGroup>
+  <ItemGroup><InternalsVisibleTo Include="Media.Tests" /></ItemGroup>
+</Project>

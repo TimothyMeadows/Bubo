@@ -16,11 +16,16 @@ using ActionInfrastructure = OpenCaw.ModelAction.Infrastructure;
 var resultOutput = Console.Out;
 var workflow = args.Length > 0 ? args[0] : "help";
 var operation = args.Length > 1 ? args[1] : "help";
+if(workflow=="gpu-guardian" && operation=="run")
+{
+    RuntimeCatalog.Verify();
+    return await GpuGuardian.Serve(args[2..]);
+}
 try
 {
     if (args.Length == 0 || args is ["--help"] or ["help"])
     {
-        resultOutput.WriteLine("bubo <proof-to-model|model-to-animation|model-to-action|blender-inspection> <operation> --api-version 1 --root ROOT --host-context PROJECT_JSON [--manifest PROJECT_JSON] [operation options]\nbubo capabilities --api-version 1\nExplicit build/setup precedes production. Host context supplies policy, permitted roots, rights/consent, tool hashes, budgets and reviews. Results are JSON on stdout; logs use stderr. No host instruction loading, implicit installation, provider fallback or automatic asset acceptance.");
+        resultOutput.WriteLine("bubo <proof-to-model|model-to-animation|model-to-action|blender-inspection|media> <operation> --api-version 1 --root ROOT --host-context PROJECT_JSON [--manifest PROJECT_JSON] [operation options]\nbubo capabilities --api-version 1\nmedia: inspect [--load true], generate, setup [--execute]. Explicit build/setup precedes production. Host context supplies policy, permitted roots, rights/consent, tool hashes, budgets and reviews. Results are JSON on stdout; logs use stderr. No host instruction loading, implicit installation, provider fallback or automatic asset acceptance.");
         return 0;
     }
     var capability = workflow == "capabilities";
@@ -40,12 +45,21 @@ try
     var context = HostExecutionContext.Load(root, options.GetValueOrDefault("host-context") ?? throw new InvalidOperationException("Explicit --host-context required"));
     if (context.InspectionOnly && workflow != "blender-inspection")
         throw new InvalidOperationException("Inspection-only context cannot execute an asset workflow");
+    if (context.MediaOnly && workflow != "media")
+        throw new InvalidOperationException("Local-media context cannot execute an asset workflow or inspection");
     if (options.TryGetValue("task", out var requestedTask) && requestedTask != context.TaskId)
         throw new InvalidOperationException("Task conflicts with host context");
     if (operation == "promote" && !context.AllowPromotion)
         throw new InvalidOperationException("Host context does not permit promotion; separate current acceptance is also required");
     if (operation == "setup" && options.ContainsKey("execute") && !context.AllowProvisioning)
         throw new InvalidOperationException("Host context does not permit explicit provisioning; no dependency installed");
+    if (workflow == "media")
+    {
+        if (!context.MediaOnly) throw new InvalidOperationException("Media execution requires a local-media purpose context");
+        var mediaResult=await MediaCommands.Execute(context,operation,options,capabilities["build"]!.AsObject());
+        resultOutput.WriteLine(JsonSerializer.Serialize(mediaResult,Workspace.Json));
+        return 0;
+    }
     if (workflow == "proof-to-model" && context.Pipeline != "PROOF_TO_MODEL")
         throw new InvalidOperationException("Host context must explicitly select PROOF_TO_MODEL");
     if (workflow is "model-to-animation" or "model-to-action")
@@ -196,6 +210,9 @@ static void ValidateOperation(string workflow, string operation, Dictionary<stri
         ("model-to-action", "doctor" or "inspect" or "compose" or "export" or "review" or "validate" or "status") => [],
         ("proof-to-model" or "model-to-animation" or "model-to-action", "promote") => ["destination"],
         ("blender-inspection", "inspect") => ["blender"],
+        ("media", "inspect") => ["load"],
+        ("media", "generate") => [],
+        ("media", "setup") => ["execute"],
         _ => throw new InvalidOperationException("Unsupported workflow/operation")
     };
     common.UnionWith(specific);
@@ -220,8 +237,8 @@ static JsonObject Capabilities()
     return new JsonObject
     {
         ["schemaVersion"] = "bubo-capabilities/v1", ["apiVersions"] = new JsonArray(1),
-        ["workflows"] = new JsonArray("proof-to-model","model-to-animation","model-to-action","blender-inspection"),
-        ["modelRuntime"] = "pinned-native-tools", ["mediaBackends"] = new JsonArray(),
+        ["workflows"] = new JsonArray("proof-to-model","model-to-animation","model-to-action","blender-inspection","media"),
+        ["modelRuntime"] = "pinned-native-tools", ["mediaBackends"] = JsonSerializer.SerializeToNode(Bubo.Media.Domain.MediaCapabilities.Implemented,Bubo.Media.Domain.MediaJson.Options),
         ["build"] = new JsonObject { ["cliSha256"] = Workspace.Hash(Assembly.GetExecutingAssembly().Location), ["resourceCatalogSha256"] = RuntimeCatalog.ExpectedSha256, ["assemblies"] = assemblies, ["launch"] = launch },
         ["platform"] = new JsonObject { ["os"] = System.Runtime.InteropServices.RuntimeInformation.OSDescription, ["nativeProcessOwnershipSupported"] = OperatingSystem.IsWindows() || OperatingSystem.IsLinux(), ["osSandbox"] = false }
     };
@@ -277,4 +294,6 @@ sealed class ProofProcess(INativeProcess inner) : ProofApplication.INativeProces
         long maximumPrivateBytes, CancellationToken cancellation = default, long maximumLogBytes = 16777216,
         IReadOnlyDictionary<string,string>? environment = null)
         => inner.RunWithLimits(executable,arguments,cwd,log,seconds,maximumPrivateBytes,cancellation,maximumLogBytes,environment);
+    public Task RunGpu(GpuProcessSpec request,CancellationToken cancellation=default,Func<CancellationToken,Task>? beforeStart=null)
+        => inner.RunGpu(request,cancellation,beforeStart);
 }

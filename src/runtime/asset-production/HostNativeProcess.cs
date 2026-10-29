@@ -39,4 +39,12 @@ public sealed class HostNativeProcess(HostExecutionContext context, INativeProce
         return inner.RunWithLimits(executable, arguments, cwd, log, seconds, maximumPrivateBytes,
             cancellation, maximumLogBytes, environment);
     }
+    public Task RunGpu(GpuProcessSpec request,CancellationToken cancellation=default,Func<CancellationToken,Task>? beforeStart=null)
+    {
+        var selected=request with {MaximumPrivateBytes=request.MaximumPrivateBytes??context.MaxPrivateBytes};
+        Admit(selected.Executable,selected.WorkingDirectory,selected.Log,selected.TimeoutSeconds,selected.MaximumLogBytes,selected.MaximumPrivateBytes);
+        if(selected.MaximumPrivateBytes is not null && !inner.SupportsPrivateMemoryLimit)
+            throw new PlatformNotSupportedException("Selected GPU memory ceiling is unavailable; no unbounded launch");
+        return GpuGuardian.Run(context,selected,cancellation,beforeStart);
+    }
 }

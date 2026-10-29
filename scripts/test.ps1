@@ -7,7 +7,7 @@ $buboPreviousTemp=$env:TEMP; $buboPreviousTmp=$env:TMP
 $env:TEMP=$buboFixtureRoot; $env:TMP=$buboFixtureRoot
 Push-Location $buboRepositoryRoot
 try {
-    foreach ($buboTestProject in @('src/Bubo.Host.Tests/Bubo.Host.Tests.csproj','src/runtime/proof-to-model/Tests/RuntimeTests.csproj','src/runtime/model-to-animation/Tests/RuntimeTests.csproj','src/runtime/model-to-action/Tests/RuntimeTests.csproj')) {
+    foreach ($buboTestProject in @('src/Bubo.Host.Tests/Bubo.Host.Tests.csproj','src/runtime/proof-to-model/Tests/RuntimeTests.csproj','src/runtime/model-to-animation/Tests/RuntimeTests.csproj','src/runtime/model-to-action/Tests/RuntimeTests.csproj','src/media/Tests/Media.Tests.csproj')) {
         dotnet run --project $buboTestProject --configuration $Configuration --no-build
         if ($LASTEXITCODE -ne 0) { throw "Tests failed: $buboTestProject" }
     }
@@ -15,4 +15,6 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Resource audit failed.' }
     python -X utf8 tests/test-cli-contract.py --cli "src/Bubo.Cli/bin/$Configuration/net10.0/bubo.dll"
     if ($LASTEXITCODE -ne 0) { throw 'Public CLI contract checks failed.' }
+    python -X utf8 tests/test-media-provision.py
+    if ($LASTEXITCODE -ne 0) { throw 'Fixed media provisioning contract checks failed.' }
 } finally { Pop-Location; $env:TEMP=$buboPreviousTemp; $env:TMP=$buboPreviousTmp }

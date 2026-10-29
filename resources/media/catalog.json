@@ -1,0 +1,386 @@
+{
+  "schemaVersion": "bubo-media-catalog/v1",
+  "generationOffline": true,
+  "maximumBatch": 4,
+  "pythonRuntimes": {
+    "x86_64-pc-windows-msvc": {
+      "version": "3.12.16",
+      "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20261026/cpython-3.12.16%2B20261026-x86_64-pc-windows-msvc-install_only_stripped.tar.gz",
+      "bytes": 22014416,
+      "sha256": "1f2ab53880fc67ea323398c6388e05af28addc99a8e389209f08a51fdff4b149",
+      "release": "20261026",
+      "license": "Python-2.0"
+    },
+    "x86_64-unknown-linux-gnu": {
+      "version": "3.12.16",
+      "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20261026/cpython-3.12.16%2B20261026-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz",
+      "bytes": 34505639,
+      "sha256": "ce4f6d0a6cfdb3bed6e44c2f9affd85943c76a42e25ad3a259002f31d6fb8a20",
+      "release": "20261026",
+      "license": "Python-2.0"
+    }
+  },
+  "backends": [
+    {
+      "id": "flux-schnell",
+      "modality": "image",
+      "source": {
+        "repository": "https://github.com/leejet/stable-diffusion.cpp",
+        "revision": "77b72a2efed78f55de26892c7e909cee001e8b83",
+        "ggmlRevision": "643e8d970cd2d926a0074f5cb12a68b38078157a",
+        "cutlassRevision": "ad7b2f5e84fcfa124cb02b91d5bd26d238c0459e"
+      },
+      "workerSource": "resources/media/image/worker.cpp",
+      "workerBuild": "resources/media/image/worker.cmake",
+      "workerProtocol": "bubo-flux-worker/v1",
+      "files": [
+        {
+          "path": "flux1-schnell-q8_0.gguf",
+          "repository": "leejet/FLUX.1-schnell-gguf",
+          "revision": "c7f665ddaf9f197ff493f41fc211f5480f5f19ac",
+          "sha256": "098c424cfa97526d9227da984563ad1509298f7573458ed210cd5ba0220ab635",
+          "bytes": 12801721248,
+          "license": "apache-2.0"
+        },
+        {
+          "path": "ae.safetensors",
+          "repository": "black-forest-labs/FLUX.1-schnell",
+          "revision": "741f7c3ce8b383c54771c7003378a50191e9efe9",
+          "sha256": "afc8e28272cd15db3919bacdb6918ce9c1ed22e96cb12c4d5ed0fba823529e38",
+          "bytes": 335304388,
+          "license": "apache-2.0"
+        },
+        {
+          "path": "clip_l.safetensors",
+          "repository": "comfyanonymous/flux_text_encoders",
+          "revision": "6af2a98e3f615bdfa612fbd85da93d1ed5f69ef5",
+          "sha256": "660c6f5b1abae9dc498ac2d21e1347d2abdb0cf6c0c0c8576cd796491d9a6cdd",
+          "bytes": 246144152,
+          "license": "apache-2.0"
+        },
+        {
+          "path": "t5xxl_fp16.safetensors",
+          "repository": "comfyanonymous/flux_text_encoders",
+          "revision": "6af2a98e3f615bdfa612fbd85da93d1ed5f69ef5",
+          "sha256": "6e480b09fae049a72d2a8c5fbccb8d3e92febeb233bbe9dfe7256958a9167635",
+          "bytes": 9787841024,
+          "license": "apache-2.0"
+        }
+      ],
+      "devices": [
+        "cuda:0"
+      ],
+      "precision": [
+        "q8_0"
+      ],
+      "offload": [
+        "text-encoder-cpu"
+      ],
+      "separatePythonEnvironment": false
+    },
+    {
+      "id": "stable-audio-open",
+      "modality": "sfx",
+      "source": {
+        "repository": "https://github.com/huggingface/diffusers",
+        "revision": "2a1433913c7044f34fa4767dd84b28bba0bb0ecf",
+        "version": "0.42.1"
+      },
+      "workerSource": "resources/media/sfx/worker.py",
+      "workerProtocol": "bubo-sfx-worker/v1",
+      "files": [
+        {
+          "path": "LICENSE.md",
+          "repository": "stabilityai/stable-audio-open-1.0",
+          "revision": "f21265c1e2710b3bd2386596943f0007f55f802e",
+          "sha256": "d6f6b1a4dce5c852bd6d7d9482d002baf0ccdb71e662250b73be9eec8764ee8d",
+          "bytes": 11852,
+          "sourceGitBlobId": "1d9ce2ee1067327543544de197291726e4fc57a4",
+          "license": "stable-audio-community"
+        },
+        {
+          "path": "README.md",
+          "repository": "stabilityai/stable-audio-open-1.0",
+          "revision": "f21265c1e2710b3bd2386596943f0007f55f802e",
+          "sha256": "11b8faf35291bad6706df53d85b12c6ea3691895d443f70c2321d654517c7527",
+          "bytes": 8342,
+          "sourceGitBlobId": "3d885b931f93cf475e68acc8ab41473b057ef2a5",
+          "license": "stable-audio-community"
+        },
+        {
+          "path": "fma_dataset_attribution2.csv",
+          "repository": "stabilityai/stable-audio-open-1.0",
+          "revision": "f21265c1e2710b3bd2386596943f0007f55f802e",
+          "sha256": "9d8b8a30c41a44072ea7571b9e5b97433b86b9a52be5a927b9c82462c9afadd9",
+          "bytes": 1975396,
+          "sourceGitBlobId": "90dd4045a8a993208dc156e51332c9dc667cafb2",
+          "license": "stable-audio-community"
+        },
+        {
+          "path": "freesound_dataset_attribution2.csv",
+          "repository": "stabilityai/stable-audio-open-1.0",
+          "revision": "f21265c1e2710b3bd2386596943f0007f55f802e",
+          "sha256": "8819b131646d3e48aa9e4571f7484c7a269bb9b639f2ce78a86e2cdefa5bb8eb",
+          "bytes": 50433223,
+          "sourceGitBlobId": "0da0aae59711c577baf0cfd0dbc80be7e736ca20",
+          "license": "stable-audio-community"
+        },
+        {
+          "path": "model_index.json",
+          "repository": "stabilityai/stable-audio-open-1.0",
+          "revision": "f21265c1e2710b3bd2386596943f0007f55f802e",
+          "sha256": "80b5bfb4f4ed10f56f27846377f000541d341eed6db17041b820606c548be6a9",
+          "bytes": 498,
+          "sourceGitBlobId": "a2e08e9778cc18fdc1c039092f5912abd687d3af",
+          "license": "stable-audio-community"
+        },
+        {
+          "path": "projection_model/config.json",
+          "repository": "stabilityai/stable-audio-open-1.0",
+          "revision": "f21265c1e2710b3bd2386596943f0007f55f802e",
+          "sha256": "a83ff2e87d709803d7702bdadb705e72b22ced16ad0fd929a8af1d11ed57b2a1",
+          "bytes": 181,
+          "sourceGitBlobId": "1cbca1a6bfc87ee7ba4b427ae1a6567dbb7578fb",
+          "license": "stable-audio-community"
+        },
+        {
+          "path": "projection_model/diffusion_pytorch_model.safetensors",
+          "repository": "stabilityai/stable-audio-open-1.0",
+          "revision": "f21265c1e2710b3bd2386596943f0007f55f802e",
+          "sha256": "032102e2b0e4b9b9e19c648dc476345157b97906752a7b4b7a0133900f340926",
+          "bytes": 1586944,
+          "sourceGitBlobId": "2c679c320f8da20db55fce301eeb7acdbc64ef28",
+          "license": "stable-audio-community"
+        },
+        {
+          "path": "scheduler/scheduler_config.json",
+          "repository": "stabilityai/stable-audio-open-1.0",
+          "revision": "f21265c1e2710b3bd2386596943f0007f55f802e",
+          "sha256": "7d476d3ad984693c144169ae7e7fd978cf2cd6bb3b9b224db3ee944d83a5ad41",
+          "bytes": 411,
+          "sourceGitBlobId": "0b2751bbf251c66bcb66f985c7f01dcd0611b0d6",
+          "license": "stable-audio-community"
+        },
+        {
+          "path": "text_encoder/config.json",
+          "repository": "stabilityai/stable-audio-open-1.0",
+          "revision": "f21265c1e2710b3bd2386596943f0007f55f802e",
+          "sha256": "491696a2ea20e9f5e78b4f150fab241a42d9d64d75b8031cab5b91d2da62a535",
+          "bytes": 1497,
+          "sourceGitBlobId": "0db501afad36254770a00fd59e338faa64fd7bbb",
+          "license": "stable-audio-community"
+        },
+        {
+          "path": "text_encoder/model.safetensors",
+          "repository": "stabilityai/stable-audio-open-1.0",
+          "revision": "f21265c1e2710b3bd2386596943f0007f55f802e",
+          "sha256": "095878c81d21f17d235e1b4aa20e9595289177e2658ef4dcec69fa5aa3b07ca2",
+          "bytes": 438525864,
+          "sourceGitBlobId": "a53cb85afb100807e0d2b5416510c8f640bf4576",
+          "license": "stable-audio-community"
+        },
+        {
+          "path": "tokenizer/special_tokens_map.json",
+          "repository": "stabilityai/stable-audio-open-1.0",
+          "revision": "f21265c1e2710b3bd2386596943f0007f55f802e",
+          "sha256": "5c87151ef0f72a99d1f766a4c418bd2a1f90aaa30a8e22fe5eca9641daebb64f",
+          "bytes": 2201,
+          "sourceGitBlobId": "2c19eb6e3b583f52d34b903b5978d3d30b6b7682",
+          "license": "stable-audio-community"
+        },
+        {
+          "path": "tokenizer/spiece.model",
+          "repository": "stabilityai/stable-audio-open-1.0",
+          "revision": "f21265c1e2710b3bd2386596943f0007f55f802e",
+          "sha256": "d60acb128cf7b7f2536e8f38a5b18a05535c9e14c7a355904270e15b0945ea86",
+          "bytes": 791656,
+          "sourceGitBlobId": "317a5ccbde45300f5d1d970d4d449af2108b147e",
+          "license": "stable-audio-community"
+        },
+        {
+          "path": "tokenizer/tokenizer.json",
+          "repository": "stabilityai/stable-audio-open-1.0",
+          "revision": "f21265c1e2710b3bd2386596943f0007f55f802e",
+          "sha256": "71c33c3bf57bf2e19b4f8ac686ad8d182a79f7cd1a4921889437c453420223f1",
+          "bytes": 2422169,
+          "sourceGitBlobId": "440e6b89375c688d05cd1d8d4b9d90ee52cdd6a7",
+          "license": "stable-audio-community"
+        },
+        {
+          "path": "tokenizer/tokenizer_config.json",
+          "repository": "stabilityai/stable-audio-open-1.0",
+          "revision": "f21265c1e2710b3bd2386596943f0007f55f802e",
+          "sha256": "63c92e838e62d98bf80514739be8eba70707aedf656a1faf113d5d4ae585045c",
+          "bytes": 20768,
+          "sourceGitBlobId": "8186f3399223c5566a5cffd47d01fa26772d5f2d",
+          "license": "stable-audio-community"
+        },
+        {
+          "path": "transformer/config.json",
+          "repository": "stabilityai/stable-audio-open-1.0",
+          "revision": "f21265c1e2710b3bd2386596943f0007f55f802e",
+          "sha256": "b5dd7f337bdcb51f68d414d619710d9fe5b9d18a3c1056afcb9ae6e020478414",
+          "bytes": 391,
+          "sourceGitBlobId": "886f818d47bbf280b5c273288b5f50c1d974bc79",
+          "license": "stable-audio-community"
+        },
+        {
+          "path": "transformer/diffusion_pytorch_model.safetensors",
+          "repository": "stabilityai/stable-audio-open-1.0",
+          "revision": "f21265c1e2710b3bd2386596943f0007f55f802e",
+          "sha256": "65ae9715febfeb2dc9f33aa506c2bda69fd2ddf8ebc483fb2df090df4ca506fd",
+          "bytes": 4227806200,
+          "sourceGitBlobId": "a80dd8393ed3fd16450e220459d93426258c4bea",
+          "license": "stable-audio-community"
+        },
+        {
+          "path": "vae/config.json",
+          "repository": "stabilityai/stable-audio-open-1.0",
+          "revision": "f21265c1e2710b3bd2386596943f0007f55f802e",
+          "sha256": "858b6cce27aa1b2d1e8d331734d2d9690d9ea1dad2fb1e6bd23ee67a61058ad9",
+          "bytes": 350,
+          "sourceGitBlobId": "b8419aca11a4ddd9dd4ce3ea26dd59dd563cb189",
+          "license": "stable-audio-community"
+        },
+        {
+          "path": "vae/diffusion_pytorch_model.safetensors",
+          "repository": "stabilityai/stable-audio-open-1.0",
+          "revision": "f21265c1e2710b3bd2386596943f0007f55f802e",
+          "sha256": "2131cdb52020b2473707465449d8bdb4f6cca61c93150a947baca02bc58ffd7b",
+          "bytes": 624490240,
+          "sourceGitBlobId": "b93a744a45f447a225ff779b9c12e0f4e6ce1c36",
+          "license": "stable-audio-community"
+        }
+      ],
+      "devices": [
+        "cuda:0"
+      ],
+      "precision": [
+        "float16",
+        "float32"
+      ],
+      "offload": [
+        "none"
+      ],
+      "environments": {
+        "windows": "resources/media/environments/sfx-windows.json",
+        "linux": "resources/media/environments/sfx-linux.json"
+      },
+      "environmentSha256": {
+        "windows": "5a44638ed77f28a8d6f95d8034a1025613b6269e800a8baf375d207cc9e44a30",
+        "linux": "ae579b29954cedabbddebd593efacd5f6aa9fb80b6577ecbdefcdcb3ac5b16a3"
+      }
+    }
+  ],
+  "windowsRuntime": {
+    "visualCppVersion": "14.51.36231.0",
+    "cudaVersion": "13.2.78",
+    "hostDriver": "separately installed NVIDIA CUDA-capable display driver; nvcuda.dll is not copied",
+    "sources": [
+      "https://docs.nvidia.com/cuda/eula/index.html",
+      "https://learn.microsoft.com/en-us/visualstudio/releases/2026/redistribution"
+    ],
+    "files": [
+      {
+        "path": "msvcp140.dll",
+        "bytes": 642720,
+        "sha256": "639342ea9a67c0009122238ce070a8257e2e04d367d627509fec29f8442afb42",
+        "backends": [
+          "flux-schnell",
+          "stable-audio-open"
+        ],
+        "license": "Microsoft-Visual-Studio-Redist"
+      },
+      {
+        "path": "msvcp140_codecvt_ids.dll",
+        "bytes": 31312,
+        "sha256": "f781e1e0133c397c3a2c73fd4dbcdb442378ba20fced56a2f7db5822436ddd2a",
+        "backends": [
+          "flux-schnell",
+          "stable-audio-open"
+        ],
+        "license": "Microsoft-Visual-Studio-Redist"
+      },
+      {
+        "path": "vcruntime140.dll",
+        "bytes": 178848,
+        "sha256": "19c293ac482fdb882cd29d2b0e6d807419efdcada04068f03e5723670895e17d",
+        "backends": [
+          "flux-schnell",
+          "stable-audio-open"
+        ],
+        "license": "Microsoft-Visual-Studio-Redist"
+      },
+      {
+        "path": "vcruntime140_1.dll",
+        "bytes": 50256,
+        "sha256": "a253a12e4a8e9e23ebfe0ced829f7751e4f42c60066986bf20515ced8dcc68cd",
+        "backends": [
+          "flux-schnell",
+          "stable-audio-open"
+        ],
+        "license": "Microsoft-Visual-Studio-Redist"
+      },
+      {
+        "path": "msvcp140_atomic_wait.dll",
+        "bytes": 57936,
+        "sha256": "d759dd381bdbd6142372de4cb57acc382e1b80c106b7414a408816564ee1eb6a",
+        "backends": [
+          "flux-schnell",
+          "stable-audio-open"
+        ],
+        "license": "Microsoft-Visual-Studio-Redist"
+      },
+      {
+        "path": "vcruntime140_threads.dll",
+        "bytes": 38560,
+        "sha256": "cd05a48a1183b074e81275d6c6472ecb5b09db8a0db8d1850b009ad041907ce9",
+        "backends": [
+          "flux-schnell",
+          "stable-audio-open"
+        ],
+        "license": "Microsoft-Visual-Studio-Redist"
+      },
+      {
+        "path": "vcomp140.dll",
+        "bytes": 213072,
+        "sha256": "f96f3a14d88d8846f31f3ab38a490304ce7d6e4f70fae4304c63e59c7aea2d30",
+        "backends": [
+          "flux-schnell",
+          "stable-audio-open"
+        ],
+        "license": "Microsoft-Visual-Studio-Redist"
+      },
+      {
+        "path": "cublas64_13.dll",
+        "bytes": 51572848,
+        "sha256": "537d278122e2621d7202653cf873a9b8b872fac37122cb9d36246ded33c53e03",
+        "backends": [
+          "flux-schnell"
+        ],
+        "license": "NVIDIA-CUDA-EULA"
+      },
+      {
+        "path": "cublasLt64_13.dll",
+        "bytes": 455684208,
+        "sha256": "b37233a1e3516a41d27dcea49595fd1cbaff979b65c80da69935cb59d0d23f5b",
+        "backends": [
+          "flux-schnell"
+        ],
+        "license": "NVIDIA-CUDA-EULA"
+      }
+    ],
+    "notices": [
+      {
+        "path": "VS-Redist.txt",
+        "bytes": 190,
+        "sha256": "2d69e3b0ac782d5513b503bafdf269a93c4fec0f1f8efac82bfbfa4b6296aef5"
+      },
+      {
+        "path": "VS-ThirdPartyNotices.txt",
+        "bytes": 6167634,
+        "sha256": "c18053db908528af47ca838e482442ae822d8bf7fef93b9d6e8f043a38d378db"
+      }
+    ]
+  }
+}

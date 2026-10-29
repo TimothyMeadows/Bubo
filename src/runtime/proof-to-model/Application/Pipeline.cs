@@ -601,7 +601,6 @@ public sealed partial class Pipeline(IWorkspace w, Dictionary<string, string> op
         if (!int.TryParse(options.GetValueOrDefault("gpu", "0"), System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var deviceId) || deviceId < 0)
             throw new InvalidOperationException("GPU must be a nonnegative integer device index");
         var device = deviceId.ToString(System.Globalization.CultureInfo.InvariantCulture);
-        using var gpu = w.Lock(".local/tools/proof-to-model/gpu-" + device + ".lock");
         var receipt = stage.Attempt + "/execution.json";
         w.Save(receipt, new
         {
@@ -617,7 +616,9 @@ public sealed partial class Pipeline(IWorkspace w, Dictionary<string, string> op
             osSandbox = false
         });
         stage.Artifacts["execution"] = receipt;
-        await native.Run(executable, arguments, w.Root, w.Resolve(stage.Attempt + "/process.log"), Timeout, cancellation, LogBudget, new Dictionary<string, string> { { "CUDA_VISIBLE_DEVICES", device } });
+        var inputs=stage.ExternalInputs.Select(x=>new OpenCaw.AssetProduction.GpuInputIdentity(x.Key,x.Value)).ToArray();
+        await native.RunGpu(new OpenCaw.AssetProduction.GpuProcessSpec(executable,arguments,w.Root,w.Resolve(stage.Attempt+"/process.log"),Timeout,LogBudget,w.HostContext?.MaxPrivateBytes,
+            new Dictionary<string,string>{{"CUDA_VISIBLE_DEVICES",device}},inputs,w.ResolveWrite(".local/tools/proof-to-model/gpu-"+device+".lock"),Math.Min(300,Timeout)),cancellation);
     }
     async Task Preprocess(Stage s, CancellationToken c)
     {

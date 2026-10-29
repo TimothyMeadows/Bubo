@@ -4,6 +4,19 @@
     <Project Path="src/Bubo.Host.Tests/Bubo.Host.Tests.csproj" />
     <Project Path="src/Bubo.Host/Bubo.Host.csproj" />
   </Folder>
+  <Folder Name="/src/media/" />
+  <Folder Name="/src/media/Application/">
+    <Project Path="src/media/Application/Media.Application.csproj" />
+  </Folder>
+  <Folder Name="/src/media/Domain/">
+    <Project Path="src/media/Domain/Media.Domain.csproj" />
+  </Folder>
+  <Folder Name="/src/media/Infrastructure/">
+    <Project Path="src/media/Infrastructure/Media.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/media/Tests/">
+    <Project Path="src/media/Tests/Media.Tests.csproj" />
+  </Folder>
   <Folder Name="/src/runtime/" />
   <Folder Name="/src/runtime/asset-production/">
     <Project Path="src/runtime/asset-production/AssetProduction.csproj" />
