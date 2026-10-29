@@ -121,6 +121,13 @@ public sealed class FixedMediaWorker(IWorkspace workspace,INativeProcess process
             || value["networkAttempts"]?.GetValue<int>()!=0 || value["endingTorchAllocatedBytes"]?.GetValue<long>()!=0)throw new InvalidOperationException("SFX lifecycle/offline evidence differs");
         if(music && (value["planningLmLoaded"]?.GetValue<bool>()!=false || value["sourceRevision"]?.GetValue<string>()!="ca1e85fe9430179831e6bc6be790c332190a3866"))
             throw new InvalidOperationException("Music engine/planning-LM evidence differs");
+        WorkerCleanup? cleanup=null;
+        if(music)
+        {
+            cleanup=MediaJson.Read<WorkerCleanup>(Encoding.UTF8.GetBytes(value["cleanup"]!.ToJsonString()));
+            if(cleanup.Mechanism!="torch._C._cuda_clearCublasWorkspaces" || cleanup.AllocatedBeforeWorkspaceClearBytes<0 || cleanup.ReservedBeforeWorkspaceClearBytes<0
+                || cleanup.EndingAllocatedBytes!=0 || cleanup.EndingReservedBytes<0)throw new InvalidOperationException("Music workspace/model cleanup evidence differs");
+        }
         var actual=value["execution"]!.AsObject();
         var python=value["python"]!.AsObject();
         if(python["version"]?.GetValue<string>()!="3.12.16" || !Path.GetFullPath(python["executable"]!.GetValue<string>()).Equals(installation.Python,OperatingSystem.IsWindows()?StringComparison.OrdinalIgnoreCase:StringComparison.Ordinal)
@@ -148,7 +155,7 @@ public sealed class FixedMediaWorker(IWorkspace workspace,INativeProcess process
                 row["seed"]!.GetValue<long>(),row["steps"]!.GetValue<int>(),row["guidance"]!.GetValue<double>(),row["scheduler"]!.GetValue<string>(),metadata));
         }
         return new(protocol,new("cuda:0",actual["deviceName"]!.GetValue<string>(),request.Settings.Precision,"none",actual["componentPrecisions"]!.AsArray().Select(x=>x!.GetValue<string>()).ToArray(),actual["deviceUuid"]!.GetValue<string>(),LoadedModules:modules),
-            value["loadingSeconds"]!.GetValue<double>(),value["unloadingSeconds"]!.GetValue<double>(),outputs.ToArray(),1,true);
+            value["loadingSeconds"]!.GetValue<double>(),value["unloadingSeconds"]!.GetValue<double>(),outputs.ToArray(),1,true,cleanup);
     }
     internal static void ValidateMusicMetadata(GenerationItem item,JsonObject value)
     {

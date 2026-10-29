@@ -1,5 +1,8 @@
 using System.IO.Compression;
 using System.Text.Json.Nodes;
+using System.Text;
+using System.Text.Json;
+using Bubo.Media.Application;
 using Bubo.Media.Domain;
 using Bubo.Media.Infrastructure;
 using OpenCaw.AssetProduction;
@@ -11,7 +14,7 @@ static class MusicFixtures
     {
         void Denied(Action action,string name)
         {
-            try{action();}catch(Exception e) when(e is InvalidOperationException or IOException){check(true,name);return;}
+            try{action();}catch(Exception e) when(e is InvalidOperationException or IOException or JsonException){check(true,name);return;}
             throw new InvalidOperationException("Accepted "+name);
         }
         var root=Path.Combine(host.Root,"tools","owned-source-fixture");Directory.CreateDirectory(root);
@@ -52,5 +55,8 @@ static class MusicFixtures
         var changed=value.DeepClone().AsObject();changed["innerSeed"]=18;Denied(()=>FixedMediaWorker.ValidateMusicMetadata(item,changed),"SIMULATED inner seed mismatch rejected despite matching outer seed");
         changed=value.DeepClone().AsObject();changed["params"]!["lyrics"]="invented words";Denied(()=>FixedMediaWorker.ValidateMusicMetadata(item,changed),"SIMULATED rewritten lyrics rejected");
         changed=value.DeepClone().AsObject();changed["conditioning"]![1]!["truncated"]=true;Denied(()=>FixedMediaWorker.ValidateMusicMetadata(item,changed),"SIMULATED truncated lyric evidence rejected");
+        var cleanup=MediaJson.Read<WorkerCleanup>(Encoding.UTF8.GetBytes("""{"mechanism":"torch._C._cuda_clearCublasWorkspaces","allocatedBeforeWorkspaceClearBytes":8519680,"reservedBeforeWorkspaceClearBytes":20971520,"endingAllocatedBytes":0,"endingReservedBytes":0}"""));
+        check(cleanup.AllocatedBeforeWorkspaceClearBytes==8519680 && cleanup.EndingAllocatedBytes==0,"SIMULATED cleanup JSON preserves explicit actual counters");
+        Denied(()=>MediaJson.Read<WorkerCleanup>(Encoding.UTF8.GetBytes("""{"mechanism":"torch._C._cuda_clearCublasWorkspaces"}""")),"missing cleanup counters cannot masquerade as observed zero allocation");
     }
 }

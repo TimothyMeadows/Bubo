@@ -143,6 +143,16 @@ def placements(handler,torch):
     require(getattr(handler.model.config,'_attn_implementation',None)=='sdpa','Unrequested attention fallback')
     return observed
 
+def release_workspace_cache(torch):
+    # Pinned Torch documents process-wide cuBLAS handle/stream workspaces.
+    # Release only after GPU work is complete; this cannot free live tensors.
+    torch.cuda.synchronize(0)
+    before=int(torch.cuda.memory_allocated(0));reserved_before=int(torch.cuda.memory_reserved(0))
+    clear=getattr(torch._C,'_cuda_clearCublasWorkspaces',None)
+    require(callable(clear),'Pinned cuBLAS workspace cleanup unavailable')
+    clear();torch.cuda.empty_cache();torch.cuda.synchronize(0)
+    return {'mechanism':'torch._C._cuda_clearCublasWorkspaces','allocatedBeforeWorkspaceClearBytes':before,'reservedBeforeWorkspaceClearBytes':reserved_before,'endingAllocatedBytes':int(torch.cuda.memory_allocated(0)),'endingReservedBytes':int(torch.cuda.memory_reserved(0))}
+
 def doctor():
     require(len(sys.argv)==6,'Usage: worker.py --doctor MODEL SOURCE CACHE RESULT.json')
     model,source,cache,result=[Path(x) for x in sys.argv[2:]]
@@ -203,9 +213,10 @@ def main():
         outputs.append({'id':item['id'],'path':path.name,'metadata':metadata_path.name,'inferenceSeconds':inference,'seed':item['seed'],'steps':item['steps'],'guidance':1.,'scheduler':'ode/euler','loopReviewed':False})
         del produced,extra,row,tensor,audio,params,config,conditioning
     peak_memory=int(torch.cuda.max_memory_allocated(0));module_paths.update(loaded_modules())
-    started=time.perf_counter();handler=None;gc.collect();torch.cuda.empty_cache();torch.cuda.synchronize(0);unloading=time.perf_counter()-started
-    remaining=int(torch.cuda.memory_allocated(0));require(remaining==0,'Model tensors remain after unload');require(not network_attempts,'Network attempts invalidate execution')
-    result={'protocol':'bubo-music-worker/v1','python':{'executable':sys.executable,'prefix':sys.prefix,'basePrefix':sys.base_prefix,'version':'.'.join(map(str,sys.version_info[:3]))},'loadedModules':sorted(module_paths|set(loaded_modules())),'execution':{'device':'cuda:0','deviceName':properties.name,'deviceUuid':str(getattr(properties,'uuid','unavailable')),'precision':'bfloat16','offload':'none','componentPrecisions':observed},'loadingSeconds':loading,'unloadingSeconds':unloading,'outputs':outputs,'modelLoads':1,'unloaded':True,'peakTorchAllocatedBytes':peak_memory,'endingTorchAllocatedBytes':remaining,'aggregateDriverMemoryMeasured':False,'networkAttempts':0,'planningLmLoaded':False,'sourceRevision':SOURCE_REVISION,'operation':job['operation'],'humanReview':'pending','promotion':False}
+    started=time.perf_counter();handler=None;gc.collect();cleanup=release_workspace_cache(torch);unloading=time.perf_counter()-started
+    with (output/'cleanup.json').open('x',encoding='utf-8') as stream:json.dump({'schemaVersion':'bubo-music-cleanup/v1','loadingSeconds':loading,'unloadingSeconds':unloading,'outputs':outputs,'peakTorchAllocatedBytes':peak_memory,**cleanup},stream,allow_nan=False,indent=2);stream.write('\n')
+    remaining=cleanup['endingAllocatedBytes'];require(remaining==0,'CUDA allocations remain after unload: '+str(remaining)+' bytes');require(not network_attempts,'Network attempts invalidate execution')
+    result={'protocol':'bubo-music-worker/v1','python':{'executable':sys.executable,'prefix':sys.prefix,'basePrefix':sys.base_prefix,'version':'.'.join(map(str,sys.version_info[:3]))},'loadedModules':sorted(module_paths|set(loaded_modules())),'execution':{'device':'cuda:0','deviceName':properties.name,'deviceUuid':str(getattr(properties,'uuid','unavailable')),'precision':'bfloat16','offload':'none','componentPrecisions':observed},'loadingSeconds':loading,'unloadingSeconds':unloading,'outputs':outputs,'modelLoads':1,'unloaded':True,'cleanup':cleanup,'peakTorchAllocatedBytes':peak_memory,'endingTorchAllocatedBytes':remaining,'aggregateDriverMemoryMeasured':False,'networkAttempts':0,'planningLmLoaded':False,'sourceRevision':SOURCE_REVISION,'operation':job['operation'],'humanReview':'pending','promotion':False}
     with result_path.open('x',encoding='utf-8') as stream:json.dump(result,stream,allow_nan=False,indent=2);stream.write('\n')
 
 if __name__=='__main__':

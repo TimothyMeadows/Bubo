@@ -39,6 +39,15 @@ denied(lambda:strict('a'*257,truncation=True,max_length=256),'SIMULATED caption 
 denied(lambda:strict('a'*2049,truncation=True,max_length=2048),'SIMULATED lyric token overflow fails instead of silently truncating')
 check(strict.pad_token_id==0,'SIMULATED tokenizer preserves upstream padding identity')
 
+events=[];allocation={'allocated':8519680,'reserved':20971520}
+def clear_workspace():events.append('clear');allocation['allocated']=0
+def empty_cache():events.append('empty');allocation['reserved']=0
+cleanup_torch=SimpleNamespace(_C=SimpleNamespace(_cuda_clearCublasWorkspaces=clear_workspace),cuda=SimpleNamespace(synchronize=lambda _:events.append('sync'),memory_allocated=lambda _:allocation['allocated'],memory_reserved=lambda _:allocation['reserved'],empty_cache=empty_cache))
+cleanup=worker.release_workspace_cache(cleanup_torch)
+check(cleanup['allocatedBeforeWorkspaceClearBytes']==8519680 and cleanup['endingAllocatedBytes']==0 and cleanup['endingReservedBytes']==0,'SIMULATED cleanup reports actual before/after allocation observations')
+check(events==['sync','clear','empty','sync'],'SIMULATED workspace clear waits for GPU completion before releasing only library ownership')
+denied(lambda:worker.release_workspace_cache(SimpleNamespace(cuda=cleanup_torch.cuda,_C=SimpleNamespace())),'missing pinned cleanup API fails explicitly')
+
 class Tensor:
     def __init__(self,amplitude=1.25):self.amplitude=amplitude;self.moves=[]
     def detach(self):return self
