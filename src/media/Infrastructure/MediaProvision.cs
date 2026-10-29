@@ -39,7 +39,16 @@ public sealed class MediaProvision(IWorkspace workspace,AuditedResources resourc
         var script=resources.Resolve("resources/media/provision.py");var catalog=resources.Resolve("resources/media/catalog.json");
         var platform=OperatingSystem.IsWindows()?"windows":OperatingSystem.IsLinux()?"linux":throw new PlatformNotSupportedException("Provisioning supports Windows/Linux only");
         var definition=JsonNode.Parse(File.ReadAllBytes(catalog))!["backends"]!.AsArray().Single(x=>x!["id"]!.GetValue<string>()==request.Backend)!;
-        var environment=request.Backend is "stable-audio-open" or "ace-step-turbo"?resources.Resolve(definition["environments"]![platform]!.GetValue<string>()):null;
+        var environment=request.Backend is "stable-audio-open" or "ace-step-turbo" or "qwen3-tts-customvoice" or "qwen3-tts-base"?resources.Resolve(definition["environments"]![platform]!.GetValue<string>()):null;
+        var voiceResources=new Dictionary<string,string>(StringComparer.Ordinal);
+        if(request.Backend is "qwen3-tts-customvoice" or "qwen3-tts-base")
+        {
+            voiceResources.Add("resources/media/voice/worker.py",resources.Resolve("resources/media/voice/worker.py"));
+            foreach(var item in definition["source"]!["adaptations"]!.AsArray().Concat(definition["notices"]!.AsArray()))
+            {
+                var path=item!["resource"]!.GetValue<string>();voiceResources.TryAdd(path,resources.Resolve(path));
+            }
+        }
         var plan=new {schemaVersion="bubo-media-provision-plan/v1",request.Backend,platform,installationRoot=request.InstallationRoot,downloadRoot=request.DownloadRoot,
             catalogSha256=Workspace.Hash(catalog),environmentSha256=environment is null?null:Workspace.Hash(environment),installerSha256=Workspace.Hash(script),
             execute,networkAccess=execute,driverInstallation=false,licenseAcceptance=false,generation=false,promotion=false};
@@ -54,7 +63,8 @@ public sealed class MediaProvision(IWorkspace workspace,AuditedResources resourc
             workerSource=resources.Resolve("resources/media/image/worker.cpp"),workerBuild=resources.Resolve("resources/media/image/worker.cmake"),
             sfxWorker=resources.Resolve("resources/media/sfx/worker.py"),
             musicWorker=resources.Resolve("resources/media/music/worker.py"),
-            resourceIdentities=new[]{script,catalog,environment,resources.Resolve("resources/media/image/worker.cpp"),resources.Resolve("resources/media/image/worker.cmake"),resources.Resolve("resources/media/sfx/worker.py"),resources.Resolve("resources/media/music/worker.py")}.OfType<string>().Select(x=>new{path=x,sha256=Workspace.Hash(x)}).ToArray(),
+            voiceWorker=voiceResources.GetValueOrDefault("resources/media/voice/worker.py"),voiceResources,
+            resourceIdentities=new[]{script,catalog,environment,resources.Resolve("resources/media/image/worker.cpp"),resources.Resolve("resources/media/image/worker.cmake"),resources.Resolve("resources/media/sfx/worker.py"),resources.Resolve("resources/media/music/worker.py")}.OfType<string>().Concat(voiceResources.Values).Distinct().Select(x=>new{path=x,sha256=Workspace.Hash(x)}).ToArray(),
             toolIdentities=tools.Select(x=>new{path=Path.GetFullPath(x.Path,host.Root),x.Sha256}).ToArray(),
             licenses=request.Licenses.Select(x=>new{path=host.ResolveReadPath(x.Path),x.Sha256}).ToArray(),
             git=request.Git is null?null:Path.GetFullPath(request.Git.Path,host.Root),cmake=request.Cmake is null?null:Path.GetFullPath(request.Cmake.Path,host.Root),

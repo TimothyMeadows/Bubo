@@ -21,6 +21,8 @@ def main():
         def sha(name): return hashlib.sha256(read(name)).hexdigest()
         for name in ('LICENSE','README.md','ARCHITECTURE.md','CONTRIBUTING.md','docs/MEDIA.md','resources/media/catalog.json','resources/media/provision.py','resources/media/image/worker.cpp','resources/media/sfx/worker.py','resources/media/music/worker.py','resources/media/environments/music-windows.json','resources/media/environments/music-linux.json','resources/media/notices/ACE-Step-LICENSE.txt','provenance/opencaw-extraction.json','provenance/inspection-adaptation.json','notices/bubo/LICENSE','notices/bubo/IMPORT.json','notices/bubo/REUSE.md'):
             assert read(name),'Empty notice/document: '+name
+        for name in ('resources/media/voice/worker.py','resources/media/voice/source-adaptations/core-init.py','resources/media/voice/source-adaptations/tokenizer-init.py','resources/media/notices/Qwen3-TTS-LICENSE.txt','resources/media/notices/Qwen3-TTS-NOTICE.txt'):
+            assert read(name),'Missing/empty direct voice resource: '+name
         receipt=json.loads(read('build-info.json'))
         build=receipt['capabilities']['build']
         assert sha('resources/catalog.json')==build['resourceCatalogSha256'],'Catalog identity differs from the verified build'

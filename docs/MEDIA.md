@@ -1,6 +1,6 @@
 # Local media API v1
 
-Bubo owns execution, pinned dependencies and fixed workers. A caller supplies its own hash-bound policy, rights, tool registration, paths and budgets through `bubo-host-context/v1`. Images use native stable-diffusion.cpp with FLUX.1-schnell Q8 diffusion weights. Stable Audio Open 1.0 SFX and ACE-Step 1.5 Turbo music each use a separate pinned CPython 3.12.16 environment. Voice is not implemented in this revision.
+Bubo owns execution, pinned dependencies and fixed workers. A caller supplies its own hash-bound policy, rights, tool registration, paths and budgets through `bubo-host-context/v1`. Images use native stable-diffusion.cpp with FLUX.1-schnell Q8 diffusion weights. Stable Audio Open 1.0 SFX and ACE-Step 1.5 Turbo music each use a separate pinned CPython 3.12.16 environment. Qwen3-TTS12Hz1.7B CustomVoice preset speech and Base local-reference cloning use a dedicated voice environment.
 
 Use a prebuilt apphost (`bubo.exe` on Windows, `bubo` on Linux):
 
@@ -67,6 +67,42 @@ After GPU work completes, music unload drops model/result references, collects g
 Adding a backend changes the media catalog identity. Preserve older installation receipts, then explicitly register fresh ones against the new catalog for image/SFX regression inspection; never regenerate accepted outputs or reset the shared six-case ledger for that refresh. Linux locks preserve a supported dependency target; native music acceptance must be reported separately.
 
 Budgets explicitly bound maximumOutputs, maximumBytesPerOutput, maximumTotalBytes, maximumPixels and maximumAudioSeconds. The service validates actual output bytes and dimensions/duration. Nonempty SFX negative prompts require guidance greater than one; guidance one disables classifier-free guidance. Mutable execution state, cache, acceptance ledgers and outputs must remain disjoint from every immutable installed root. There is no automatic provider/device/precision fallback and no hidden extra candidate or warmup inference.
+
+## Preset speech and consented cloning
+
+Select `qwen3-tts-customvoice` (`preset-speech`) or `qwen3-tts-base` (`consented-cloning`). Both require `cuda:0`, `bfloat16`, `offload: none`, and explicit SDPA. The complete separate13-file snapshots include their native12Hz codec. Source revision022e286b98fbec7e1e916cb940cdf532cd9f488e is verified as a closed archive with exactly two declared import adaptations and retained originals: they omit unused25Hz imports/registration that otherwise launch SoX during import. Selected12Hz math/weights are unchanged. Windows46/Linux64 wheel locks exclude the25Hz/UI/training/FlashAttention graph. Exact PyAV/native component notices and source provenance are retained; its bundled FFmpeg/codec components are not all BSD licensed.
+
+Voice items use spoken `prompt`, an explicit nonnegative int32 `seed`, and typed `voice`. Omit diffusion `steps`/`guidance` and fixed `seconds`; image dimensions, negative prompts, music options and loop claims are rejected. The actual variable waveform is bounded by explicit token, time and byte ceilings. EOS is observed before the upstream wrapper removes it; incomplete token-limit termination fails. `maximumNewTokens` is3..2048 because upstream suppresses EOS for the first two generated tokens. No hidden retakes or warmup samples.
+
+```json
+{
+  "language": "english",
+  "preset": "ryan",
+  "expression": "Speak calmly and clearly.",
+  "sampling": {
+    "maximumNewTokens": 512,
+    "doSample": true, "temperature": 0.9, "topK": 50, "topP": 1.0,
+    "repetitionPenalty": 1.05,
+    "subtalkerDoSample": true, "subtalkerTemperature": 0.9,
+    "subtalkerTopK": 50, "subtalkerTopP": 1.0
+  },
+  "reference": null
+}
+```
+
+Explicit lowercase languages:chinese,english,french,german,italian,japanese,korean,portuguese,russian,spanish. Automatic language selection is outside this fixed profile. CustomVoice presets:aiden,dylan,eric,ono_anna,ryan,serena,sohee,uncle_fu,vivian. Expression text is limited to512characters. Both talker/subtalker sampling are explicit; temperature(0..2],topK1..200,topP(0..1],repetitionPenalty1..2. Process RNGs are seeded per item without a cross-platform bitwise guarantee.
+
+Base uses `preset: null`, empty `expression` and `reference` with separate local audio/transcript/recording-rights/consent FileIdentity objects. Register audio and transcript as host `input`, recording rights as `rights`, and normalized consent plus its cited source assertion as `consent`. All paths are canonical project-relative local paths; URL/data/remote forms are rejected. Transcripts must be exact nonempty UTF8 within4096characters/16KiB; references are bounded localM4A/AAC orWAV up to20MiB and1..30decodedseconds.
+
+Recording rights schema `bubo-voice-reference-rights/v1` includes task,owner,audio,transcript,recordingRightsConfirmed. Consent schema `bubo-voice-consent/v1` includes task,speaker,audio,transcript,speakerRightsConfirmed,consentGranted,scope,sourceEvidence. Both must bind the exact audio/transcript identities. `scope` is `local-voice-cloning` or `local-voice-cloning-qa`; QA-only consent requires the matching declared acceptance case. The source assertion is a fifth fresh, immutable registered identity, not an inferred speaker identity. All five references are revalidated under queued GPU ownership; changed inputs cannot inherit prior consent. Runtime assertions cite existing human evidence rather than prompting for duplicate consent.
+
+The fixed worker decodes verified original bytes in-process with pinned PyAV, forbids external data references/secondary I/O, records explicit channel averaging and24kHz resampling, and retains original/decoded hashes. No denoising, trimming, loudness normalization or transcript ASR. The local mono24k tuple plus exact transcript creates an operation-local private ICL prompt with `x_vector_only_mode: false`; Base has no expression/instruction fallback.
+
+Native output is24kHz mono FLOAT WAV. The pinned decoder intrinsically clamps[-1,1]; that behavior is disclosed and preserved, with no downstream normalization, resampling or synthetic stereo. Independently inspect actual bytes/rate/channels/frames/amplitude. Model/talker/codec placement, imported source pins, seed/sampling/EOS, and mandatory measured workspace cleanup are recorded. The offline process profile suppresses urllib3's irrelevant IPv6 capability probe; bind/connect/DNS blocks remain active. Every attempt cache, including Numba, belongs to mutable owned state.
+
+Voice inputs, reference/transcript/consent records, decoded caches, requests and returned manifests may contain private information. Keep them in private host/task state; logs suppress backend conditioning diagnostics. Publish only deliberately prepared hash-based QA summaries when audio disclosure is not separately authorized. Preset/clone generation and complete listening/reference-match review remain separate from runtime promotion. Current structural/import fixtures do not establish real GPU speech quality; report actual native evidence and untested platforms explicitly.
+
+Voice registration supplies the same complete Python/archive/wheel roots as music, plus the closed original/adapted source and pinned native notice directory on both platforms. Preserve earlier image/SFX/music receipts and explicitly refresh their catalog binding for regression inspection; never regenerate accepted outputs or reset the shared six-case ledger.
 
 ## Ownership and evidence
 

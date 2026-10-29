@@ -24,6 +24,18 @@ internal static class EngineSourceIntegrity
         using var zip=new ZipArchive(input,ZipArchiveMode.Read);
         var expected=new HashSet<string>(StringComparer.Ordinal);
         var canonical=new HashSet<string>(OperatingSystem.IsWindows()?StringComparer.OrdinalIgnoreCase:StringComparer.Ordinal);
+        if(source.ContainsKey("adaptations") && source["adaptations"] is not JsonArray)
+            throw new InvalidOperationException("Engine source adaptations require an explicit array");
+        var declarations=source["adaptations"]?.AsArray()??[];
+        if(declarations.Count>16 || declarations.Any(node=>node is not JsonObject))
+            throw new InvalidOperationException("Engine source adaptations require bounded object declarations");
+        var adaptations=new Dictionary<string,JsonObject>(StringComparer.Ordinal);
+        foreach(var declaration in declarations.Cast<JsonObject>())
+        {
+            var target=declaration["path"]?.GetValue<string>()??throw new InvalidOperationException("Missing engine source adaptation path");
+            if(!adaptations.TryAdd(target,declaration))throw new InvalidOperationException("Duplicate engine source adaptation path");
+        }
+        var adapted=new HashSet<string>(StringComparer.Ordinal);
         long expanded=0;
         foreach(var entry in zip.Entries)
         {
@@ -38,9 +50,23 @@ internal static class EngineSourceIntegrity
             if(!MediaAdmission.Within(path,sourceRoot) || !canonical.Add(path))throw new InvalidOperationException("Aliased engine source entry");
             var file=observed.At(path);
             using var contents=entry.Open();
-            if(file.Bytes!=entry.Length || file.Sha256!=Convert.ToHexStringLower(SHA256.HashData(contents)))
+            var originalHash=Convert.ToHexStringLower(SHA256.HashData(contents));
+            if(adaptations.TryGetValue(relative,out var change))
+            {
+                var retained=change["originalRetainedPath"]!.GetValue<string>();
+                if(!retained.StartsWith(".originals/",StringComparison.Ordinal)||retained.Contains('\\')||retained.Split('/').Any(part=>part is "" or "." or "..")
+                    ||originalHash!=change["originalSha256"]!.GetValue<string>()||!expected.Add(retained)||!adapted.Add(relative))
+                    throw new InvalidOperationException("Invalid explicit engine source adaptation ancestry");
+                var originalPath=host.ResolveReadPath(Path.Combine(sourceRoot,retained.Replace('/',Path.DirectorySeparatorChar)));
+                if(!MediaAdmission.Within(originalPath,sourceRoot)||!canonical.Add(originalPath))throw new InvalidOperationException("Aliased engine source original");
+                var original=observed.At(originalPath);
+                if(original.Sha256!=originalHash||original.Bytes!=entry.Length||file.Sha256!=change["replacementSha256"]!.GetValue<string>()||file.Bytes!=change["replacementBytes"]!.GetValue<long>())
+                    throw new InvalidOperationException("Engine source adaptation or retained original differs: "+relative);
+            }
+            else if(file.Bytes!=entry.Length || file.Sha256!=originalHash)
                 throw new InvalidOperationException("Engine source differs from its exact pinned archive: "+relative);
         }
+        if(!adapted.SetEquals(adaptations.Keys))throw new InvalidOperationException("Engine source adaptation does not match an actual archived file");
         var actual=InstallationVerifier.FilesUnder(host,sourceRoot).Select(x=>Path.GetRelativePath(sourceRoot,x).Replace('\\','/')).Order(StringComparer.Ordinal);
         if(!actual.SequenceEqual(expected.Order(StringComparer.Ordinal)))throw new InvalidOperationException("Engine source has missing or extra files");
     }

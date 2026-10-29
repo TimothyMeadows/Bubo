@@ -105,7 +105,7 @@ public sealed class MediaService(IWorkspace workspace,IInstallationVerifier inst
             || !Finite(result.LoadingSeconds) || !Finite(result.UnloadingSeconds) || result.Execution.Device!=request.Settings.Device
             || result.Execution.Precision!=request.Settings.Precision || result.Execution.Offload!=request.Settings.Offload || string.IsNullOrWhiteSpace(result.Execution.DeviceName))
             throw new InvalidOperationException("Worker result/lifecycle/settings differ from the finite request");
-        if(request.Backend=="ace-step-turbo" && (result.Cleanup is not {Mechanism:"torch._C._cuda_clearCublasWorkspaces",EndingAllocatedBytes:0} cleanup
+        if(request.Backend is "ace-step-turbo" or "qwen3-tts-customvoice" or "qwen3-tts-base" && (result.Cleanup is not {Mechanism:"torch._C._cuda_clearCublasWorkspaces",EndingAllocatedBytes:0} cleanup
             || cleanup.AllocatedBeforeWorkspaceClearBytes<0 || cleanup.ReservedBeforeWorkspaceClearBytes<0 || cleanup.EndingReservedBytes<0))
             throw new InvalidOperationException("Music result lacks current zero-allocation workspace cleanup evidence");
         for(var i=0;i<result.Outputs.Length;i++)
@@ -116,6 +116,10 @@ public sealed class MediaService(IWorkspace workspace,IInstallationVerifier inst
             if(request.Backend is "stable-audio-open" or "ace-step-turbo" && (actual.SampleRate!=(request.Backend=="ace-step-turbo"?48000:44100) || actual.Channels!=2 || actual.Frames is not >0 || actual.Peak is not >=0
                 || actual.Rms is not >=0 || actual.ClippedFraction is not >=0 or >1 || actual.SilentFraction is not >=0 or >1
                 || !Finite(actual.Peak.Value) || !Finite(actual.Rms.Value)))throw new InvalidOperationException("Invalid independently measured audio");
+            if(request.Backend is "qwen3-tts-customvoice" or "qwen3-tts-base" && (actual.SampleRate!=24000||actual.Channels!=1||actual.Frames is not >0
+                ||actual.Frames>request.Budget.MaximumAudioSeconds*24000||actual.NativeMetadata is null||actual.Scheduler!="autoregressive-sampling"
+                ||actual.Peak is not >=0 or >1||actual.Rms is not >=0 or >1||actual.ClippedFraction is not >=0 or >1||actual.SilentFraction is not >=0 or >1
+                ||!Finite(actual.Peak.Value)||!Finite(actual.Rms.Value)))throw new InvalidOperationException("Invalid independently measured native voice audio");
         }
     }
     static bool Finite(double value)=>double.IsFinite(value) && value>=0;

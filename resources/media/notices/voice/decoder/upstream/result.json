@@ -1,0 +1,106 @@
+{
+  "schemaVersion": "opencaw-decoder-source-notices/v1",
+  "pyavSourceRevision": "a4ad0133b13eb84067dc6e8105eb1fc8f8b93c4f",
+  "producerSourceRevision": "bac889417e26be29615cb6a3f38318151fed55cd",
+  "producerRelease": "9.0.2-1",
+  "sources": [
+    {
+      "path": "pyav-19.0.2-vendor.json",
+      "url": "https://raw.githubusercontent.com/PyAV-Org/PyAV/a4ad0133b13eb84067dc6e8105eb1fc8f8b93c4f/scripts/ffmpeg-latest.json",
+      "size": 108,
+      "sha256": "8a56555f7c96b9f497a3e22348c1d566ff7706ba9c39022a9e763b05c9eb3f2f",
+      "status": "captured"
+    },
+    {
+      "path": "pyav-19.0.2-license.rst",
+      "url": "https://raw.githubusercontent.com/PyAV-Org/PyAV/a4ad0133b13eb84067dc6e8105eb1fc8f8b93c4f/docs/development/license.rst",
+      "size": 246,
+      "sha256": "becc70e9cfe7e15d624f6de729fae233f188e22c294d517e7bd98c435ffb304e",
+      "status": "captured"
+    },
+    {
+      "path": "producer-build-ffmpeg.py",
+      "url": "https://raw.githubusercontent.com/PyAV-Org/pyav-ffmpeg/bac889417e26be29615cb6a3f38318151fed55cd/scripts/build-ffmpeg.py",
+      "size": 13365,
+      "sha256": "daa1dd71739eb1b5748df961d221199996a550651966b66e57c0b03976dff2b2",
+      "status": "captured"
+    },
+    {
+      "path": "producer-pkg.py",
+      "url": "https://raw.githubusercontent.com/PyAV-Org/pyav-ffmpeg/bac889417e26be29615cb6a3f38318151fed55cd/scripts/pkg.py",
+      "size": 7912,
+      "sha256": "49ea1d3e96aa6a76751c47e5bf8b3e09a066ec2721b8895c4a6ad41ba5fedfc1",
+      "status": "captured"
+    },
+    {
+      "path": "producer-ffmpeg.patch",
+      "url": "https://raw.githubusercontent.com/PyAV-Org/pyav-ffmpeg/bac889417e26be29615cb6a3f38318151fed55cd/patches/ffmpeg.patch",
+      "size": 430,
+      "sha256": "661b7f0553ae145ce6526bb5514ed0f50a699e337dcc85c6d743809685f47020",
+      "status": "captured"
+    },
+    {
+      "path": "ffmpeg-9.0.2-LICENSE.md",
+      "url": "https://raw.githubusercontent.com/FFmpeg/FFmpeg/n9.0.2/LICENSE.md",
+      "size": 4346,
+      "sha256": "2e1d16c72fd74e12063776371da757322f8b77589386532f4fd8634bde7de1af",
+      "status": "captured"
+    },
+    {
+      "path": "ffmpeg-9.0.2-COPYING.GPLv2",
+      "url": "https://raw.githubusercontent.com/FFmpeg/FFmpeg/n9.0.2/COPYING.GPLv2",
+      "size": 18092,
+      "sha256": "8177f97513213526df2cf6184d8ff986c675afb514d4e68a404010521b880643",
+      "status": "captured"
+    },
+    {
+      "path": "ffmpeg-9.0.2-COPYING.GPLv3",
+      "url": "https://raw.githubusercontent.com/FFmpeg/FFmpeg/n9.0.2/COPYING.GPLv3",
+      "size": 35147,
+      "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903",
+      "status": "captured"
+    },
+    {
+      "path": "ffmpeg-9.0.2-COPYING.LGPLv2.1",
+      "url": "https://raw.githubusercontent.com/FFmpeg/FFmpeg/n9.0.2/COPYING.LGPLv2.1",
+      "size": 26517,
+      "sha256": "246041b6ecf9bc32d718a62c57877c78b5eb397b6467e74ed7ae2626ab189c30",
+      "status": "captured"
+    },
+    {
+      "path": "ffmpeg-9.0.2-COPYING.LGPLv3",
+      "url": "https://raw.githubusercontent.com/FFmpeg/FFmpeg/n9.0.2/COPYING.LGPLv3",
+      "size": 7651,
+      "sha256": "da7eabb7bafdf7d3ae5e9f223aa5bdc1eece45ac569dc21b3b037520b4464768",
+      "status": "captured"
+    },
+    {
+      "path": "x264-b35605ace3ddf7c1a5d67a2eb553f034aef41d55-COPYING",
+      "url": "https://raw.githubusercontent.com/mirror/x264/b35605ace3ddf7c1a5d67a2eb553f034aef41d55/COPYING",
+      "size": 17992,
+      "sha256": "32b1062f7da84967e7019d01ab805935caa7ab7321a7ced0e30ebe75e5df1670",
+      "status": "captured"
+    },
+    {
+      "path": "x265-4.3-COPYING",
+      "url": "https://raw.githubusercontent.com/Multicorewareinc/x265/4.3/COPYING",
+      "size": 18120,
+      "sha256": "d8afb1bcc7a2cfc603683b168d6987ef0a48e59e0da3693bf55c5d33b67e2b49",
+      "status": "captured"
+    },
+    {
+      "path": "gcc-runtime-library-exception.txt",
+      "url": "https://raw.githubusercontent.com/gcc-mirror/gcc/releases/gcc-15.2.0/COPYING.RUNTIME",
+      "status": "captured",
+      "size": 3324,
+      "sha256": "9d6b43ce4d8de0c878bf16b54d8e7a10d9bd42b75178153e3af6a815bdc90f74",
+      "scope": "Canonical GCC Runtime Library Exception3.1 text; exact producer GCC version not established"
+    }
+  ],
+  "materialFacts": [
+    "Exact wheels vendor x264 and x265 libraries but contain only PyAV BSD notice and authors.",
+    "Producer recipe enables version3 and x264/x265; its patch moves x264/x265 from EXTERNAL_LIBRARY_GPL_LIST to EXTERNAL_LIBRARY_VERSION3_LIST.",
+    "Preserve actual upstream component GPL/LGPL texts; do not describe bundled dependency licensing solely using PyAV BSD metadata."
+  ],
+  "limitations": "Supplementary primary license texts/producer recipes, not a claim of complete legal analysis or every bundled permissive/system-component notice. Actual provisioner must verify complete wheel SHA256 and preserve all package notices."
+}

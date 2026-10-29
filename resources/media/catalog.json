@@ -501,6 +501,664 @@
           "reason": "Use exact source-compatible model code; preserve original HF code and complete ancestry; production code sync is verification-only"
         }
       ]
+    },
+    {
+      "id": "qwen3-tts-customvoice",
+      "modality": "preset-speech",
+      "source": {
+        "repository": "https://github.com/QwenLM/Qwen3-TTS",
+        "revision": "022e286b98fbec7e1e916cb940cdf532cd9f488e",
+        "archiveUrl": "https://codeload.github.com/QwenLM/Qwen3-TTS/zip/022e286b98fbec7e1e916cb940cdf532cd9f488e",
+        "archiveSha256": "0f2732485bce635f419f142a57d4309415fd79397e7c47edeaf0f8215a4dbb76",
+        "archiveBytes": 7205699,
+        "archiveRootPrefix": "Qwen3-TTS-022e286b98fbec7e1e916cb940cdf532cd9f488e/",
+        "license": "apache-2.0",
+        "adaptations": [
+          {
+            "path": "qwen_tts/core/__init__.py",
+            "originalSha256": "1b380d9de843b6d585d938c339d066136567ca7125412674234204af4386679e",
+            "replacementSha256": "c3d2f2f28cae7a0ec4d8dd8251470c8871acd2bf143d2fc239fcfbe8f2938497",
+            "originalRetainedPath": ".originals/qwen_tts/core/__init__.py",
+            "resource": "resources/media/voice/source-adaptations/core-init.py",
+            "replacementBytes": 814
+          },
+          {
+            "path": "qwen_tts/inference/qwen3_tts_tokenizer.py",
+            "originalSha256": "ac2d855022a1bd21d33ab7b267ec952eef71f81d3f8d969a306139ff1a929515",
+            "replacementSha256": "4ac0307ea79d846a90e66d2a200a8eb5378e64179038384c6b019a8325769eda",
+            "originalRetainedPath": ".originals/qwen_tts/inference/qwen3_tts_tokenizer.py",
+            "resource": "resources/media/voice/source-adaptations/tokenizer-init.py",
+            "replacementBytes": 15475
+          }
+        ],
+        "runtimeSourceFiles": {
+          "qwen_tts/__init__.py": "ea52de59d070fde366467a6902d0edcfc1b0575b8c570a0c71020c41d6a593ed",
+          "qwen_tts/core/__init__.py": "c3d2f2f28cae7a0ec4d8dd8251470c8871acd2bf143d2fc239fcfbe8f2938497",
+          "qwen_tts/core/models/__init__.py": "917d38d8fd7ed84de73703fd2394d535ca416e15694d1e50324e4a06d4022c82",
+          "qwen_tts/core/models/configuration_qwen3_tts.py": "f52867f14fde06a416dd14864d503ce6d13d0a08d5f5da30191e1c80c13f5d18",
+          "qwen_tts/core/models/modeling_qwen3_tts.py": "25c42656bcf810f06ef6bc1839bd7083f3c8cfedac3a147c4060b4262b1c96a0",
+          "qwen_tts/core/models/processing_qwen3_tts.py": "61472203188e46eda68d740c25f0f228ece24a61ecf942e57d6e49e78b4d6bcd",
+          "qwen_tts/core/tokenizer_12hz/configuration_qwen3_tts_tokenizer_v2.py": "9e30c24394b00cb0366d7da3482b7436468acc1cd3da1a6fe614a1d34653a5e3",
+          "qwen_tts/core/tokenizer_12hz/modeling_qwen3_tts_tokenizer_v2.py": "844e8dd8c0182ef9c6463c874631c22ef3c5a4fd1899dd657016164cc5379628",
+          "qwen_tts/inference/qwen3_tts_model.py": "e1da450732857c1f5fe3e36ebab85db2f6dc6a48caaff6973f463384e30275e4",
+          "qwen_tts/inference/qwen3_tts_tokenizer.py": "4ac0307ea79d846a90e66d2a200a8eb5378e64179038384c6b019a8325769eda"
+        }
+      },
+      "modelRevision": "0c0e3051f131929182e2c023b9537f8b1c68adfe",
+      "workerSource": "resources/media/voice/worker.py",
+      "workerProtocol": "bubo-voice-worker/v1",
+      "files": [
+        {
+          "path": ".gitattributes",
+          "repository": "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice",
+          "revision": "0c0e3051f131929182e2c023b9537f8b1c68adfe",
+          "url": "https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice/resolve/0c0e3051f131929182e2c023b9537f8b1c68adfe/.gitattributes",
+          "sha256": "11ad7efa24975ee4b0c3c3a38ed18737f0658a5f75a0a96787b576a78a023361",
+          "bytes": 1519,
+          "license": "apache-2.0"
+        },
+        {
+          "path": "README.md",
+          "repository": "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice",
+          "revision": "0c0e3051f131929182e2c023b9537f8b1c68adfe",
+          "url": "https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice/resolve/0c0e3051f131929182e2c023b9537f8b1c68adfe/README.md",
+          "sha256": "64f65e809b51cc0c35f393fbbfcc2d735c0cb3fdbbc6f3fdc4a5e6ce55e9d088",
+          "bytes": 57846,
+          "license": "apache-2.0"
+        },
+        {
+          "path": "config.json",
+          "repository": "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice",
+          "revision": "0c0e3051f131929182e2c023b9537f8b1c68adfe",
+          "url": "https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice/resolve/0c0e3051f131929182e2c023b9537f8b1c68adfe/config.json",
+          "sha256": "17a07f527a1c25ea30b4e023a184482a23d3e279d697b1dc81b1bde498d29cf9",
+          "bytes": 4908,
+          "license": "apache-2.0"
+        },
+        {
+          "path": "generation_config.json",
+          "repository": "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice",
+          "revision": "0c0e3051f131929182e2c023b9537f8b1c68adfe",
+          "url": "https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice/resolve/0c0e3051f131929182e2c023b9537f8b1c68adfe/generation_config.json",
+          "sha256": "f1b90b4513f3b34c62851049e2492d7b4c5940daf1276f89c82b8ef04127f3aa",
+          "bytes": 245,
+          "license": "apache-2.0"
+        },
+        {
+          "path": "merges.txt",
+          "repository": "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice",
+          "revision": "0c0e3051f131929182e2c023b9537f8b1c68adfe",
+          "url": "https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice/resolve/0c0e3051f131929182e2c023b9537f8b1c68adfe/merges.txt",
+          "sha256": "599bab54075088774b1733fde865d5bd747cbcc7a547c5bc12610e874e26f5e3",
+          "bytes": 1671839,
+          "license": "apache-2.0"
+        },
+        {
+          "path": "model.safetensors",
+          "repository": "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice",
+          "revision": "0c0e3051f131929182e2c023b9537f8b1c68adfe",
+          "url": "https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice/resolve/0c0e3051f131929182e2c023b9537f8b1c68adfe/model.safetensors",
+          "sha256": "38b1d5971bdbd982b561cccec982669a53b0537c3cf5e9bd4778ed07bb2f5137",
+          "bytes": 3833402552,
+          "license": "apache-2.0"
+        },
+        {
+          "path": "preprocessor_config.json",
+          "repository": "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice",
+          "revision": "0c0e3051f131929182e2c023b9537f8b1c68adfe",
+          "url": "https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice/resolve/0c0e3051f131929182e2c023b9537f8b1c68adfe/preprocessor_config.json",
+          "sha256": "efdde1022ea9d76928bf7a9cd53139138f5ba2e466e837f08f6105ab1af1c119",
+          "bytes": 127,
+          "license": "apache-2.0"
+        },
+        {
+          "path": "speech_tokenizer/config.json",
+          "repository": "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice",
+          "revision": "0c0e3051f131929182e2c023b9537f8b1c68adfe",
+          "url": "https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice/resolve/0c0e3051f131929182e2c023b9537f8b1c68adfe/speech_tokenizer/config.json",
+          "sha256": "ee65bb901c876664ab8707c487157aa1a6ee57c65969b28fb5ec9dc211e68167",
+          "bytes": 2336,
+          "license": "apache-2.0"
+        },
+        {
+          "path": "speech_tokenizer/configuration.json",
+          "repository": "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice",
+          "revision": "0c0e3051f131929182e2c023b9537f8b1c68adfe",
+          "url": "https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice/resolve/0c0e3051f131929182e2c023b9537f8b1c68adfe/speech_tokenizer/configuration.json",
+          "sha256": "6bc26d64eb5024b4d1dab5a52371958b429256d6c9d59787f1f5294a54e0cebd",
+          "bytes": 76,
+          "license": "apache-2.0"
+        },
+        {
+          "path": "speech_tokenizer/model.safetensors",
+          "repository": "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice",
+          "revision": "0c0e3051f131929182e2c023b9537f8b1c68adfe",
+          "url": "https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice/resolve/0c0e3051f131929182e2c023b9537f8b1c68adfe/speech_tokenizer/model.safetensors",
+          "sha256": "836b7b357f5ea43e889936a3709af68dfe3751881acefe4ecf0dbd30ba571258",
+          "bytes": 682293092,
+          "license": "apache-2.0"
+        },
+        {
+          "path": "speech_tokenizer/preprocessor_config.json",
+          "repository": "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice",
+          "revision": "0c0e3051f131929182e2c023b9537f8b1c68adfe",
+          "url": "https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice/resolve/0c0e3051f131929182e2c023b9537f8b1c68adfe/speech_tokenizer/preprocessor_config.json",
+          "sha256": "fcb3805e597e786d4067706e602f6688524640f8d3396790e2e09b5942fcbdfb",
+          "bytes": 234,
+          "license": "apache-2.0"
+        },
+        {
+          "path": "tokenizer_config.json",
+          "repository": "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice",
+          "revision": "0c0e3051f131929182e2c023b9537f8b1c68adfe",
+          "url": "https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice/resolve/0c0e3051f131929182e2c023b9537f8b1c68adfe/tokenizer_config.json",
+          "sha256": "dc3c31c3bdaedd5016382bb3cbe07323026775ad51f5a4fb564505992ae4a670",
+          "bytes": 7344,
+          "license": "apache-2.0"
+        },
+        {
+          "path": "vocab.json",
+          "repository": "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice",
+          "revision": "0c0e3051f131929182e2c023b9537f8b1c68adfe",
+          "url": "https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice/resolve/0c0e3051f131929182e2c023b9537f8b1c68adfe/vocab.json",
+          "sha256": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910",
+          "bytes": 2776833,
+          "license": "apache-2.0"
+        }
+      ],
+      "devices": [
+        "cuda:0"
+      ],
+      "precision": [
+        "bfloat16"
+      ],
+      "offload": [
+        "none"
+      ],
+      "environments": {
+        "windows": "resources/media/environments/voice-customvoice-windows.json",
+        "linux": "resources/media/environments/voice-customvoice-linux.json"
+      },
+      "environmentSha256": {
+        "windows": "9a4e3fc26a1a7dec3bfa7375e33abe08911f5a9f0d9388fefe93db80f2080f9b",
+        "linux": "572ee0a569091fda22f238dadfd02fde46cf9aaeb61682b0c3b5cc02962a2cc5"
+      },
+      "notices": [
+        {
+          "path": "decoder/component-source-pins.json",
+          "resource": "resources/media/notices/voice/decoder/component-source-pins.json",
+          "sha256": "fc2c5bd63673e9ccd1f940918e40bc070238fd67d91f500d57cb2f4e14a1e834",
+          "bytes": 5916
+        },
+        {
+          "path": "decoder/linux/av-19.0.2.dist-info/licenses/AUTHORS.rst",
+          "resource": "resources/media/notices/voice/decoder/linux/av-19.0.2.dist-info/licenses/AUTHORS.rst",
+          "sha256": "15b3aeba291c0b560950a58fa3206e42009eb0409c1bc1ac91f8df49bb505977",
+          "bytes": 6336
+        },
+        {
+          "path": "decoder/linux/av-19.0.2.dist-info/licenses/LICENSE.txt",
+          "resource": "resources/media/notices/voice/decoder/linux/av-19.0.2.dist-info/licenses/LICENSE.txt",
+          "sha256": "76af0461ffb92e19f1c14449e95557d83a2dfaa1baf202d49e5f1d8746c0da19",
+          "bytes": 1505
+        },
+        {
+          "path": "decoder/linux/av-19.0.2.dist-info/METADATA",
+          "resource": "resources/media/notices/voice/decoder/linux/av-19.0.2.dist-info/METADATA",
+          "sha256": "2885b8f6756f2654c61ec51b9acd17c6d7db54c37a47cb54b025353dde3ff302",
+          "bytes": 4993
+        },
+        {
+          "path": "decoder/linux/av-19.0.2.dist-info/RECORD",
+          "resource": "resources/media/notices/voice/decoder/linux/av-19.0.2.dist-info/RECORD",
+          "sha256": "be498ba173d166ff091957d1c98ae2668ce3a640292195e8e4e4670284f49467",
+          "bytes": 20740
+        },
+        {
+          "path": "decoder/linux/av-19.0.2.dist-info/WHEEL",
+          "resource": "resources/media/notices/voice/decoder/linux/av-19.0.2.dist-info/WHEEL",
+          "sha256": "d0f44c42ff3d4648f9dc5701848e8ec2736232a597900d4a500804f8e5658ac5",
+          "bytes": 112
+        },
+        {
+          "path": "decoder/result.json",
+          "resource": "resources/media/notices/voice/decoder/result.json",
+          "sha256": "47e8e4434d7f69b1a4287708b509e376ce86fc1801c647c057faf3f8809b9d53",
+          "bytes": 8735
+        },
+        {
+          "path": "decoder/upstream/ffmpeg-9.0.2-COPYING.GPLv2",
+          "resource": "resources/media/notices/voice/decoder/upstream/ffmpeg-9.0.2-COPYING.GPLv2",
+          "sha256": "8177f97513213526df2cf6184d8ff986c675afb514d4e68a404010521b880643",
+          "bytes": 18092
+        },
+        {
+          "path": "decoder/upstream/ffmpeg-9.0.2-COPYING.GPLv3",
+          "resource": "resources/media/notices/voice/decoder/upstream/ffmpeg-9.0.2-COPYING.GPLv3",
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903",
+          "bytes": 35147
+        },
+        {
+          "path": "decoder/upstream/ffmpeg-9.0.2-COPYING.LGPLv2.1",
+          "resource": "resources/media/notices/voice/decoder/upstream/ffmpeg-9.0.2-COPYING.LGPLv2.1",
+          "sha256": "246041b6ecf9bc32d718a62c57877c78b5eb397b6467e74ed7ae2626ab189c30",
+          "bytes": 26517
+        },
+        {
+          "path": "decoder/upstream/ffmpeg-9.0.2-COPYING.LGPLv3",
+          "resource": "resources/media/notices/voice/decoder/upstream/ffmpeg-9.0.2-COPYING.LGPLv3",
+          "sha256": "da7eabb7bafdf7d3ae5e9f223aa5bdc1eece45ac569dc21b3b037520b4464768",
+          "bytes": 7651
+        },
+        {
+          "path": "decoder/upstream/ffmpeg-9.0.2-LICENSE.md",
+          "resource": "resources/media/notices/voice/decoder/upstream/ffmpeg-9.0.2-LICENSE.md",
+          "sha256": "2e1d16c72fd74e12063776371da757322f8b77589386532f4fd8634bde7de1af",
+          "bytes": 4346
+        },
+        {
+          "path": "decoder/upstream/gcc-runtime-library-exception.txt",
+          "resource": "resources/media/notices/voice/decoder/upstream/gcc-runtime-library-exception.txt",
+          "sha256": "9d6b43ce4d8de0c878bf16b54d8e7a10d9bd42b75178153e3af6a815bdc90f74",
+          "bytes": 3324
+        },
+        {
+          "path": "decoder/upstream/producer-ffmpeg.patch",
+          "resource": "resources/media/notices/voice/decoder/upstream/producer-ffmpeg.patch",
+          "sha256": "661b7f0553ae145ce6526bb5514ed0f50a699e337dcc85c6d743809685f47020",
+          "bytes": 430
+        },
+        {
+          "path": "decoder/upstream/pyav-19.0.2-license.rst",
+          "resource": "resources/media/notices/voice/decoder/upstream/pyav-19.0.2-license.rst",
+          "sha256": "becc70e9cfe7e15d624f6de729fae233f188e22c294d517e7bd98c435ffb304e",
+          "bytes": 246
+        },
+        {
+          "path": "decoder/upstream/pyav-19.0.2-vendor.json",
+          "resource": "resources/media/notices/voice/decoder/upstream/pyav-19.0.2-vendor.json",
+          "sha256": "8a56555f7c96b9f497a3e22348c1d566ff7706ba9c39022a9e763b05c9eb3f2f",
+          "bytes": 108
+        },
+        {
+          "path": "decoder/upstream/result.json",
+          "resource": "resources/media/notices/voice/decoder/upstream/result.json",
+          "sha256": "43f1aec0cd0112dbc0476da978af54b93eb9abb11de31710d04fa8c162f4faa2",
+          "bytes": 4955
+        },
+        {
+          "path": "decoder/upstream/x264-b35605ace3ddf7c1a5d67a2eb553f034aef41d55-COPYING",
+          "resource": "resources/media/notices/voice/decoder/upstream/x264-b35605ace3ddf7c1a5d67a2eb553f034aef41d55-COPYING",
+          "sha256": "32b1062f7da84967e7019d01ab805935caa7ab7321a7ced0e30ebe75e5df1670",
+          "bytes": 17992
+        },
+        {
+          "path": "decoder/upstream/x265-4.3-COPYING",
+          "resource": "resources/media/notices/voice/decoder/upstream/x265-4.3-COPYING",
+          "sha256": "d8afb1bcc7a2cfc603683b168d6987ef0a48e59e0da3693bf55c5d33b67e2b49",
+          "bytes": 18120
+        },
+        {
+          "path": "decoder/windows/av-19.0.2.dist-info/licenses/AUTHORS.rst",
+          "resource": "resources/media/notices/voice/decoder/windows/av-19.0.2.dist-info/licenses/AUTHORS.rst",
+          "sha256": "2abfebe175cefe78fcb14db260a3c8972d3b52156f50dedd0bc416ac4f884a96",
+          "bytes": 6472
+        },
+        {
+          "path": "decoder/windows/av-19.0.2.dist-info/licenses/LICENSE.txt",
+          "resource": "resources/media/notices/voice/decoder/windows/av-19.0.2.dist-info/licenses/LICENSE.txt",
+          "sha256": "f32ebcb6007dcc05eea369b3820e6391b0a7ef1ed763f30f1aca15dfdbacbe96",
+          "bytes": 1528
+        },
+        {
+          "path": "decoder/windows/av-19.0.2.dist-info/METADATA",
+          "resource": "resources/media/notices/voice/decoder/windows/av-19.0.2.dist-info/METADATA",
+          "sha256": "30cf3bef7c83211e6cf7771bc23edccae6998f1484d36d23240da8b54a26b8f6",
+          "bytes": 5131
+        },
+        {
+          "path": "decoder/windows/av-19.0.2.dist-info/RECORD",
+          "resource": "resources/media/notices/voice/decoder/windows/av-19.0.2.dist-info/RECORD",
+          "sha256": "8fcb2ed5dd38cd12ff15bdde005ac5949867240e6abb49afbc21b73e6e5ac6e3",
+          "bytes": 19989
+        },
+        {
+          "path": "decoder/windows/av-19.0.2.dist-info/WHEEL",
+          "resource": "resources/media/notices/voice/decoder/windows/av-19.0.2.dist-info/WHEEL",
+          "sha256": "bcc51bef8f854a71d790322eb3547f7ee74855404df09888aa9251d22c7aea59",
+          "bytes": 100
+        }
+      ],
+      "profile": "fixed12Hz directAPI; native24000Hz monoFLOAT; explicit autoregressive settings and EOS; intrinsic decoder clamp preserved; no downstream normalization, external reference URL,25Hz,SoX shell,FlashAttention,UI or hosted service"
+    },
+    {
+      "id": "qwen3-tts-base",
+      "modality": "consented-cloning",
+      "source": {
+        "repository": "https://github.com/QwenLM/Qwen3-TTS",
+        "revision": "022e286b98fbec7e1e916cb940cdf532cd9f488e",
+        "archiveUrl": "https://codeload.github.com/QwenLM/Qwen3-TTS/zip/022e286b98fbec7e1e916cb940cdf532cd9f488e",
+        "archiveSha256": "0f2732485bce635f419f142a57d4309415fd79397e7c47edeaf0f8215a4dbb76",
+        "archiveBytes": 7205699,
+        "archiveRootPrefix": "Qwen3-TTS-022e286b98fbec7e1e916cb940cdf532cd9f488e/",
+        "license": "apache-2.0",
+        "adaptations": [
+          {
+            "path": "qwen_tts/core/__init__.py",
+            "originalSha256": "1b380d9de843b6d585d938c339d066136567ca7125412674234204af4386679e",
+            "replacementSha256": "c3d2f2f28cae7a0ec4d8dd8251470c8871acd2bf143d2fc239fcfbe8f2938497",
+            "originalRetainedPath": ".originals/qwen_tts/core/__init__.py",
+            "resource": "resources/media/voice/source-adaptations/core-init.py",
+            "replacementBytes": 814
+          },
+          {
+            "path": "qwen_tts/inference/qwen3_tts_tokenizer.py",
+            "originalSha256": "ac2d855022a1bd21d33ab7b267ec952eef71f81d3f8d969a306139ff1a929515",
+            "replacementSha256": "4ac0307ea79d846a90e66d2a200a8eb5378e64179038384c6b019a8325769eda",
+            "originalRetainedPath": ".originals/qwen_tts/inference/qwen3_tts_tokenizer.py",
+            "resource": "resources/media/voice/source-adaptations/tokenizer-init.py",
+            "replacementBytes": 15475
+          }
+        ],
+        "runtimeSourceFiles": {
+          "qwen_tts/__init__.py": "ea52de59d070fde366467a6902d0edcfc1b0575b8c570a0c71020c41d6a593ed",
+          "qwen_tts/core/__init__.py": "c3d2f2f28cae7a0ec4d8dd8251470c8871acd2bf143d2fc239fcfbe8f2938497",
+          "qwen_tts/core/models/__init__.py": "917d38d8fd7ed84de73703fd2394d535ca416e15694d1e50324e4a06d4022c82",
+          "qwen_tts/core/models/configuration_qwen3_tts.py": "f52867f14fde06a416dd14864d503ce6d13d0a08d5f5da30191e1c80c13f5d18",
+          "qwen_tts/core/models/modeling_qwen3_tts.py": "25c42656bcf810f06ef6bc1839bd7083f3c8cfedac3a147c4060b4262b1c96a0",
+          "qwen_tts/core/models/processing_qwen3_tts.py": "61472203188e46eda68d740c25f0f228ece24a61ecf942e57d6e49e78b4d6bcd",
+          "qwen_tts/core/tokenizer_12hz/configuration_qwen3_tts_tokenizer_v2.py": "9e30c24394b00cb0366d7da3482b7436468acc1cd3da1a6fe614a1d34653a5e3",
+          "qwen_tts/core/tokenizer_12hz/modeling_qwen3_tts_tokenizer_v2.py": "844e8dd8c0182ef9c6463c874631c22ef3c5a4fd1899dd657016164cc5379628",
+          "qwen_tts/inference/qwen3_tts_model.py": "e1da450732857c1f5fe3e36ebab85db2f6dc6a48caaff6973f463384e30275e4",
+          "qwen_tts/inference/qwen3_tts_tokenizer.py": "4ac0307ea79d846a90e66d2a200a8eb5378e64179038384c6b019a8325769eda"
+        }
+      },
+      "modelRevision": "fd4b254389122332181a7c3db7f27e918eec64e3",
+      "workerSource": "resources/media/voice/worker.py",
+      "workerProtocol": "bubo-voice-worker/v1",
+      "files": [
+        {
+          "path": ".gitattributes",
+          "repository": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+          "revision": "fd4b254389122332181a7c3db7f27e918eec64e3",
+          "url": "https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-Base/resolve/fd4b254389122332181a7c3db7f27e918eec64e3/.gitattributes",
+          "sha256": "11ad7efa24975ee4b0c3c3a38ed18737f0658a5f75a0a96787b576a78a023361",
+          "bytes": 1519,
+          "license": "apache-2.0"
+        },
+        {
+          "path": "README.md",
+          "repository": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+          "revision": "fd4b254389122332181a7c3db7f27e918eec64e3",
+          "url": "https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-Base/resolve/fd4b254389122332181a7c3db7f27e918eec64e3/README.md",
+          "sha256": "621b7e88f1867bc03d817176fc1f7f55f4b5a70654b2a07fdcda1e169efb024b",
+          "bytes": 57817,
+          "license": "apache-2.0"
+        },
+        {
+          "path": "config.json",
+          "repository": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+          "revision": "fd4b254389122332181a7c3db7f27e918eec64e3",
+          "url": "https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-Base/resolve/fd4b254389122332181a7c3db7f27e918eec64e3/config.json",
+          "sha256": "b4f01752d15a488abde3e1ab44723ae4f4b9e68a4037257b098b3737893cc1f9",
+          "bytes": 4494,
+          "license": "apache-2.0"
+        },
+        {
+          "path": "generation_config.json",
+          "repository": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+          "revision": "fd4b254389122332181a7c3db7f27e918eec64e3",
+          "url": "https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-Base/resolve/fd4b254389122332181a7c3db7f27e918eec64e3/generation_config.json",
+          "sha256": "f1b90b4513f3b34c62851049e2492d7b4c5940daf1276f89c82b8ef04127f3aa",
+          "bytes": 245,
+          "license": "apache-2.0"
+        },
+        {
+          "path": "merges.txt",
+          "repository": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+          "revision": "fd4b254389122332181a7c3db7f27e918eec64e3",
+          "url": "https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-Base/resolve/fd4b254389122332181a7c3db7f27e918eec64e3/merges.txt",
+          "sha256": "599bab54075088774b1733fde865d5bd747cbcc7a547c5bc12610e874e26f5e3",
+          "bytes": 1671839,
+          "license": "apache-2.0"
+        },
+        {
+          "path": "model.safetensors",
+          "repository": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+          "revision": "fd4b254389122332181a7c3db7f27e918eec64e3",
+          "url": "https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-Base/resolve/fd4b254389122332181a7c3db7f27e918eec64e3/model.safetensors",
+          "sha256": "38fc7fc51c5e776e840414b6fd443962e9411b9654888fd7913e4da643cb857c",
+          "bytes": 3857413744,
+          "license": "apache-2.0"
+        },
+        {
+          "path": "preprocessor_config.json",
+          "repository": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+          "revision": "fd4b254389122332181a7c3db7f27e918eec64e3",
+          "url": "https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-Base/resolve/fd4b254389122332181a7c3db7f27e918eec64e3/preprocessor_config.json",
+          "sha256": "efdde1022ea9d76928bf7a9cd53139138f5ba2e466e837f08f6105ab1af1c119",
+          "bytes": 127,
+          "license": "apache-2.0"
+        },
+        {
+          "path": "speech_tokenizer/config.json",
+          "repository": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+          "revision": "fd4b254389122332181a7c3db7f27e918eec64e3",
+          "url": "https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-Base/resolve/fd4b254389122332181a7c3db7f27e918eec64e3/speech_tokenizer/config.json",
+          "sha256": "ee65bb901c876664ab8707c487157aa1a6ee57c65969b28fb5ec9dc211e68167",
+          "bytes": 2336,
+          "license": "apache-2.0"
+        },
+        {
+          "path": "speech_tokenizer/configuration.json",
+          "repository": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+          "revision": "fd4b254389122332181a7c3db7f27e918eec64e3",
+          "url": "https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-Base/resolve/fd4b254389122332181a7c3db7f27e918eec64e3/speech_tokenizer/configuration.json",
+          "sha256": "6bc26d64eb5024b4d1dab5a52371958b429256d6c9d59787f1f5294a54e0cebd",
+          "bytes": 76,
+          "license": "apache-2.0"
+        },
+        {
+          "path": "speech_tokenizer/model.safetensors",
+          "repository": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+          "revision": "fd4b254389122332181a7c3db7f27e918eec64e3",
+          "url": "https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-Base/resolve/fd4b254389122332181a7c3db7f27e918eec64e3/speech_tokenizer/model.safetensors",
+          "sha256": "836b7b357f5ea43e889936a3709af68dfe3751881acefe4ecf0dbd30ba571258",
+          "bytes": 682293092,
+          "license": "apache-2.0"
+        },
+        {
+          "path": "speech_tokenizer/preprocessor_config.json",
+          "repository": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+          "revision": "fd4b254389122332181a7c3db7f27e918eec64e3",
+          "url": "https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-Base/resolve/fd4b254389122332181a7c3db7f27e918eec64e3/speech_tokenizer/preprocessor_config.json",
+          "sha256": "fcb3805e597e786d4067706e602f6688524640f8d3396790e2e09b5942fcbdfb",
+          "bytes": 234,
+          "license": "apache-2.0"
+        },
+        {
+          "path": "tokenizer_config.json",
+          "repository": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+          "revision": "fd4b254389122332181a7c3db7f27e918eec64e3",
+          "url": "https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-Base/resolve/fd4b254389122332181a7c3db7f27e918eec64e3/tokenizer_config.json",
+          "sha256": "dc3c31c3bdaedd5016382bb3cbe07323026775ad51f5a4fb564505992ae4a670",
+          "bytes": 7344,
+          "license": "apache-2.0"
+        },
+        {
+          "path": "vocab.json",
+          "repository": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+          "revision": "fd4b254389122332181a7c3db7f27e918eec64e3",
+          "url": "https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-Base/resolve/fd4b254389122332181a7c3db7f27e918eec64e3/vocab.json",
+          "sha256": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910",
+          "bytes": 2776833,
+          "license": "apache-2.0"
+        }
+      ],
+      "devices": [
+        "cuda:0"
+      ],
+      "precision": [
+        "bfloat16"
+      ],
+      "offload": [
+        "none"
+      ],
+      "environments": {
+        "windows": "resources/media/environments/voice-base-windows.json",
+        "linux": "resources/media/environments/voice-base-linux.json"
+      },
+      "environmentSha256": {
+        "windows": "ae4c3e977b184bc816508396be7f24420c6caf330347f816420147e1453e87e6",
+        "linux": "d910011727420e73b49eb2d95adea5417c352664478e62ce9bb31901429a9ade"
+      },
+      "notices": [
+        {
+          "path": "decoder/component-source-pins.json",
+          "resource": "resources/media/notices/voice/decoder/component-source-pins.json",
+          "sha256": "fc2c5bd63673e9ccd1f940918e40bc070238fd67d91f500d57cb2f4e14a1e834",
+          "bytes": 5916
+        },
+        {
+          "path": "decoder/linux/av-19.0.2.dist-info/licenses/AUTHORS.rst",
+          "resource": "resources/media/notices/voice/decoder/linux/av-19.0.2.dist-info/licenses/AUTHORS.rst",
+          "sha256": "15b3aeba291c0b560950a58fa3206e42009eb0409c1bc1ac91f8df49bb505977",
+          "bytes": 6336
+        },
+        {
+          "path": "decoder/linux/av-19.0.2.dist-info/licenses/LICENSE.txt",
+          "resource": "resources/media/notices/voice/decoder/linux/av-19.0.2.dist-info/licenses/LICENSE.txt",
+          "sha256": "76af0461ffb92e19f1c14449e95557d83a2dfaa1baf202d49e5f1d8746c0da19",
+          "bytes": 1505
+        },
+        {
+          "path": "decoder/linux/av-19.0.2.dist-info/METADATA",
+          "resource": "resources/media/notices/voice/decoder/linux/av-19.0.2.dist-info/METADATA",
+          "sha256": "2885b8f6756f2654c61ec51b9acd17c6d7db54c37a47cb54b025353dde3ff302",
+          "bytes": 4993
+        },
+        {
+          "path": "decoder/linux/av-19.0.2.dist-info/RECORD",
+          "resource": "resources/media/notices/voice/decoder/linux/av-19.0.2.dist-info/RECORD",
+          "sha256": "be498ba173d166ff091957d1c98ae2668ce3a640292195e8e4e4670284f49467",
+          "bytes": 20740
+        },
+        {
+          "path": "decoder/linux/av-19.0.2.dist-info/WHEEL",
+          "resource": "resources/media/notices/voice/decoder/linux/av-19.0.2.dist-info/WHEEL",
+          "sha256": "d0f44c42ff3d4648f9dc5701848e8ec2736232a597900d4a500804f8e5658ac5",
+          "bytes": 112
+        },
+        {
+          "path": "decoder/result.json",
+          "resource": "resources/media/notices/voice/decoder/result.json",
+          "sha256": "47e8e4434d7f69b1a4287708b509e376ce86fc1801c647c057faf3f8809b9d53",
+          "bytes": 8735
+        },
+        {
+          "path": "decoder/upstream/ffmpeg-9.0.2-COPYING.GPLv2",
+          "resource": "resources/media/notices/voice/decoder/upstream/ffmpeg-9.0.2-COPYING.GPLv2",
+          "sha256": "8177f97513213526df2cf6184d8ff986c675afb514d4e68a404010521b880643",
+          "bytes": 18092
+        },
+        {
+          "path": "decoder/upstream/ffmpeg-9.0.2-COPYING.GPLv3",
+          "resource": "resources/media/notices/voice/decoder/upstream/ffmpeg-9.0.2-COPYING.GPLv3",
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903",
+          "bytes": 35147
+        },
+        {
+          "path": "decoder/upstream/ffmpeg-9.0.2-COPYING.LGPLv2.1",
+          "resource": "resources/media/notices/voice/decoder/upstream/ffmpeg-9.0.2-COPYING.LGPLv2.1",
+          "sha256": "246041b6ecf9bc32d718a62c57877c78b5eb397b6467e74ed7ae2626ab189c30",
+          "bytes": 26517
+        },
+        {
+          "path": "decoder/upstream/ffmpeg-9.0.2-COPYING.LGPLv3",
+          "resource": "resources/media/notices/voice/decoder/upstream/ffmpeg-9.0.2-COPYING.LGPLv3",
+          "sha256": "da7eabb7bafdf7d3ae5e9f223aa5bdc1eece45ac569dc21b3b037520b4464768",
+          "bytes": 7651
+        },
+        {
+          "path": "decoder/upstream/ffmpeg-9.0.2-LICENSE.md",
+          "resource": "resources/media/notices/voice/decoder/upstream/ffmpeg-9.0.2-LICENSE.md",
+          "sha256": "2e1d16c72fd74e12063776371da757322f8b77589386532f4fd8634bde7de1af",
+          "bytes": 4346
+        },
+        {
+          "path": "decoder/upstream/gcc-runtime-library-exception.txt",
+          "resource": "resources/media/notices/voice/decoder/upstream/gcc-runtime-library-exception.txt",
+          "sha256": "9d6b43ce4d8de0c878bf16b54d8e7a10d9bd42b75178153e3af6a815bdc90f74",
+          "bytes": 3324
+        },
+        {
+          "path": "decoder/upstream/producer-ffmpeg.patch",
+          "resource": "resources/media/notices/voice/decoder/upstream/producer-ffmpeg.patch",
+          "sha256": "661b7f0553ae145ce6526bb5514ed0f50a699e337dcc85c6d743809685f47020",
+          "bytes": 430
+        },
+        {
+          "path": "decoder/upstream/pyav-19.0.2-license.rst",
+          "resource": "resources/media/notices/voice/decoder/upstream/pyav-19.0.2-license.rst",
+          "sha256": "becc70e9cfe7e15d624f6de729fae233f188e22c294d517e7bd98c435ffb304e",
+          "bytes": 246
+        },
+        {
+          "path": "decoder/upstream/pyav-19.0.2-vendor.json",
+          "resource": "resources/media/notices/voice/decoder/upstream/pyav-19.0.2-vendor.json",
+          "sha256": "8a56555f7c96b9f497a3e22348c1d566ff7706ba9c39022a9e763b05c9eb3f2f",
+          "bytes": 108
+        },
+        {
+          "path": "decoder/upstream/result.json",
+          "resource": "resources/media/notices/voice/decoder/upstream/result.json",
+          "sha256": "43f1aec0cd0112dbc0476da978af54b93eb9abb11de31710d04fa8c162f4faa2",
+          "bytes": 4955
+        },
+        {
+          "path": "decoder/upstream/x264-b35605ace3ddf7c1a5d67a2eb553f034aef41d55-COPYING",
+          "resource": "resources/media/notices/voice/decoder/upstream/x264-b35605ace3ddf7c1a5d67a2eb553f034aef41d55-COPYING",
+          "sha256": "32b1062f7da84967e7019d01ab805935caa7ab7321a7ced0e30ebe75e5df1670",
+          "bytes": 17992
+        },
+        {
+          "path": "decoder/upstream/x265-4.3-COPYING",
+          "resource": "resources/media/notices/voice/decoder/upstream/x265-4.3-COPYING",
+          "sha256": "d8afb1bcc7a2cfc603683b168d6987ef0a48e59e0da3693bf55c5d33b67e2b49",
+          "bytes": 18120
+        },
+        {
+          "path": "decoder/windows/av-19.0.2.dist-info/licenses/AUTHORS.rst",
+          "resource": "resources/media/notices/voice/decoder/windows/av-19.0.2.dist-info/licenses/AUTHORS.rst",
+          "sha256": "2abfebe175cefe78fcb14db260a3c8972d3b52156f50dedd0bc416ac4f884a96",
+          "bytes": 6472
+        },
+        {
+          "path": "decoder/windows/av-19.0.2.dist-info/licenses/LICENSE.txt",
+          "resource": "resources/media/notices/voice/decoder/windows/av-19.0.2.dist-info/licenses/LICENSE.txt",
+          "sha256": "f32ebcb6007dcc05eea369b3820e6391b0a7ef1ed763f30f1aca15dfdbacbe96",
+          "bytes": 1528
+        },
+        {
+          "path": "decoder/windows/av-19.0.2.dist-info/METADATA",
+          "resource": "resources/media/notices/voice/decoder/windows/av-19.0.2.dist-info/METADATA",
+          "sha256": "30cf3bef7c83211e6cf7771bc23edccae6998f1484d36d23240da8b54a26b8f6",
+          "bytes": 5131
+        },
+        {
+          "path": "decoder/windows/av-19.0.2.dist-info/RECORD",
+          "resource": "resources/media/notices/voice/decoder/windows/av-19.0.2.dist-info/RECORD",
+          "sha256": "8fcb2ed5dd38cd12ff15bdde005ac5949867240e6abb49afbc21b73e6e5ac6e3",
+          "bytes": 19989
+        },
+        {
+          "path": "decoder/windows/av-19.0.2.dist-info/WHEEL",
+          "resource": "resources/media/notices/voice/decoder/windows/av-19.0.2.dist-info/WHEEL",
+          "sha256": "bcc51bef8f854a71d790322eb3547f7ee74855404df09888aa9251d22c7aea59",
+          "bytes": 100
+        }
+      ],
+      "profile": "fixed12Hz directAPI; native24000Hz monoFLOAT; explicit autoregressive settings and EOS; intrinsic decoder clamp preserved; no downstream normalization, external reference URL,25Hz,SoX shell,FlashAttention,UI or hosted service"
     }
   ],
   "windowsRuntime": {
@@ -519,7 +1177,9 @@
         "backends": [
           "flux-schnell",
           "stable-audio-open",
-          "ace-step-turbo"
+          "ace-step-turbo",
+          "qwen3-tts-customvoice",
+          "qwen3-tts-base"
         ],
         "license": "Microsoft-Visual-Studio-Redist"
       },
@@ -530,7 +1190,9 @@
         "backends": [
           "flux-schnell",
           "stable-audio-open",
-          "ace-step-turbo"
+          "ace-step-turbo",
+          "qwen3-tts-customvoice",
+          "qwen3-tts-base"
         ],
         "license": "Microsoft-Visual-Studio-Redist"
       },
@@ -541,7 +1203,9 @@
         "backends": [
           "flux-schnell",
           "stable-audio-open",
-          "ace-step-turbo"
+          "ace-step-turbo",
+          "qwen3-tts-customvoice",
+          "qwen3-tts-base"
         ],
         "license": "Microsoft-Visual-Studio-Redist"
       },
@@ -552,7 +1216,9 @@
         "backends": [
           "flux-schnell",
           "stable-audio-open",
-          "ace-step-turbo"
+          "ace-step-turbo",
+          "qwen3-tts-customvoice",
+          "qwen3-tts-base"
         ],
         "license": "Microsoft-Visual-Studio-Redist"
       },
@@ -563,7 +1229,9 @@
         "backends": [
           "flux-schnell",
           "stable-audio-open",
-          "ace-step-turbo"
+          "ace-step-turbo",
+          "qwen3-tts-customvoice",
+          "qwen3-tts-base"
         ],
         "license": "Microsoft-Visual-Studio-Redist"
       },
@@ -574,7 +1242,9 @@
         "backends": [
           "flux-schnell",
           "stable-audio-open",
-          "ace-step-turbo"
+          "ace-step-turbo",
+          "qwen3-tts-customvoice",
+          "qwen3-tts-base"
         ],
         "license": "Microsoft-Visual-Studio-Redist"
       },
@@ -585,7 +1255,9 @@
         "backends": [
           "flux-schnell",
           "stable-audio-open",
-          "ace-step-turbo"
+          "ace-step-turbo",
+          "qwen3-tts-customvoice",
+          "qwen3-tts-base"
         ],
         "license": "Microsoft-Visual-Studio-Redist"
       },

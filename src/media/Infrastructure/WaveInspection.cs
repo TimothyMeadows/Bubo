@@ -6,9 +6,10 @@ public sealed record WaveMeasurements(int SampleRate,int Channels,long Frames,do
 
 public static class WaveInspection
 {
-    public static WaveMeasurements Read(string path,long maximumBytes,int expectedSampleRate=44100)
+    public static WaveMeasurements Read(string path,long maximumBytes,int expectedSampleRate=44100,int expectedChannels=2)
     {
-        if(expectedSampleRate is not (44100 or 48000))throw new InvalidOperationException("Unsupported explicit native audio rate; no resampling");
+        if(!((expectedSampleRate is 44100 or 48000)&&expectedChannels==2 || expectedSampleRate==24000&&expectedChannels==1))
+            throw new InvalidOperationException("Unsupported explicit native audio rate/channels; no resampling or synthetic stereo");
         using var input=new FileStream(path,FileMode.Open,FileAccess.Read,FileShare.Read);
         if(input.Length is <44 || input.Length>maximumBytes)throw new InvalidOperationException("Waveform exceeds its declared byte budget");
         using var reader=new BinaryReader(input,Encoding.ASCII,true);
@@ -23,7 +24,8 @@ public static class WaveInspection
             {
                 if(format!=0 || length<16)throw new InvalidOperationException("Duplicate/short wave format");
                 format=reader.ReadUInt16();channels=reader.ReadUInt16();rate=reader.ReadUInt32();var byteRate=reader.ReadUInt32();align=reader.ReadUInt16();bits=reader.ReadUInt16();
-                if(format!=3 || channels!=2 || rate!=expectedSampleRate || bits!=32 || align!=8 || byteRate!=rate*align)throw new InvalidOperationException("Expected exact native-rate stereo float32 waveform");
+                if(format!=3 || channels!=expectedChannels || rate!=expectedSampleRate || bits!=32 || align!=expectedChannels*4 || byteRate!=rate*align)
+                    throw new InvalidOperationException("Expected exact native-rate/channel float32 waveform");
             }
             else if(kind=="data") {if(data!=-1)throw new InvalidOperationException("Duplicate wave data");data=start;bytes=length;}
             input.Position=start+length+(length%2);

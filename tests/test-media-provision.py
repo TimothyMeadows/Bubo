@@ -75,6 +75,33 @@ except OSError:
     else:unavailable.append('native link creation unavailable; reparse fixture not run')
 else:denied(lambda:provision.owned(link/'file'),'native linked directory rejected')
 
+adaptation_index=0
+def adaptation_fixture():
+    global adaptation_index
+    adaptation_index+=1
+    source=install/('adaptation-'+str(adaptation_index));source.mkdir()
+    (source/'pkg').mkdir();original=source/'pkg/engine.py';original.write_bytes(b'OWNED ORIGINAL; never executed\n')
+    resource=cache/('replacement-'+str(adaptation_index)+'.py');resource.write_bytes(b'OWNED REVIEWED REPLACEMENT; never executed\n')
+    change={'path':'pkg/engine.py','originalRetainedPath':'.originals/pkg/engine.py','originalSha256':provision.digest(original),'replacementSha256':provision.digest(resource),'replacementBytes':resource.stat().st_size,'resource':'audited/replacement.py'}
+    return source,resource,change
+source,resource,change=adaptation_fixture()
+provision.apply_source_adaptations(source,{'adaptations':[change]},{change['resource']:str(resource)})
+check((source/change['path']).read_bytes()==resource.read_bytes() and provision.digest(source/change['originalRetainedPath'])==change['originalSha256'],'explicit source adaptation preserves exact archived original and reviewed replacement')
+for label,alter in [
+    ('changed replacement hash',lambda value:value.update(replacementSha256='0'*64)),
+    ('changed original hash',lambda value:value.update(originalSha256='0'*64)),
+    ('wrong replacement length',lambda value:value.update(replacementBytes=value['replacementBytes']+1)),
+    ('escaping retained original',lambda value:value.update(originalRetainedPath='.originals/../../escape.py')),
+    ('missing resource mapping',lambda value:value.update(resource='unregistered/replacement.py')),
+]:
+    source,resource,change=adaptation_fixture();mapping={change['resource']:str(resource)};alter(change)
+    denied(lambda:provision.apply_source_adaptations(source,{'adaptations':[change]},mapping),'source adaptation rejects '+label)
+for declarations in [None,['not-an-object'],[None],{}]:
+    source,resource,change=adaptation_fixture()
+    denied(lambda:provision.apply_source_adaptations(source,{'adaptations':declarations},{}),'malformed adaptation declarations rejected before source mutation')
+source,resource,change=adaptation_fixture()
+denied(lambda:provision.apply_source_adaptations(source,{'adaptations':[change]*17},{change['resource']:str(resource)}),'source adaptation count exceeds bounded explicit profile')
+
 if os.name=='nt':
     system=Path(os.environ['SystemRoot'])/'System32';shell=system/'cmd.exe';where=system/'where.exe'
     command='"'+str(shell)+'" /d /s /c ""'+str(where)+'" cmd.exe >nul && echo BUBO_OWNED_QUOTE_OK"'
