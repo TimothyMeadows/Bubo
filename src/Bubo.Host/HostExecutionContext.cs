@@ -22,6 +22,7 @@ public sealed class HostExecutionContext
     readonly string[] readRoots;
     readonly string[] writeRoots;
     readonly string[] inputRoots;
+    readonly string[] toolRoots;
     readonly Dictionary<string, HostFileReference> references;
     readonly Dictionary<string, HostFileReference> tools;
 
@@ -31,7 +32,10 @@ public sealed class HostExecutionContext
     public string ContextSha256 { get; }
     public string StateRoot { get; }
     public string StagingRoot { get; }
+    public string MediaStateRoot { get; }
+    public bool HasExplicitMediaStateRoot { get; }
     public bool InspectionOnly { get; }
+    public bool MediaOnly { get; }
     public string Pipeline { get; }
     public string StyleSha256 { get; }
     public string? MediaPath { get; }
@@ -45,6 +49,7 @@ public sealed class HostExecutionContext
     public JsonArray Libraries => libraries.DeepClone().AsArray();
     public IReadOnlyList<HostFileReference> References { get; }
     public IReadOnlyList<HostFileReference> Tools { get; }
+    public IReadOnlyList<string> ToolRoots => System.Array.AsReadOnly(toolRoots);
 
     public static HostExecutionContext Load(string projectRoot, string contextPath)
     {
@@ -76,22 +81,36 @@ public sealed class HostExecutionContext
         var roots = Object(value, "roots");
         StateRoot = RootPath(Text(roots, "state"));
         StagingRoot = RootPath(Text(roots, "staging"));
-        var toolRoots = RootArray(roots, "tools");
+        toolRoots = RootArray(roots, "tools");
         inputRoots = RootArray(roots, "inputs");
         var outputRoots = RootArray(roots, "outputs");
-        writeRoots = [StateRoot, StagingRoot, .. toolRoots, .. outputRoots];
+        HasExplicitMediaStateRoot = roots.ContainsKey("mediaState");
+        MediaStateRoot = HasExplicitMediaStateRoot ? RootPath(Text(roots, "mediaState")) : StateRoot + "/media-state";
+        writeRoots = [StateRoot, StagingRoot, MediaStateRoot, .. toolRoots, .. outputRoots];
         readRoots = [.. writeRoots, .. inputRoots];
 
         var policy = Object(value, "policy");
         InspectionOnly = policy["purpose"]?.GetValue<string>() == "read-only-blender-inspection";
-        if (policy.ContainsKey("purpose") && !InspectionOnly)
+        MediaOnly = policy["purpose"]?.GetValue<string>() == "local-media";
+        if (policy.ContainsKey("purpose") && !InspectionOnly && !MediaOnly)
             throw Invalid("Unknown host policy purpose");
         if (InspectionOnly)
         {
-            if (new[] { "pipeline", "styleSha256", "engine", "libraries", "media" }.Any(policy.ContainsKey))
+            if (new[] { "pipeline", "styleSha256", "engine", "libraries", "media", "imageStyle" }.Any(policy.ContainsKey) || roots.ContainsKey("mediaState"))
                 throw Invalid("Inspection policy must not assert art or engine selections");
             Pipeline = "";
             StyleSha256 = "";
+            engine = new JsonObject();
+            libraries = new JsonArray();
+        }
+        else if (MediaOnly)
+        {
+            if (Text(policy, "pipeline") != "LOCAL" || new[] { "engine", "libraries", "styleSha256" }.Any(policy.ContainsKey))
+                throw Invalid("Local-media policy requires LOCAL and does not infer an engine or image style");
+            if (policy.ContainsKey("imageStyle") && policy["imageStyle"] is not JsonObject)
+                throw Invalid("Explicit imageStyle must be a hash-bound policy object");
+            Pipeline = "LOCAL";
+            StyleSha256 = policy["imageStyle"] is JsonObject style ? HashText(style, "sha256") : "";
             engine = new JsonObject();
             libraries = new JsonArray();
         }
@@ -165,6 +184,14 @@ public sealed class HostExecutionContext
             if (!references.TryGetValue(MediaPath, out var reference) || reference.Kind != "policy" || reference.Sha256 != MediaSha256)
                 throw Invalid("Media policy must match a registered policy reference");
         }
+        if ((MediaOnly || roots.ContainsKey("mediaState")) && (MediaPath is null || Pipeline != "LOCAL"))
+            throw Invalid("Shared media state and local-media purpose require an explicit hash-bound LOCAL media policy");
+        if (MediaOnly && policy["imageStyle"] is JsonObject imageStyle)
+        {
+            var stylePath = ProjectRelative(Root, Text(imageStyle, "path"));
+            if (!references.TryGetValue(stylePath, out var styleReference) || styleReference.Kind != "policy" || styleReference.Sha256 != StyleSha256)
+                throw Invalid("Image style must match an exact registered policy reference");
+        }
 
         var budgets = Object(value, "budgets");
         var seconds = PositiveInteger(budgets, "timeoutSeconds");
@@ -181,6 +208,8 @@ public sealed class HostExecutionContext
         AllowPromotion = Boolean(permissions, "promotion");
         if (InspectionOnly && (AllowProvisioning || AllowPromotion))
             throw Invalid("Read-only inspection cannot authorize provisioning or promotion");
+        if (MediaOnly && AllowPromotion)
+            throw Invalid("Media execution cannot grant asset promotion; use separate reviewed host acceptance");
 
         ValidateFresh();
         foreach (var tool in tools.Values)

@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="../Domain/Media.Domain.csproj" />
+    <ProjectReference Include="../../Bubo.Host/Bubo.Host.csproj" />
+    <ProjectReference Include="../../runtime/asset-production/AssetProduction.csproj" />
+  </ItemGroup>
+</Project>

@@ -3,7 +3,7 @@ using OpenCaw.AssetProduction;
 
 static class RuntimeCatalog
 {
-    public const string ExpectedSha256 = "716f7a0c58740dd1b5d876a051cb143891146fce8b4fb5ada270d80cd3ab6dfc";
+    public const string ExpectedSha256 = "a6b07c2114767494f7ad383344c87f0cb49c92a209a2e98bba4eaeaca5dd13b2";
     public static void Verify()
     {
         var root = Path.GetFullPath(AppContext.BaseDirectory);

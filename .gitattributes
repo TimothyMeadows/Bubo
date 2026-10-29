@@ -9,3 +9,7 @@ resources/proof-to-model/blender/review.py text eol=crlf
 resources/proof-to-model/blender/rigid_finish.py text eol=crlf
 resources/proof-to-model/blender/rigid_source_topology.py text eol=crlf
 resources/blender/inspect-blender-scene.py text eol=crlf
+# These pinned media inventories/notices were registered with CRLF bytes.
+resources/media/catalog.json text eol=crlf
+resources/media/environments/* text eol=crlf
+resources/media/notices/*.txt text eol=crlf

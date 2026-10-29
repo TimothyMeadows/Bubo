@@ -259,6 +259,14 @@ static class MultiViewPipelineTests
 
     sealed class SimulatedProcess(Workspace workspace) : INativeProcess
     {
+        // Fixture-only GPU port: this runner creates synthetic files and never claims native ownership evidence.
+        public async Task RunGpu(OpenCaw.AssetProduction.GpuProcessSpec spec,CancellationToken cancellation=default,Func<CancellationToken,Task>? beforeStart=null)
+        {
+            cancellation.ThrowIfCancellationRequested();
+            using var legacy=spec.CompatibilityLock is {} path?workspace.Lock(path):null;
+            if(beforeStart is not null)await beforeStart(cancellation);
+            await Run(spec.Executable,spec.Arguments,spec.WorkingDirectory,spec.Log,spec.TimeoutSeconds,cancellation,spec.MaximumLogBytes,spec.Environment);
+        }
         public int Launches { get; private set; }
         public int FramesRead { get; private set; }
         public List<string> LastReadHashes { get; } = [];

@@ -2,7 +2,7 @@
 
 ![Bubo robotic owl](logo.png)
 
-Bubo is a standalone .NET 10 model and asset-production runtime. It executes proof-to-model reconstruction/finishing, model-to-animation, model-to-action, and read-only native Blender scene inspection through a versioned CLI. Host applications supply selected policy, permitted roots, rights/consent evidence, budgets and reviews as explicit JSON.
+Bubo is a standalone .NET 10 model and asset-production runtime. It executes proof-to-model reconstruction/finishing, model-to-animation, model-to-action, read-only native Blender scene inspection, and offline image/SFX generation through a versioned CLI. Host applications supply selected policy, permitted roots, rights/consent evidence, budgets and reviews as explicit JSON.
 
 ## Build and run
 
@@ -31,7 +31,7 @@ bubo <workflow> <operation> --api-version 1 --root PROJECT_ROOT \
   --host-context PROJECT_CONTEXT_JSON --manifest PROJECT_MANIFEST [operation options]
 ```
 
-Workflows are `proof-to-model`, `model-to-animation`, `model-to-action`, and `blender-inspection`. `capabilities --api-version 1` advertises the supported API and exact build/resource identities without a host project. API v1 results are JSON on stdout; logs are on stderr and bounded task-local files. The result's `data` contains workflow status data; exported motion/action package formats retain their existing versioned schemas.
+Workflows are `proof-to-model`, `model-to-animation`, `model-to-action`, `blender-inspection` and `media`. `capabilities --api-version 1` advertises the supported API/backends and exact build/resource identities without a host project. API v1 results are JSON on stdout; logs are on stderr and bounded task-local files. The result's `data` contains workflow status data; exported motion/action package formats retain their existing versioned schemas.
 
 The host-context contract is implemented in `src/Bubo.Host/` and exercised by its executable tests. Its `bubo-host-context/v1` object contains the absolute project root and task, declared state/staging/tool/input/output roots, selected pipeline/engine and policy fingerprints, hash-bound rights/consent/review/input references, explicit existing native executable hashes, finite process budgets, and provisioning/promotion permissions. Permissions default false. References and input-only roots remain read-only; paths cannot escape or traverse Git metadata, aliases or reparse points. These cooperative checks and native process ownership are not an OS sandbox.
 
@@ -69,6 +69,7 @@ Historical `.opencaw/.cache/` state keys and `opencaw-*` package identifiers are
 - **Model-to-animation:** `init`, `doctor`, `inspect`, `prepare`, `rig`, `author`, `retarget`, `bake`, `export`, `review`, `record`, `validate`, `status`, `promote`. Preserve declared profiles, actual clip/rig hashes, owned/licensed retargeting, complete motion ranges and separate acceptance.
 - **Model-to-action:** `init`, `doctor`, `inspect`, `compose`, `export`, `review`, `record`, `validate`, `status`, `promote`. Compose explicit reviewed in-place clips with bounded trims/repeats/blends/cues; gameplay authority remains outside presentation.
 - **Blender inspection:** `inspect --blender ABSOLUTE_EXE`; its registered `--manifest` job contains `schemaVersion: 1`, local `scene`, `profile` and a new declared writable `output`. Profiles are `static-asset`, `rigged-actor`, `procedural-scene`, `render-scene`, and `simulation`. The existing source is opened with factory startup, disabled auto-execution and offline mode.
+- **Local media:** explicit dry-run `setup`, `inspect` (optional zero-sample `--load true`), and bounded `generate`. FLUX.1-schnell Q8 images use the fixed native worker; Stable Audio Open1.0 SFX uses an isolated pinned Python environment. Shared GPU ownership covers reconstruction and media. Read [the media API and setup contract](docs/MEDIA.md) before provisioning or generation. Human output review and runtime promotion remain separate.
 
 Read-only inspection may use `policy: {"purpose":"read-only-blender-inspection","receipt":{"path":"inspection-policy.json","sha256":"<exact hash>"}}` instead of art/engine selections. The receipt must be a registered `policy` reference. This context cannot assert pipeline, style, engine, library or media selections, enable provisioning/promotion, or execute an asset workflow. It needs no STYLE.md or ENGINE.md. Ordinary production contexts retain all existing requirements. Single-view proof diagnostics require `--mode single-view-diagnostic` explicitly on each applicable operation; this does not enable six-view production or approval reuse.
 

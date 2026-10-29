@@ -1,0 +1,450 @@
+{
+  "schemaVersion": "bubo-native-acceptance-evidence/v1",
+  "implementationRevision": "eb4c6f58b5e375d3b0569ea25bcd41fd01b9f9fe",
+  "trackingIssue": "https://github.com/TimothyMeadows/OpenCaw/issues/144",
+  "platform": "Windows CUDA; NVIDIA RTX5080 Laptop16GB",
+  "evidenceScope": "Actual full public generate calls; original manifests/claims are preserved in the tracking task. This portable record omits absolute host module paths and GPU UUID; original manifest digests retain exact identity. No source/model output bytes were altered.",
+  "records": [
+    {
+      "requestId": "image-candidate",
+      "case": "image",
+      "kind": "candidate",
+      "file": "image-candidate.png",
+      "bytes": 158228,
+      "sha256": "a68bb378efc89d46a143fd67a2c9648f5aab0b20be188c58ae769f7bb5db1c9e",
+      "originalManifestSha256": "c9fab9b76df1486d68cb50b13e024330ebbc13d05b837f892fdca5c19c36308c",
+      "originalClaimSha256": "83b6d12fb913fdec94055018c8010bdd439194bab2bfc5a4042c390fa8aa2c4c",
+      "request": {
+        "schemaVersion": "bubo-media-request/v1",
+        "requestId": "image-candidate",
+        "backend": "flux-schnell",
+        "task": "bubo-media-image-sfx",
+        "outputDirectory": "staging",
+        "rights": {
+          "path": "inputs/rights.json",
+          "sha256": "69e0fa97150e75002356074c8d7e4db7cb39fceef5a9cb0a0daace46a8199a6e"
+        },
+        "installation": {
+          "path": "installations/flux-schnell-v3.json",
+          "sha256": "2ea63d02534a6328d45111e49f60b02a0768001624e82cc14697e9a130334e3d"
+        },
+        "settings": {
+          "device": "cuda:0",
+          "precision": "q8_0",
+          "offload": "text-encoder-cpu"
+        },
+        "budget": {
+          "maximumOutputs": 1,
+          "maximumBytesPerOutput": 8388608,
+          "maximumTotalBytes": 8388608,
+          "maximumPixels": 262144,
+          "maximumAudioSeconds": 47
+        },
+        "items": [
+          {
+            "id": "clockwork-owl",
+            "prompt": "Cel shaded comic illustration of one small brass clockwork owl with blue enamel panels, clearly separated folded wings and two feet, three quarter view, centered on a plain warm gray background, clean dark outlines, simple geometric shading, no lettering",
+            "negativePrompt": "",
+            "seed": 104729,
+            "steps": 4,
+            "guidance": 1,
+            "width": 512,
+            "height": 512,
+            "seconds": null,
+            "loopCandidate": false
+          }
+        ],
+        "acceptance": {
+          "case": "image",
+          "kind": "candidate",
+          "approval": {
+            "path": "inputs/budget-shared-v1.json",
+            "sha256": "5b9dc685a455a53bb1e0128f472be493abbb69b67ab242d7b44238f73a5828a6"
+          }
+        }
+      },
+      "runtimeBuild": {
+        "cliSha256": "b841b9de90591ad77c51dd92a63a7fe02708c19ec5cdf20c76ad2c8b9f14c467",
+        "resourceCatalogSha256": "a6b07c2114767494f7ad383344c87f0cb49c92a209a2e98bba4eaeaca5dd13b2",
+        "assemblies": {
+          "Action.Application.dll": "f43724b5d6d39978b48b5587a446375f0f7b9ee3f0a5ba77d0c34ff967ae475e",
+          "Action.Domain.dll": "cdf5ef81f12af4dc2bcc6cfd7fd9721ff388d250f90ff161b714e6f6596b0232",
+          "Action.Infrastructure.dll": "d59d36975ffd12800892f721bd91130f91ffd0e79609dadf96e2212419990c71",
+          "AssetProduction.dll": "e4304d3a8d86bee2149f997abcdf9af7c9ad2a46321f9fc5885d23601b4cf082",
+          "Bubo.Host.dll": "d57ca33eb6cf5066950389dff6bc899cad8d1010c054379ce3e97bd7ed5f6120",
+          "Media.Application.dll": "a836f92217ef7b54336468cb7c9166b3c7a06e344ea6a35860c2b592c7f838d3",
+          "Media.Domain.dll": "810107eda3d3377f75543676fe13542a8903c5f4330c5eb42626d7dadf3c9c8b",
+          "Media.Infrastructure.dll": "dcbbc5877d7837c87b9c5c429f6588e4c06ceca0ac75b644dc9e62d81345232c",
+          "Motion.Application.dll": "c32b3d3635a51bb753746812dc802920589b4c2d64ce9bf608ed869d4d2171f1",
+          "Motion.Domain.dll": "538204a6a529c73eecc7a4d8e66b1339a65f16bb605d6bc6a2bf0bed806534a7",
+          "Motion.Infrastructure.dll": "0a713e44929ac8b3d29b6bc35416be54b5703d860f50edc0f1b60d4b54b03bc6",
+          "ProofToModel.Application.dll": "fb6ca256bf3530438cb74cac911c08ce714243fd9f85e65b7f2848079e8674ff",
+          "ProofToModel.Domain.dll": "3755e9f3129fd14f924e509c69fc9284c510e7d45d258770f03e0c77f76cef4a",
+          "ProofToModel.Infrastructure.dll": "2af17dd64229904f085f94fa8f36a941b306a292bff4194662d63fe0026d3efc",
+          "bubo.dll": "b841b9de90591ad77c51dd92a63a7fe02708c19ec5cdf20c76ad2c8b9f14c467"
+        },
+        "launch": {
+          "bubo.deps.json": "5554a90aade976497162753d9fcfb72ae766c6073fedbb4314d7f071eadb5b40",
+          "bubo.runtimeconfig.json": "c230a317a54dd960bcbeb5f347f52e18dc665a26f7efda2159fced9a5ac7e097",
+          "bubo.exe": "afd015d176e0e171f6e820fa65f579d01ab1d3309737c83c7f16d102173cbbdf"
+        }
+      },
+      "backendCatalogSha256": "0b024993cad8689da83041d81fc6c884cd5548f40787aa75802954a818373390",
+      "environmentSha256": "0c63b764c7e5991e2aa2fe706af2026ee663fde5b4e5ad0abd6eea7488760cb7",
+      "workerSha256": "687a6a5e13e9c11e0af7da1a576ff2cfa367e4a0bfe446281c66126406c4c9f2",
+      "workerSourceSha256": "5ef74a9441036be2d3f818e633e339d59effa6871badcf44db5110162dafcd4b",
+      "resourceCatalogSha256": "a6b07c2114767494f7ad383344c87f0cb49c92a209a2e98bba4eaeaca5dd13b2",
+      "hostContextSha256": "9243c1e7198c1f577c248902bd3ae1f1320a0371aaa2606c3e0e291f75b430f9",
+      "rightsSha256": "69e0fa97150e75002356074c8d7e4db7cb39fceef5a9cb0a0daace46a8199a6e",
+      "mediaPolicySha256": "8155d4089bbeb689a2ff60e503678fe8af4e077dab88afcb94f090079a762305",
+      "imageStyleSha256": "383444a3b1addcf76f2d8c5a319453723d50addfca19aacb99238bff00f17d64",
+      "actualSettings": {
+        "device": "cuda:0",
+        "deviceName": "NVIDIA GeForce RTX 5080 Laptop GPU",
+        "precision": "q8_0",
+        "offload": "text-encoder-cpu",
+        "componentPrecisions": [
+          "diffusion-weight-storage:q8_0",
+          "other-component-storage:catalogued; compute precision not individually exposed"
+        ],
+        "modelVersion": "Flux",
+        "linkedLibraryCommit": "77b72a2"
+      },
+      "timing": {
+        "loadingSeconds": 10.5535521,
+        "unloadingSeconds": 0.9395442,
+        "perOutputInferenceSeconds": [
+          23.0073666
+        ]
+      },
+      "modelLoads": 1,
+      "unloaded": true,
+      "measurement": {
+        "width": 512,
+        "height": 512,
+        "sampleRate": null,
+        "channels": null,
+        "frames": null,
+        "peak": null,
+        "rms": null,
+        "clippedFraction": null,
+        "silentFraction": null
+      },
+      "actualSampling": {
+        "seed": 104729,
+        "steps": 4,
+        "guidance": 1,
+        "scheduler": "flux",
+        "nativeMetadata": {
+          "path": "staging/image-candidate/native/000.info.json",
+          "sha256": "ed8e1381b0c2519cc3c584ef518f152a710d616f17faa0f78efd73e389bb9aa9"
+        }
+      },
+      "review": "rejected-for-revision",
+      "promotion": false
+    },
+    {
+      "requestId": "image-revision",
+      "case": "image",
+      "kind": "revision",
+      "file": "image-revision.png",
+      "bytes": 235646,
+      "sha256": "c14a3cf6872073ce8f933b619f2553dee3b2fecf4255b759e217e9655ce55c92",
+      "originalManifestSha256": "b0eae23d2f9501f0ea96b2aad37ee9841059dd307a2e6b542864c095621b4670",
+      "originalClaimSha256": "bfb737a128248ffd4535994790fa650103d8ae10eaae2ac7daea8cdaacf330bd",
+      "request": {
+        "schemaVersion": "bubo-media-request/v1",
+        "requestId": "image-revision",
+        "backend": "flux-schnell",
+        "task": "bubo-media-image-sfx",
+        "outputDirectory": "staging",
+        "rights": {
+          "path": "inputs/rights.json",
+          "sha256": "69e0fa97150e75002356074c8d7e4db7cb39fceef5a9cb0a0daace46a8199a6e"
+        },
+        "installation": {
+          "path": "installations/flux-schnell-v3.json",
+          "sha256": "2ea63d02534a6328d45111e49f60b02a0768001624e82cc14697e9a130334e3d"
+        },
+        "settings": {
+          "device": "cuda:0",
+          "precision": "q8_0",
+          "offload": "text-encoder-cpu"
+        },
+        "budget": {
+          "maximumOutputs": 1,
+          "maximumBytesPerOutput": 8388608,
+          "maximumTotalBytes": 8388608,
+          "maximumPixels": 262144,
+          "maximumAudioSeconds": 47
+        },
+        "items": [
+          {
+            "id": "clockwork-owl",
+            "prompt": "Three-quarter right-facing view of one small brass mechanical toy owl, its left shoulder and left side visibly nearer the viewer, asymmetric perspective. Blue enamel armor plates, visible tiny brass gears at the wing hinges, separate folded wings and two distinct feet. Smooth solid blue chest panel. Cel-shaded comic drawing with clean dark outlines and simple hard-edged geometric shading. Centered on a uniform neutral warm gray background without floating accent marks. Entire body visible. Blank unmarked surfaces, no clock face, no dial, no writing, no numbers, no symbols.",
+            "negativePrompt": "",
+            "seed": 104759,
+            "steps": 4,
+            "guidance": 1,
+            "width": 512,
+            "height": 512,
+            "seconds": null,
+            "loopCandidate": false
+          }
+        ],
+        "acceptance": {
+          "case": "image",
+          "kind": "revision",
+          "approval": {
+            "path": "inputs/budget-shared-v1.json",
+            "sha256": "5b9dc685a455a53bb1e0128f472be493abbb69b67ab242d7b44238f73a5828a6"
+          }
+        }
+      },
+      "runtimeBuild": {
+        "cliSha256": "b841b9de90591ad77c51dd92a63a7fe02708c19ec5cdf20c76ad2c8b9f14c467",
+        "resourceCatalogSha256": "a6b07c2114767494f7ad383344c87f0cb49c92a209a2e98bba4eaeaca5dd13b2",
+        "assemblies": {
+          "Action.Application.dll": "f43724b5d6d39978b48b5587a446375f0f7b9ee3f0a5ba77d0c34ff967ae475e",
+          "Action.Domain.dll": "cdf5ef81f12af4dc2bcc6cfd7fd9721ff388d250f90ff161b714e6f6596b0232",
+          "Action.Infrastructure.dll": "d59d36975ffd12800892f721bd91130f91ffd0e79609dadf96e2212419990c71",
+          "AssetProduction.dll": "e4304d3a8d86bee2149f997abcdf9af7c9ad2a46321f9fc5885d23601b4cf082",
+          "Bubo.Host.dll": "d57ca33eb6cf5066950389dff6bc899cad8d1010c054379ce3e97bd7ed5f6120",
+          "Media.Application.dll": "a836f92217ef7b54336468cb7c9166b3c7a06e344ea6a35860c2b592c7f838d3",
+          "Media.Domain.dll": "810107eda3d3377f75543676fe13542a8903c5f4330c5eb42626d7dadf3c9c8b",
+          "Media.Infrastructure.dll": "dcbbc5877d7837c87b9c5c429f6588e4c06ceca0ac75b644dc9e62d81345232c",
+          "Motion.Application.dll": "c32b3d3635a51bb753746812dc802920589b4c2d64ce9bf608ed869d4d2171f1",
+          "Motion.Domain.dll": "538204a6a529c73eecc7a4d8e66b1339a65f16bb605d6bc6a2bf0bed806534a7",
+          "Motion.Infrastructure.dll": "0a713e44929ac8b3d29b6bc35416be54b5703d860f50edc0f1b60d4b54b03bc6",
+          "ProofToModel.Application.dll": "fb6ca256bf3530438cb74cac911c08ce714243fd9f85e65b7f2848079e8674ff",
+          "ProofToModel.Domain.dll": "3755e9f3129fd14f924e509c69fc9284c510e7d45d258770f03e0c77f76cef4a",
+          "ProofToModel.Infrastructure.dll": "2af17dd64229904f085f94fa8f36a941b306a292bff4194662d63fe0026d3efc",
+          "bubo.dll": "b841b9de90591ad77c51dd92a63a7fe02708c19ec5cdf20c76ad2c8b9f14c467"
+        },
+        "launch": {
+          "bubo.deps.json": "5554a90aade976497162753d9fcfb72ae766c6073fedbb4314d7f071eadb5b40",
+          "bubo.runtimeconfig.json": "c230a317a54dd960bcbeb5f347f52e18dc665a26f7efda2159fced9a5ac7e097",
+          "bubo.exe": "afd015d176e0e171f6e820fa65f579d01ab1d3309737c83c7f16d102173cbbdf"
+        }
+      },
+      "backendCatalogSha256": "0b024993cad8689da83041d81fc6c884cd5548f40787aa75802954a818373390",
+      "environmentSha256": "0c63b764c7e5991e2aa2fe706af2026ee663fde5b4e5ad0abd6eea7488760cb7",
+      "workerSha256": "687a6a5e13e9c11e0af7da1a576ff2cfa367e4a0bfe446281c66126406c4c9f2",
+      "workerSourceSha256": "5ef74a9441036be2d3f818e633e339d59effa6871badcf44db5110162dafcd4b",
+      "resourceCatalogSha256": "a6b07c2114767494f7ad383344c87f0cb49c92a209a2e98bba4eaeaca5dd13b2",
+      "hostContextSha256": "a17c32aa3f2d5ce30b74fc6b1b35f8da2dbe6777d7ec4575e5c5243fb66e2007",
+      "rightsSha256": "69e0fa97150e75002356074c8d7e4db7cb39fceef5a9cb0a0daace46a8199a6e",
+      "mediaPolicySha256": "8155d4089bbeb689a2ff60e503678fe8af4e077dab88afcb94f090079a762305",
+      "imageStyleSha256": "383444a3b1addcf76f2d8c5a319453723d50addfca19aacb99238bff00f17d64",
+      "actualSettings": {
+        "device": "cuda:0",
+        "deviceName": "NVIDIA GeForce RTX 5080 Laptop GPU",
+        "precision": "q8_0",
+        "offload": "text-encoder-cpu",
+        "componentPrecisions": [
+          "diffusion-weight-storage:q8_0",
+          "other-component-storage:catalogued; compute precision not individually exposed"
+        ],
+        "modelVersion": "Flux",
+        "linkedLibraryCommit": "77b72a2"
+      },
+      "timing": {
+        "loadingSeconds": 10.1317606,
+        "unloadingSeconds": 0.8103373,
+        "perOutputInferenceSeconds": [
+          20.6439692
+        ]
+      },
+      "modelLoads": 1,
+      "unloaded": true,
+      "measurement": {
+        "width": 512,
+        "height": 512,
+        "sampleRate": null,
+        "channels": null,
+        "frames": null,
+        "peak": null,
+        "rms": null,
+        "clippedFraction": null,
+        "silentFraction": null
+      },
+      "actualSampling": {
+        "seed": 104759,
+        "steps": 4,
+        "guidance": 1,
+        "scheduler": "flux",
+        "nativeMetadata": {
+          "path": "staging/image-revision/native/000.info.json",
+          "sha256": "df406b41557d4441eaee5333e5b004b9183f74322ea5ebb2160e0bec86f7fee2"
+        }
+      },
+      "review": "accepted-for-backend-QA-with-documented-misses",
+      "promotion": false
+    },
+    {
+      "requestId": "sfx-candidate",
+      "case": "sfx",
+      "kind": "candidate",
+      "file": "sfx-candidate.wav",
+      "bytes": 1411288,
+      "sha256": "156cc78394c504c4b5e365b2a0bb1a789e4628998c85aa94a72259e1f12945ca",
+      "originalManifestSha256": "09e62509e1bfd22514f11dda1890420b6df2c334c510c262b29cb88f9a44a5bf",
+      "originalClaimSha256": "67b209c206a6ed5e9e7b53263d637e63bd5f0b71c88b8ec4e4e414e14cb6a8ba",
+      "request": {
+        "schemaVersion": "bubo-media-request/v1",
+        "requestId": "sfx-candidate",
+        "backend": "stable-audio-open",
+        "task": "bubo-media-image-sfx",
+        "outputDirectory": "staging",
+        "rights": {
+          "path": "inputs/rights.json",
+          "sha256": "69e0fa97150e75002356074c8d7e4db7cb39fceef5a9cb0a0daace46a8199a6e"
+        },
+        "installation": {
+          "path": "installations/stable-audio-open-v3.json",
+          "sha256": "4908e695786c106464599fab5dc2d542b27ca6ea1dacafb8990b38d8b975de05"
+        },
+        "settings": {
+          "device": "cuda:0",
+          "precision": "float16",
+          "offload": "none"
+        },
+        "budget": {
+          "maximumOutputs": 1,
+          "maximumBytesPerOutput": 8388608,
+          "maximumTotalBytes": 8388608,
+          "maximumPixels": 262144,
+          "maximumAudioSeconds": 47
+        },
+        "items": [
+          {
+            "id": "mechanical-latch",
+            "prompt": "Single mechanical latch clicking closed, a brief metallic clunk and short spring rattle, isolated, no speech or music",
+            "negativePrompt": "speech, singing, music",
+            "seed": 130363,
+            "steps": 100,
+            "guidance": 3.5,
+            "width": null,
+            "height": null,
+            "seconds": 4.0,
+            "loopCandidate": false
+          }
+        ],
+        "acceptance": {
+          "case": "sfx",
+          "kind": "candidate",
+          "approval": {
+            "path": "inputs/budget-shared-v1.json",
+            "sha256": "5b9dc685a455a53bb1e0128f472be493abbb69b67ab242d7b44238f73a5828a6"
+          }
+        }
+      },
+      "runtimeBuild": {
+        "cliSha256": "b841b9de90591ad77c51dd92a63a7fe02708c19ec5cdf20c76ad2c8b9f14c467",
+        "resourceCatalogSha256": "a6b07c2114767494f7ad383344c87f0cb49c92a209a2e98bba4eaeaca5dd13b2",
+        "assemblies": {
+          "Action.Application.dll": "f43724b5d6d39978b48b5587a446375f0f7b9ee3f0a5ba77d0c34ff967ae475e",
+          "Action.Domain.dll": "cdf5ef81f12af4dc2bcc6cfd7fd9721ff388d250f90ff161b714e6f6596b0232",
+          "Action.Infrastructure.dll": "d59d36975ffd12800892f721bd91130f91ffd0e79609dadf96e2212419990c71",
+          "AssetProduction.dll": "e4304d3a8d86bee2149f997abcdf9af7c9ad2a46321f9fc5885d23601b4cf082",
+          "Bubo.Host.dll": "d57ca33eb6cf5066950389dff6bc899cad8d1010c054379ce3e97bd7ed5f6120",
+          "Media.Application.dll": "a836f92217ef7b54336468cb7c9166b3c7a06e344ea6a35860c2b592c7f838d3",
+          "Media.Domain.dll": "810107eda3d3377f75543676fe13542a8903c5f4330c5eb42626d7dadf3c9c8b",
+          "Media.Infrastructure.dll": "dcbbc5877d7837c87b9c5c429f6588e4c06ceca0ac75b644dc9e62d81345232c",
+          "Motion.Application.dll": "c32b3d3635a51bb753746812dc802920589b4c2d64ce9bf608ed869d4d2171f1",
+          "Motion.Domain.dll": "538204a6a529c73eecc7a4d8e66b1339a65f16bb605d6bc6a2bf0bed806534a7",
+          "Motion.Infrastructure.dll": "0a713e44929ac8b3d29b6bc35416be54b5703d860f50edc0f1b60d4b54b03bc6",
+          "ProofToModel.Application.dll": "fb6ca256bf3530438cb74cac911c08ce714243fd9f85e65b7f2848079e8674ff",
+          "ProofToModel.Domain.dll": "3755e9f3129fd14f924e509c69fc9284c510e7d45d258770f03e0c77f76cef4a",
+          "ProofToModel.Infrastructure.dll": "2af17dd64229904f085f94fa8f36a941b306a292bff4194662d63fe0026d3efc",
+          "bubo.dll": "b841b9de90591ad77c51dd92a63a7fe02708c19ec5cdf20c76ad2c8b9f14c467"
+        },
+        "launch": {
+          "bubo.deps.json": "5554a90aade976497162753d9fcfb72ae766c6073fedbb4314d7f071eadb5b40",
+          "bubo.runtimeconfig.json": "c230a317a54dd960bcbeb5f347f52e18dc665a26f7efda2159fced9a5ac7e097",
+          "bubo.exe": "afd015d176e0e171f6e820fa65f579d01ab1d3309737c83c7f16d102173cbbdf"
+        }
+      },
+      "backendCatalogSha256": "0b024993cad8689da83041d81fc6c884cd5548f40787aa75802954a818373390",
+      "environmentSha256": "4133a5ba2b3cbc418ff33a7b1f675c4d4340b56a5cd2a20a366c32bdb39f181c",
+      "workerSha256": "e08cf8248942d666f9d705cc39527bb593ea5eca4d244b238796f2aa7287833b",
+      "workerSourceSha256": "e08cf8248942d666f9d705cc39527bb593ea5eca4d244b238796f2aa7287833b",
+      "resourceCatalogSha256": "a6b07c2114767494f7ad383344c87f0cb49c92a209a2e98bba4eaeaca5dd13b2",
+      "hostContextSha256": "d4af6c9923672f91a18c2137be9a1b61f49fcc674ca1c326c78165b082138abc",
+      "rightsSha256": "69e0fa97150e75002356074c8d7e4db7cb39fceef5a9cb0a0daace46a8199a6e",
+      "mediaPolicySha256": "8155d4089bbeb689a2ff60e503678fe8af4e077dab88afcb94f090079a762305",
+      "imageStyleSha256": null,
+      "actualSettings": {
+        "device": "cuda:0",
+        "deviceName": "NVIDIA GeForce RTX 5080 Laptop GPU",
+        "precision": "float16",
+        "offload": "none",
+        "componentPrecisions": [
+          "projection_model:float16",
+          "text_encoder:float16",
+          "transformer:float16",
+          "vae:float16"
+        ],
+        "modelVersion": null,
+        "linkedLibraryCommit": null
+      },
+      "timing": {
+        "loadingSeconds": 2.799271799973212,
+        "unloadingSeconds": 0.2099943000357598,
+        "perOutputInferenceSeconds": [
+          26.523524799966253
+        ]
+      },
+      "modelLoads": 1,
+      "unloaded": true,
+      "measurement": {
+        "width": null,
+        "height": null,
+        "sampleRate": 44100,
+        "channels": 2,
+        "frames": 176400,
+        "peak": 0.9345703125,
+        "rms": 0.02183285782705974,
+        "clippedFraction": 0,
+        "silentFraction": 0.0828202947845805
+      },
+      "actualSampling": {
+        "seed": 130363,
+        "steps": 100,
+        "guidance": 3.5,
+        "scheduler": "CosineDPMSolverMultistepScheduler",
+        "nativeMetadata": null
+      },
+      "review": "accepted-for-backend-QA",
+      "promotion": false
+    }
+  ],
+  "budget": {
+    "image": {
+      "candidateConsumed": true,
+      "revisionConsumed": true,
+      "remainingGenerations": 0
+    },
+    "sfx": {
+      "candidateConsumed": true,
+      "revisionConsumed": false,
+      "remainingRevisions": 1
+    },
+    "otherFourCases": "unconsumed"
+  },
+  "imageReview": {
+    "primary": "usable coherent owl; direction and eye dial/glyphs miss prompt",
+    "independent": "usable backend QA output with partial adherence; far wing occluded; no obvious malformed anatomy or pixels",
+    "human": "accepted-for-backend-QA-with-documented-misses"
+  },
+  "sfxReview": {
+    "independentMeasurement": "4seconds44100Hz stereo float, peak0.9345703125,RMS0.0218328578,zero clipping,finite samples",
+    "humanListening": "accepted-for-backend-QA",
+    "loop": "not-requested"
+  },
+  "promotion": false,
+  "userQaReview": {
+    "file": "user-qa-review.json",
+    "sha256": "9bd66446caa5bc58f30fa7f14c3a5be49aa479f441a4b911690303814afbb0cd"
+  }
+}
