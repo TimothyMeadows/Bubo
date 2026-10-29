@@ -57,7 +57,9 @@ denied(lambda:provision.extract_source(source_zip,install/'bad-source','pin/'),'
 with zipfile.ZipFile(source_zip,'w') as output:
     linked=zipfile.ZipInfo('pin/engine.py');linked.external_attr=0xA000<<16;output.writestr(linked,b'../outside')
 denied(lambda:provision.extract_source(source_zip,install/'linked-source','pin/'),'source ZIP symbolic link rejected')
-with zipfile.ZipFile(source_zip,'w') as output:output.writestr('pin/alias\\engine.py',b'# alias')
+with zipfile.ZipFile(source_zip,'w') as output:
+    aliased=zipfile.ZipInfo('pin/placeholder');aliased.filename='pin/alias\\engine.py';output.writestr(aliased,b'# alias')
+with zipfile.ZipFile(source_zip) as archive_check:check('\\' in archive_check.infolist()[0].orig_filename,'adversarial ZIP fixture actually retains its backslash on Windows')
 denied(lambda:provision.extract_source(source_zip,install/'aliased-source','pin/'),'source ZIP backslash alias rejected')
 
 link=install/'linked'

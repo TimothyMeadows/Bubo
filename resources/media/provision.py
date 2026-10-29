@@ -127,6 +127,7 @@ def extract_source(archive,destination,prefix):
     destination=owned(destination);destination.mkdir(parents=True,exist_ok=False);names=set();total=0
     with zipfile.ZipFile(owned(archive)) as source:
         for entry in source.infolist():
+            require('\\' not in entry.orig_filename,'Backslash source ZIP name rejected before platform normalization')
             require(entry.filename.startswith(prefix),'Unexpected source ZIP root');relative=entry.filename[len(prefix):]
             if not relative or entry.is_dir():continue
             require('\\' not in relative and all(x not in ('','.','..') for x in relative.split('/')) and ((entry.external_attr>>16)&0xF000)!=0xA000,'Unsafe source ZIP entry')

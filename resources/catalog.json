@@ -20,7 +20,7 @@
     "resources/media/notices/CUTLASS-LICENSE.txt": "6b9e8b964c2a90f7743107a23bccec9ebc6f5a47d4a8fa3d986aa6f51f86da68",
     "resources/media/notices/ggml-LICENSE.txt": "bcd8ec749126d45cb06737d0690295d73df4b6e7e194205bcf91190368f27285",
     "resources/media/notices/stable-diffusion.cpp-LICENSE.txt": "4e76049398df734a97db46f3bd4b5cbc460cb5f6bfaf737cdc3d6fbb8ab3de27",
-    "resources/media/provision.py": "5441df5ad73e8602e6933850ad4f367e7ff3d7a5c850658dcbb71df2596c15f2",
+    "resources/media/provision.py": "d01d93ce1e87f20ecb23e4ee9dbd472f7c20911761e317c9d710df74c987e9fe",
     "resources/media/sfx/worker.py": "e08cf8248942d666f9d705cc39527bb593ea5eca4d244b238796f2aa7287833b",
     "resources/model-to-action/action-package.schema.json": "670624e7583c2a0deed578fabc618a84da6cc242f67ab871eafca0aa6442c2f5",
     "resources/model-to-action/action-recipe.schema.json": "dd204fc7fe35d139003652122aaea01fab9ac305a09fab839a5e667a1207602e",
