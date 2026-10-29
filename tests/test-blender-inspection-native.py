@@ -18,6 +18,11 @@ def main():
     before=sha(scene)
     job=project/'job.json'; job.write_text(json.dumps({'schemaVersion':1,'scene':'inputs/collections.blend','profile':'static-asset','output':'.art-staging/report.json'})+'\n',encoding='utf-8')
     context=host_fixture.context(project,'inspection',['--source','inputs/collections.blend'])
+    inspection_context=json.loads(context.read_text(encoding='utf-8'))
+    inspection_context['policy']={'purpose':'read-only-blender-inspection','receipt':{'path':host_fixture.POLICY,'sha256':sha(project/host_fixture.POLICY)}}
+    inspection_context['permissions']={'provisioning':False,'promotion':False}
+    context.write_text(json.dumps(inspection_context,indent=2)+'\n',encoding='utf-8')
+    assert not (project/'STYLE.md').exists() and not (project/'ENGINE.md').exists()
     result=subprocess.run(['dotnet',str(CLI),'blender-inspection','inspect','--api-version','1','--root',str(project),'--host-context',str(context),'--manifest','job.json','--blender',BLENDER],capture_output=True,timeout=120)
     (project/'result.json').write_bytes(result.stdout); (project/'inspection.log').write_bytes(result.stderr)
     assert result.returncode==0,result.stderr.decode(errors='replace')

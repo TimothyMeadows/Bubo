@@ -31,6 +31,7 @@ public sealed class HostExecutionContext
     public string ContextSha256 { get; }
     public string StateRoot { get; }
     public string StagingRoot { get; }
+    public bool InspectionOnly { get; }
     public string Pipeline { get; }
     public string StyleSha256 { get; }
     public string? MediaPath { get; }
@@ -82,6 +83,20 @@ public sealed class HostExecutionContext
         readRoots = [.. writeRoots, .. inputRoots];
 
         var policy = Object(value, "policy");
+        InspectionOnly = policy["purpose"]?.GetValue<string>() == "read-only-blender-inspection";
+        if (policy.ContainsKey("purpose") && !InspectionOnly)
+            throw Invalid("Unknown host policy purpose");
+        if (InspectionOnly)
+        {
+            if (new[] { "pipeline", "styleSha256", "engine", "libraries", "media" }.Any(policy.ContainsKey))
+                throw Invalid("Inspection policy must not assert art or engine selections");
+            Pipeline = "";
+            StyleSha256 = "";
+            engine = new JsonObject();
+            libraries = new JsonArray();
+        }
+        else
+        {
         Pipeline = Text(policy, "pipeline");
         if (Pipeline is not ("CLOUD" or "LOCAL" or "PROOF_TO_MODEL" or "CODE" or "BLENDER"))
             throw Invalid("Unknown host pipeline selection");
@@ -105,6 +120,7 @@ public sealed class HostExecutionContext
             ? libraryValue?.DeepClone() as JsonArray ?? throw Invalid("policy.libraries must be an array")
             : [];
         ValidateLibraries(libraries);
+        }
 
         references = new Dictionary<string, HostFileReference>(comparer);
         foreach (var entry in Array(value, "references", true))
@@ -133,6 +149,14 @@ public sealed class HostExecutionContext
         References = new ReadOnlyCollection<HostFileReference>(references.Values.ToArray());
         Tools = new ReadOnlyCollection<HostFileReference>(tools.Values.ToArray());
 
+        if (InspectionOnly)
+        {
+            var receipt = Object(policy, "receipt");
+            var receiptPath = ProjectRelative(Root, Text(receipt, "path"));
+            if (!references.TryGetValue(receiptPath, out var reference) || reference.Kind != "policy" || reference.Sha256 != HashText(receipt, "sha256"))
+                throw Invalid("Inspection policy receipt must match a registered policy reference");
+        }
+
         if (policy.TryGetPropertyValue("media", out var mediaValue))
         {
             var media = mediaValue as JsonObject ?? throw Invalid("policy.media must be an object");
@@ -155,6 +179,8 @@ public sealed class HostExecutionContext
             : new JsonObject();
         AllowProvisioning = Boolean(permissions, "provisioning");
         AllowPromotion = Boolean(permissions, "promotion");
+        if (InspectionOnly && (AllowProvisioning || AllowPromotion))
+            throw Invalid("Read-only inspection cannot authorize provisioning or promotion");
 
         ValidateFresh();
         foreach (var tool in tools.Values)
