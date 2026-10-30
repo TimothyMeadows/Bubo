@@ -23,7 +23,7 @@ static class AdapterFixtures
             {
                 var item=request.Items[i];File.WriteAllBytes(Path.Combine(native,$"{i:000}.rgb"),new byte[64*64*3]);
                 File.WriteAllText(Path.Combine(native,$"{i:000}.info.json"),JsonSerializer.Serialize(new {schema="sdcpp.generation/v1",kind="image",prompt=item.Prompt,negative_prompt="",width=64,height=64,seed=item.Seed.ToString(System.Globalization.CultureInfo.InvariantCulture),sample_params=new{sample_steps=item.Steps,guidance=new{txt_cfg=item.Guidance},sample_method="euler",scheduler="simple"}}));
-                Text(writer,item.Id);Text(writer,$"{i:000}.rgb");Text(writer,$"{i:000}.info.json");Text(writer,"simple");writer.Write(.1);writer.Write(64u);writer.Write(64u);writer.Write(3u);writer.Write(item.Seed);writer.Write((uint)item.Steps);
+                Text(writer,item.Id);Text(writer,$"{i:000}.rgb");Text(writer,$"{i:000}.info.json");Text(writer,"simple");writer.Write(.1);writer.Write(64u);writer.Write(64u);writer.Write(3u);writer.Write(item.Seed);writer.Write((uint)item.Steps!.Value);
             }
         }
         var result=new FixedMediaWorker(workspace,new NoNative()).ReadImage(request,installation,response,native,output,false);

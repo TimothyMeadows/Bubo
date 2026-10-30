@@ -1,0 +1,207 @@
+{
+  "schemaVersion": "opencaw-wheel-notice-research/v1",
+  "artifacts": [
+    {
+      "platform": "windows",
+      "wheel": {
+        "filename": "av-19.0.2-cp312-abi3-win_amd64.whl",
+        "url": "https://files.pythonhosted.org/packages/32/5a/743a83666ded197df8b9957e2800bef9a39d52b23be2ca211bbd14b5fb22/av-19.0.2-cp312-abi3-win_amd64.whl",
+        "sha256": "3ce5a1d7b916d13c16ac58f1756f0fee4af2d53f02bc1403e18550b50d375a22",
+        "size": 28150949
+      },
+      "wheelHashSource": "Primary PyPI release digest; full wheel payload not fetched/rehashed in this metadata pass",
+      "wheelMemberCount": 262,
+      "sharedLibraries": [
+        "av.libs/avcodec-63-2756d4fffb772585dcdece87427716a4.dll",
+        "av.libs/avdevice-63-2b26d22512639c049532c0bc6f6c022f.dll",
+        "av.libs/avfilter-12-87c7677b784d3ea4ecceb3e6cae9c9f1.dll",
+        "av.libs/avformat-63-e8c4f8fc30664f2b7e85dcc683bd4b0d.dll",
+        "av.libs/avutil-61-e540ec7976bbd26a4a94dc737be3001c.dll",
+        "av.libs/libdav1d-5469d6ef7baf7426269a9483c24587b7.dll",
+        "av.libs/libgcc_s_seh-1-3e3b83c1f8de213bb810010a5622b180.dll",
+        "av.libs/libiconv-2-5e7e51fe6a6e182df6c9f30f41700345.dll",
+        "av.libs/libopus-0-278e2dd25a2793d306204c9d966fe0de.dll",
+        "av.libs/libsharpyuv-90c3f670f207c806d3e44db799e78832.dll",
+        "av.libs/libstdc++-6-7ad22040206bf70776b13a24ec3f87b2.dll",
+        "av.libs/libSvtAv1Enc-7a2b2046575991edd70ef501ca085458.dll",
+        "av.libs/libvmaf-e1698aa5c58a07400697833b5f19b0a3.dll",
+        "av.libs/libvpl-45cd70cb42c579529a30ad6fc282c626.dll",
+        "av.libs/libvpx-1-dd81d2b55a771749d485047772201cc1.dll",
+        "av.libs/libwebp-abac96c4759f9eb9b31588c8a839816c.dll",
+        "av.libs/libwebpmux-0b9545d83accdb1110a7efa5d1c54007.dll",
+        "av.libs/libwinpthread-1-3e9f18fdf7e856e1e9fedd138e84e874.dll",
+        "av.libs/libx264-165-0f71f37cf3f3ee0e2ecac2b06829e9ff.dll",
+        "av.libs/libx265-ee9d492f3fb55d0a3b564bb1bf4f6822.dll",
+        "av.libs/swresample-7-4f9462a1fb73b949ccad2774dd941624.dll",
+        "av.libs/swscale-10-9af0a10ad7003982e48548ff39e98465.dll",
+        "av.libs/zlib1-4d767210e087ff082d94ef0a09ddc7f8.dll"
+      ],
+      "notices": [
+        {
+          "path": "av-19.0.2.dist-info/METADATA",
+          "size": 5131,
+          "sha256": "30cf3bef7c83211e6cf7771bc23edccae6998f1484d36d23240da8b54a26b8f6"
+        },
+        {
+          "path": "av-19.0.2.dist-info/RECORD",
+          "size": 19989,
+          "sha256": "8fcb2ed5dd38cd12ff15bdde005ac5949867240e6abb49afbc21b73e6e5ac6e3"
+        },
+        {
+          "path": "av-19.0.2.dist-info/WHEEL",
+          "size": 100,
+          "sha256": "bcc51bef8f854a71d790322eb3547f7ee74855404df09888aa9251d22c7aea59"
+        },
+        {
+          "path": "av-19.0.2.dist-info/licenses/AUTHORS.py",
+          "size": 5863,
+          "sha256": "a69d8ff2559cf3da0e390c7d9f5f648d9db0333a00f9d4989a330a7180cca910"
+        },
+        {
+          "path": "av-19.0.2.dist-info/licenses/AUTHORS.rst",
+          "size": 6472,
+          "sha256": "2abfebe175cefe78fcb14db260a3c8972d3b52156f50dedd0bc416ac4f884a96"
+        },
+        {
+          "path": "av-19.0.2.dist-info/licenses/LICENSE.txt",
+          "size": 1528,
+          "sha256": "f32ebcb6007dcc05eea369b3820e6391b0a7ef1ed763f30f1aca15dfdbacbe96"
+        }
+      ],
+      "httpRangeRequests": 21,
+      "rangeBytesRead": 37209,
+      "fullWheelDownloaded": false,
+      "softwareInstalled": false
+    },
+    {
+      "platform": "linux",
+      "wheel": {
+        "filename": "av-19.0.2-cp312-abi3-manylinux_2_28_x86_64.whl",
+        "url": "https://files.pythonhosted.org/packages/e1/7f/9f1237feb894afa472ef834aa1fbfe4d6398f28dc7e86a1b418650204c36/av-19.0.2-cp312-abi3-manylinux_2_28_x86_64.whl",
+        "sha256": "9c1da7aad0fa6c13b4a5c1e7985be0d13f8526a96284573acaf3d55ead6d3fe8",
+        "size": 34990159
+      },
+      "wheelHashSource": "Primary PyPI release digest; full wheel payload not fetched/rehashed in this metadata pass",
+      "wheelMemberCount": 271,
+      "sharedLibraries": [
+        "av/_core.abi3.so",
+        "av/_cyutil.abi3.so",
+        "av/bitstream.abi3.so",
+        "av/buffer.abi3.so",
+        "av/device.abi3.so",
+        "av/dictionary.abi3.so",
+        "av/error.abi3.so",
+        "av/format.abi3.so",
+        "av/frame.abi3.so",
+        "av/index.abi3.so",
+        "av/logging.abi3.so",
+        "av/opaque.abi3.so",
+        "av/packet.abi3.so",
+        "av/plane.abi3.so",
+        "av/rational.abi3.so",
+        "av/stream.abi3.so",
+        "av/utils.abi3.so",
+        "av/audio/codeccontext.abi3.so",
+        "av/audio/fifo.abi3.so",
+        "av/audio/format.abi3.so",
+        "av/audio/frame.abi3.so",
+        "av/audio/layout.abi3.so",
+        "av/audio/plane.abi3.so",
+        "av/audio/resampler.abi3.so",
+        "av/audio/stream.abi3.so",
+        "av/codec/codec.abi3.so",
+        "av/codec/context.abi3.so",
+        "av/codec/hwaccel.abi3.so",
+        "av/container/core.abi3.so",
+        "av/container/input.abi3.so",
+        "av/container/output.abi3.so",
+        "av/container/pyio.abi3.so",
+        "av/container/streams.abi3.so",
+        "av/filter/context.abi3.so",
+        "av/filter/filter.abi3.so",
+        "av/filter/graph.abi3.so",
+        "av/filter/link.abi3.so",
+        "av/filter/loudnorm.abi3.so",
+        "av/sidedata/encparams.abi3.so",
+        "av/sidedata/motionvectors.abi3.so",
+        "av/sidedata/sidedata.abi3.so",
+        "av/subtitles/codeccontext.abi3.so",
+        "av/subtitles/stream.abi3.so",
+        "av/subtitles/subtitle.abi3.so",
+        "av/video/codeccontext.abi3.so",
+        "av/video/format.abi3.so",
+        "av/video/frame.abi3.so",
+        "av/video/plane.abi3.so",
+        "av/video/reformatter.abi3.so",
+        "av/video/stream.abi3.so",
+        "av.libs/libSvtAv1Enc-cc8e453e.so.4.2.0",
+        "av.libs/libXau-154567c4.so.6.0.0",
+        "av.libs/libasound-c7818c60.so.2.0.0",
+        "av.libs/libavcodec-d61378e8.so.63.1.102",
+        "av.libs/libavdevice-c9c4901c.so.63.1.102",
+        "av.libs/libavfilter-6a4661f8.so.12.1.102",
+        "av.libs/libavformat-7f5186bf.so.63.1.102",
+        "av.libs/libavutil-8f0ab4ee.so.61.1.102",
+        "av.libs/libdav1d-0fe430b9.so.7.0.0",
+        "av.libs/libdrm-b0291a67.so.2.4.0",
+        "av.libs/libgmp-8c6c054f.so.10.5.0",
+        "av.libs/libgnutls-e2125fb5.so.30.42.0",
+        "av.libs/libhogweed-e2118ea2.so.7.0",
+        "av.libs/libnettle-6eb03162.so.9.0",
+        "av.libs/libopus-114e2b1a.so.0.11.1",
+        "av.libs/libsharpyuv-48a062bd.so.0.1.2",
+        "av.libs/libswresample-d0a74e06.so.7.1.102",
+        "av.libs/libswscale-cd7831fd.so.10.1.102",
+        "av.libs/libunistring-09f6121d.so.5.2.1",
+        "av.libs/libvmaf-258f7447.so.3.2.0",
+        "av.libs/libvpl-e4e9cae8.so.2.16",
+        "av.libs/libvpx-e67815b1.so.12.1.0",
+        "av.libs/libwebp-0c5118d0.so.7.2.0",
+        "av.libs/libwebpmux-e1880640.so.3.1.2",
+        "av.libs/libx264-d6533a8d.so.165",
+        "av.libs/libx265-eebb7db1.so.217",
+        "av.libs/libxcb-5ddf6756.so.1.1.0",
+        "av.libs/libxcb-shape-7716c890.so.0.0.0",
+        "av.libs/libxcb-shm-0be6dfbf.so.0.0.0",
+        "av.libs/libxcb-xfixes-6de855b8.so.0.0.0"
+      ],
+      "notices": [
+        {
+          "path": "av-19.0.2.dist-info/METADATA",
+          "size": 4993,
+          "sha256": "2885b8f6756f2654c61ec51b9acd17c6d7db54c37a47cb54b025353dde3ff302"
+        },
+        {
+          "path": "av-19.0.2.dist-info/WHEEL",
+          "size": 112,
+          "sha256": "d0f44c42ff3d4648f9dc5701848e8ec2736232a597900d4a500804f8e5658ac5"
+        },
+        {
+          "path": "av-19.0.2.dist-info/RECORD",
+          "size": 20740,
+          "sha256": "be498ba173d166ff091957d1c98ae2668ce3a640292195e8e4e4670284f49467"
+        },
+        {
+          "path": "av-19.0.2.dist-info/licenses/AUTHORS.py",
+          "size": 5679,
+          "sha256": "0135d9b1e183663cf7179736b93524cc38fe7080f1383b1ce93614e6f244e18d"
+        },
+        {
+          "path": "av-19.0.2.dist-info/licenses/AUTHORS.rst",
+          "size": 6336,
+          "sha256": "15b3aeba291c0b560950a58fa3206e42009eb0409c1bc1ac91f8df49bb505977"
+        },
+        {
+          "path": "av-19.0.2.dist-info/licenses/LICENSE.txt",
+          "size": 1505,
+          "sha256": "76af0461ffb92e19f1c14449e95557d83a2dfaa1baf202d49e5f1d8746c0da19"
+        }
+      ],
+      "httpRangeRequests": 21,
+      "rangeBytesRead": 37709,
+      "fullWheelDownloaded": false,
+      "softwareInstalled": false
+    }
+  ],
+  "limitations": "Read exact ZIP central-directory and license/metadata members over HTTP206. Full artifact SHA256 will still require verification when provisioned. No shared library payloads or private audio read."
+}

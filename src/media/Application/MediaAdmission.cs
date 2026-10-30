@@ -37,6 +37,7 @@ public sealed class MediaAdmission(IWorkspace workspace)
         if (rights.SchemaVersion!="bubo-media-rights/v1" || rights.Task!=context.TaskId || string.IsNullOrWhiteSpace(rights.Owner)
             || rights.Owner.Length>160 || !rights.PromptRightsConfirmed || !rights.GenerationAllowed)
             throw new InvalidOperationException("Current scoped generation and prompt-rights evidence is required");
+        _=new VoiceAdmission(workspace).Validate(request);
         if (request.Acceptance is { } acceptance)
         {
             if (!context.HasExplicitMediaStateRoot) throw new InvalidOperationException("Acceptance requires its explicitly shared six-case state root");

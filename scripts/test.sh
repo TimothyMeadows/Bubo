@@ -12,3 +12,4 @@ python3 scripts/audit-resources.py
 python3 tests/test-cli-contract.py --cli "src/Bubo.Cli/bin/$configuration/net10.0/bubo.dll"
 python3 tests/test-media-provision.py
 python3 tests/test-music-worker.py
+python3 tests/test-voice-worker.py

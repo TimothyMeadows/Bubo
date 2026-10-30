@@ -1,0 +1,5 @@
+Qwen3-TTS12Hz1.7B CustomVoice/Base source 022e286b98fbec7e1e916cb940cdf532cd9f488e and model snapshots: Apache-2.0.
+Fixed audited12Hz profile removes unused25Hz imports/registration from exactly2sourcefiles to prevent SoX import-time shell execution. Original archive and retained original files are verified alongside exact replacements; selected12Hz model/codec math and weights are unchanged.
+PyAV19.0.2 wheels contain PyAV BSD notices and bundled FFmpeg/native codec libraries, includingx264/x265. Exact wheel/producer/component-source identities and supplementary GPL/LGPL/component license texts are retained in voice/decoder; do not label the entire native bundle BSD.
+Native12Hz decoder clamps[-1,1] intrinsically; output preserves that behavior and applies no further normalization/resampling. CustomVoice supports declared presets/expressions; Base uses exact local reference/transcript and reference-bound rights/consent, no instruction fallback or ASR.
+No VoiceDesign/25Hz/UI/training/FlashAttention/hosted service dependency. Generation cannot install/download, use external reference URLs, accept licenses or promote outputs.

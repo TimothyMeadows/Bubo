@@ -41,6 +41,10 @@ void Denied(Action run, string name)
     { Check(true, name); return; }
     throw new InvalidOperationException("FAIL: accepted " + name);
 }
+if(args is ["--voice-contract-only"])
+{
+    VoiceFixtures.Run(Check);Console.WriteLine($"PASS: {count} owned CPU voice assertions; no model or private audio execution.");return 0;
+}
 var identity = new FileIdentity("inputs/receipt.json", new string('a',64));
 var item = new GenerationItem { Id="one",Prompt="An owned engineering illustration",Seed=1,Steps=4,Guidance=1,Width=512,Height=512 };
 var request = new MediaRequest
@@ -149,6 +153,7 @@ context=Load(host);File.AppendAllText(Path.Combine(root,"media.json"),"changed")
 Console.WriteLine($"PASS: {count} media request/host contract assertions; no model execution, license assertion or human acceptance.");
 ApplicationFixtures.Run(Check);
 CodecFixtures.Run(Check);
+VoiceFixtures.Run(Check);
 var gpuCount=await GpuGuardianFixtures.Run(Check);
 Console.WriteLine($"PASS: {gpuCount} actual guardian lifecycle assertions; total{count} assertions.");
 return 0;

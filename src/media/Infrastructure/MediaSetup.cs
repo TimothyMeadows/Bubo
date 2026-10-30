@@ -43,7 +43,7 @@ public sealed class MediaSetup(IWorkspace workspace,AuditedResources resources)
             var native=Path.GetFullPath(request.NativeWorker.Path,host.Root);host.EnsureToolAllowed(native);
             if(!MediaAdmission.Within(native,bundle))throw new InvalidOperationException("Native worker must be inside its complete runtime bundle");
         }
-        else if(request.Backend is "stable-audio-open" or "ace-step-turbo")
+        else if(request.Backend is "stable-audio-open" or "ace-step-turbo" or "qwen3-tts-customvoice" or "qwen3-tts-base")
         {
             if(request.Python is null || request.EnvironmentRoot is null || request.PythonBaseRoot is null || request.WheelhouseRoot is null || request.PythonArchive is null || request.NativeWorker is not null || request.NativeRuntimeRoot is not null)
                 throw new InvalidOperationException("Python media setup requires its dedicated environment and pinned base Python runtime");
@@ -51,9 +51,9 @@ public sealed class MediaSetup(IWorkspace workspace,AuditedResources resources)
             roots.Add(host.ResolveReadPath(request.WheelhouseRoot));
             var python=Path.GetFullPath(request.Python.Path,host.Root);host.EnsureToolAllowed(python);
             if(!MediaAdmission.Within(python,roots[1]))throw new InvalidOperationException("Python executable must belong to its dedicated environment");
-            if(request.Backend=="ace-step-turbo")
+            if(request.Backend is "ace-step-turbo" or "qwen3-tts-customvoice" or "qwen3-tts-base")
             {
-                if(request.SourceRoot is null || request.SourceArchive is null)throw new InvalidOperationException("Music requires its pinned closed source tree/archive");
+                if(request.SourceRoot is null || request.SourceArchive is null)throw new InvalidOperationException("Selected backend requires its pinned closed source tree/archive");
                 roots.Add(host.ResolveReadPath(request.SourceRoot));
             }
             else if(request.SourceRoot is not null || request.SourceArchive is not null)throw new InvalidOperationException("SFX cannot select an arbitrary source package");
@@ -67,7 +67,7 @@ public sealed class MediaSetup(IWorkspace workspace,AuditedResources resources)
         var plan=new {schemaVersion="bubo-media-setup-plan/v1",backend=request.Backend,capability.Modality,catalogSha256=Workspace.Hash(catalogPath),
             action="verify-and-register-existing-installation",roots=request.Backend=="flux-schnell"?new[]{request.ModelDirectory,request.NativeRuntimeRoot}:new[]{request.ModelDirectory,request.EnvironmentRoot,request.PythonBaseRoot},
             requiredComponents=definition["files"]!.DeepClone(),source=definition["source"]?.DeepClone(),
-            environment=request.Backend is "stable-audio-open" or "ace-step-turbo"?definition["environments"]!.DeepClone():null,
+            environment=request.Backend is "stable-audio-open" or "ace-step-turbo" or "qwen3-tts-customvoice" or "qwen3-tts-base"?definition["environments"]!.DeepClone():null,
             sourceRoot=request.SourceRoot,sourceArchive=request.SourceArchive,
             receipt=request.ReceiptPath,execute,downloads=false,installation=false,generation=false,licenseAcceptance=false,promotion=false};
         if(!execute)return Task.FromResult<object>(plan);

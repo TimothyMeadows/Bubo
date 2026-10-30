@@ -91,22 +91,26 @@ public sealed record GenerationItem
     public required string Prompt { get; init; }
     public string NegativePrompt { get; init; } = "";
     public required long Seed { get; init; }
-    public required int Steps { get; init; }
-    public required double Guidance { get; init; }
+    public int? Steps { get; init; }
+    public double? Guidance { get; init; }
     public int? Width { get; init; }
     public int? Height { get; init; }
     public double? Seconds { get; init; }
     public bool LoopCandidate { get; init; }
     public MusicOptions? Music { get; init; }
+    public VoiceOptions? Voice { get; init; }
 
     public void Validate(string modality, OutputBudget budget)
     {
         MediaRequest.Identity(Id, "item id");
         if (string.IsNullOrWhiteSpace(Prompt) || Prompt.Length > 4096 || NegativePrompt is null || NegativePrompt.Length > 4096
-            || Prompt.Contains('\0') || NegativePrompt.Contains('\0') || Seed < 0 || !double.IsFinite(Guidance))
-            throw new InvalidOperationException("Prompt, negative prompt, explicit nonnegative seed and finite guidance are required");
+            || Prompt.Contains('\0') || NegativePrompt.Contains('\0') || Seed < 0 || Guidance is {} guidance && !double.IsFinite(guidance))
+            throw new InvalidOperationException("Prompt, negative prompt, explicit nonnegative seed and any supplied guidance must be valid");
         if(modality!="music" && Music is not null)
             throw new InvalidOperationException("Music options cannot be silently ignored by another modality");
+        var voice=modality is "preset-speech" or "consented-cloning";
+        if(!voice && (Voice is not null || Steps is null || Guidance is null))
+            throw new InvalidOperationException("Image/SFX/music require actual steps/guidance and cannot ignore voice options");
         switch (modality)
         {
             case "image":
@@ -126,6 +130,14 @@ public sealed record GenerationItem
                     || Steps is <1 or >8 || Guidance!=1 || Seed>int.MaxValue)
                     throw new InvalidOperationException("ACE-Step Turbo requires explicit music mode, bounded caption/whole-second duration,1..8steps,guidance1 and a nonnegative int32 seed; image/negative-prompt controls are unsupported");
                 Music.Validate();
+                break;
+            case "preset-speech":
+            case "consented-cloning":
+                if(Voice is null || Steps is not null || Guidance is not null || Seconds is not null || Width is not null || Height is not null
+                    || LoopCandidate || NegativePrompt.Length!=0 || Seed>int.MaxValue || System.Text.Encoding.UTF8.GetByteCount(Prompt)>4096
+                    || budget.MaximumAudioSeconds>120)
+                    throw new InvalidOperationException("Voice requires typed autoregressive settings and bounded measured duration; fixed seconds/diffusion/image/loop/negative controls are unsupported");
+                Voice.Validate(modality);
                 break;
             default: throw new InvalidOperationException("This backend modality is not implemented");
         }
@@ -170,7 +182,9 @@ public static class MediaCapabilities
     {
         new BackendCapability("flux-schnell", "image", ["cuda:0"], ["q8_0"], ["text-encoder-cpu"], 4, "bubo-flux-worker/v1"),
         new BackendCapability("stable-audio-open", "sfx", ["cuda:0"], ["float16", "float32"], ["none"], 4, "bubo-sfx-worker/v1"),
-        new BackendCapability("ace-step-turbo", "music", ["cuda:0"], ["bfloat16"], ["none"], 4, "bubo-music-worker/v1")
+        new BackendCapability("ace-step-turbo", "music", ["cuda:0"], ["bfloat16"], ["none"], 4, "bubo-music-worker/v1"),
+        new BackendCapability("qwen3-tts-customvoice", "preset-speech", ["cuda:0"], ["bfloat16"], ["none"], 4, "bubo-voice-worker/v1"),
+        new BackendCapability("qwen3-tts-base", "consented-cloning", ["cuda:0"], ["bfloat16"], ["none"], 4, "bubo-voice-worker/v1")
     });
     public static BackendCapability Require(string id) => Implemented.SingleOrDefault(x => x.Id == id)
         ?? throw new InvalidOperationException("Unknown or unimplemented media backend; no provider fallback");

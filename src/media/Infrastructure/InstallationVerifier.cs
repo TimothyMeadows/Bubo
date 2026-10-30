@@ -68,6 +68,18 @@ public sealed class InstallationVerifier(IWorkspace workspace,AuditedResources r
         foreach(var item in expected)
             if(!accepted.Contains(Text(item,"license")))throw new InvalidOperationException("A selected component license is not approved");
         if(receipt["noticeDirectory"] is JsonValue noticeValue && noticeValue.TryGetValue<string>(out var noticeDirectory))VerifyInventoryRoot(host,host.ResolveReadPath(noticeDirectory),inventory);
+        if(definition["notices"] is JsonArray backendNotices)
+        {
+            var backendNoticeRoot=host.ResolveReadPath(receipt["noticeDirectory"]?.GetValue<string>()??throw new InvalidOperationException("Selected backend needs its pinned native component notices"));
+            foreach(var item in backendNotices)
+            {
+                var notice=item?.AsObject()??throw new InvalidOperationException("Invalid pinned backend notice");
+                var full=host.ResolveReadPath(Path.Combine(backendNoticeRoot,Text(notice,"path")));var relative=workspace.Relative(full);
+                if(!MediaAdmission.Within(full,backendNoticeRoot)||!inventory.TryGetValue(relative,out var actual)||actual.Sha256!=Text(notice,"sha256")||actual.Bytes!=notice["bytes"]!.GetValue<long>())
+                    throw new InvalidOperationException("Pinned native backend notice/source provenance is missing or changed");
+                verifiedFiles.Add(full);
+            }
+        }
         if(platform=="windows")
         {
             var notices=host.ResolveReadPath(receipt["noticeDirectory"]?.GetValue<string>()??(backend=="flux-schnell"?Text(receipt,"nativeRuntimeRoot"):throw new InvalidOperationException("Windows SFX needs its inventoried runtime notice directory")));
@@ -78,8 +90,8 @@ public sealed class InstallationVerifier(IWorkspace workspace,AuditedResources r
                 verifiedFiles.Add(host.ResolveReadPath(path));
             }
         }
-        string? python=null;string? sourceDirectory=null;string worker;string environmentHash;
-        if(backend is "stable-audio-open" or "ace-step-turbo")
+        string? python=null;string? sourceDirectory=null;IReadOnlyDictionary<string,string>? runtimeSourceFiles=null;string worker;string environmentHash;
+        if(backend is "stable-audio-open" or "ace-step-turbo" or "qwen3-tts-customvoice" or "qwen3-tts-base")
         {
             if(receipt["nativeRuntimeRoot"] is not null || receipt["nativeWorker"] is not null
                 || backend=="stable-audio-open" && (receipt["sourceRoot"] is not null || receipt["sourceArchive"] is not null))
@@ -102,13 +114,23 @@ public sealed class InstallationVerifier(IWorkspace workspace,AuditedResources r
             var runtime=catalog["pythonRuntimes"]![platform=="windows"?"x86_64-pc-windows-msvc":"x86_64-unknown-linux-gnu"]!.AsObject();
             PythonIntegrity.Verify(host,environment,pythonBase,wheelhouse,archive,envSpec,runtime,catalog,observed);
             verifiedRoots.AddRange([environment,pythonBase,wheelhouse]);verifiedFiles.Add(archive);
-            if(backend=="ace-step-turbo")
+            if(backend is "ace-step-turbo" or "qwen3-tts-customvoice" or "qwen3-tts-base")
             {
                 sourceDirectory=host.ResolveReadPath(Text(receipt,"sourceRoot"));
                 var sourceArchive=host.ResolveReadPath(Text(receipt,"sourceArchive"));
                 VerifyInventoryRoot(host,sourceDirectory,inventory);
                 if(!inventory.ContainsKey(workspace.Relative(sourceArchive)))throw new InvalidOperationException("Engine source archive is not inventoried");
                 EngineSourceIntegrity.Verify(host,sourceDirectory,sourceArchive,definition["source"]!.AsObject(),observed);
+                if(definition["source"]!["runtimeSourceFiles"] is JsonObject sourceFiles)
+                {
+                    runtimeSourceFiles=sourceFiles.ToDictionary(row=>row.Key,row=>row.Value!.GetValue<string>(),StringComparer.Ordinal);
+                    foreach(var file in runtimeSourceFiles)
+                    {
+                        var full=host.ResolveReadPath(Path.Combine(sourceDirectory,file.Key));
+                        if(!MediaAdmission.Within(full,sourceDirectory)||observed.At(full).Sha256!=file.Value)
+                            throw new InvalidOperationException("Declared runtime source differs from pinned original/adaptation closure");
+                    }
+                }
                 verifiedRoots.Add(sourceDirectory);verifiedFiles.Add(sourceArchive);
             }
             var config=Path.Combine(environment,"pyvenv.cfg");
@@ -147,7 +169,7 @@ public sealed class InstallationVerifier(IWorkspace workspace,AuditedResources r
         RequireInventoryNamespace(host,inventory.Values,verifiedRoots,verifiedFiles);
         var immutableRoots=verifiedRoots.Concat(verifiedFiles).ToList();
         if(receipt["noticeDirectory"] is JsonValue noticeRoot)immutableRoots.Add(host.ResolveReadPath(noticeRoot.GetValue<string>()));
-        return new(backend,identity.Path,identity.Sha256,worker,model,python,components,catalogHash,environmentHash,inventory.Values.ToArray(),Workspace.Hash(worker),resources.Hash(Text(definition,"workerSource")),resources.CatalogSha256,immutableRoots,sourceDirectory);
+        return new(backend,identity.Path,identity.Sha256,worker,model,python,components,catalogHash,environmentHash,inventory.Values.ToArray(),Workspace.Hash(worker),resources.Hash(Text(definition,"workerSource")),resources.CatalogSha256,immutableRoots,sourceDirectory,runtimeSourceFiles);
     }
     internal static void RequireInventoryNamespace(HostExecutionContext host,IEnumerable<InstalledFile> inventory,IReadOnlyCollection<string> verifiedRoots,IReadOnlyCollection<string> verifiedFiles)
     {

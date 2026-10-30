@@ -7,7 +7,7 @@ using OpenCaw.AssetProduction;
 
 namespace Bubo.Media.Infrastructure;
 
-public sealed class FixedMediaWorker(IWorkspace workspace,INativeProcess process):IMediaWorker
+public sealed partial class FixedMediaWorker(IWorkspace workspace,INativeProcess process):IMediaWorker
 {
     public Task<WorkerBatchResult> Run(MediaRequest request,PreparedInstallation installation,string attemptDirectory,CancellationToken cancellation,
         Func<CancellationToken,Task>? beforeStart=null)=>Execute(request,installation,attemptDirectory,false,cancellation,beforeStart);
@@ -32,7 +32,7 @@ public sealed class FixedMediaWorker(IWorkspace workspace,INativeProcess process
             writer.Write(Encoding.ASCII.GetBytes("BFLX0001"));
             foreach(var name in new[]{"flux1-schnell-q8_0.gguf","ae.safetensors","clip_l.safetensors","t5xxl_fp16.safetensors"})Text(writer,installation.Components[name]);
             Text(writer,native);writer.Write((uint)(probe?0:request.Items.Length));
-            if(!probe)foreach(var item in request.Items){Text(writer,item.Id);Text(writer,item.Prompt);writer.Write((uint)item.Width!.Value);writer.Write((uint)item.Height!.Value);writer.Write(item.Seed);writer.Write((uint)item.Steps);}
+            if(!probe)foreach(var item in request.Items){Text(writer,item.Id);Text(writer,item.Prompt);writer.Write((uint)item.Width!.Value);writer.Write((uint)item.Height!.Value);writer.Write(item.Seed);writer.Write((uint)item.Steps!.Value);}
             executable=installation.Worker;args=[job,result];
         }
         else if(installation.Backend=="stable-audio-open")
@@ -50,12 +50,26 @@ public sealed class FixedMediaWorker(IWorkspace workspace,INativeProcess process
             using var stream=new FileStream(job,FileMode.CreateNew,FileAccess.Write,FileShare.Read);JsonSerializer.Serialize(stream,payload,MediaJson.Options);
             executable=installation.Python!;args=["-I","-B","-X","utf8",installation.Worker,job,result];
         }
+        else if(installation.Backend is "qwen3-tts-customvoice" or "qwen3-tts-base")
+        {
+            _=new VoiceAdmission(workspace).Validate(request,probe);
+            VoiceReference? Absolute(VoiceReference? reference)=>reference is null?null:new(
+                new(host.ResolveReadPath(reference.Audio.Path),reference.Audio.Sha256),new(host.ResolveReadPath(reference.Transcript.Path),reference.Transcript.Sha256),
+                new(host.ResolveReadPath(reference.Rights.Path),reference.Rights.Sha256),new(host.ResolveReadPath(reference.Consent.Path),reference.Consent.Sha256));
+            var payload=new{schemaVersion="bubo-voice-worker/v1",operation=probe?"probe":"generate",backend=installation.Backend,modelDirectory=installation.ModelDirectory,
+                sourceDirectory=installation.SourceDirectory??throw new InvalidOperationException("Pinned voice source required"),rootDirectory=host.Root,
+                outputDirectory=native,cacheDirectory=cache,settings=request.Settings,maximumAudioSeconds=request.Budget.MaximumAudioSeconds,
+                items=probe?[]:request.Items.Select(item=>new{item.Id,item.Prompt,item.Seed,voice=item.Voice! with{Reference=Absolute(item.Voice!.Reference)}}).ToArray()};
+            using var stream=new FileStream(job,FileMode.CreateNew,FileAccess.Write,FileShare.Read);JsonSerializer.Serialize(stream,payload,MediaJson.Options);
+            executable=installation.Python!;args=["-I","-B","-X","utf8",installation.Worker,job,result];
+        }
         else throw new InvalidOperationException("Unknown fixed worker; no fallback");
         var inputs=installation.Files.Select(x=>new GpuInputIdentity(x.Path,x.Sha256)).Append(new(workspace.Relative(job),workspace.HashFile(job)))
             .Append(new(installation.ReceiptPath,installation.ReceiptSha256)).ToList();
-        if(installation.Backend is "stable-audio-open" or "ace-step-turbo")inputs.Add(new(installation.Worker,workspace.HashFile(installation.Worker)));
+        if(installation.Backend is "stable-audio-open" or "ace-step-turbo" or "qwen3-tts-customvoice" or "qwen3-tts-base")inputs.Add(new(installation.Worker,workspace.HashFile(installation.Worker)));
+        inputs.AddRange(new VoiceAdmission(workspace).Validate(request,probe).Select(file=>new GpuInputIdentity(file.Path,file.Sha256)));
         inputs.AddRange(host.Tools.Where(x=>x.Kind=="platform-module").Select(x=>new GpuInputIdentity(x.Path,x.Sha256)));
-        var environment=new Dictionary<string,string> { ["CUDA_VISIBLE_DEVICES"]="0",["CUDA_CACHE_PATH"]=Path.Combine(cache,"cuda"),["TEMP"]=Path.Combine(cache,"tmp"),["TMP"]=Path.Combine(cache,"tmp"),["TORCHINDUCTOR_CACHE_DIR"]=Path.Combine(cache,"inductor"),["TRITON_CACHE_DIR"]=Path.Combine(cache,"triton") };
+        var environment=new Dictionary<string,string> { ["CUDA_VISIBLE_DEVICES"]="0",["CUDA_CACHE_PATH"]=Path.Combine(cache,"cuda"),["TEMP"]=Path.Combine(cache,"tmp"),["TMP"]=Path.Combine(cache,"tmp"),["TORCHINDUCTOR_CACHE_DIR"]=Path.Combine(cache,"inductor"),["TRITON_CACHE_DIR"]=Path.Combine(cache,"triton"),["NUMBA_CACHE_DIR"]=Path.Combine(cache,"numba") };
         var spec=new GpuProcessSpec(executable,args,host.Root,workspace.ResolveWrite(attempt+"/worker.log"),host.TimeoutSeconds,host.MaxLogBytes,host.MaxPrivateBytes,environment,inputs,MaximumWaitSeconds:Math.Min(300,host.TimeoutSeconds));
         await process.RunGpu(spec,cancellation,async token=>
         {
@@ -72,6 +86,7 @@ public sealed class FixedMediaWorker(IWorkspace workspace,INativeProcess process
             "flux-schnell"=>ReadImage(request,installation,result,native,output,probe),
             "stable-audio-open"=>ReadAudio(request,installation,result,native,probe,false),
             "ace-step-turbo"=>ReadAudio(request,installation,result,native,probe,true),
+            "qwen3-tts-customvoice" or "qwen3-tts-base"=>ReadVoice(request,installation,result,native,cache,probe),
             _=>throw new InvalidOperationException("Unknown fixed worker result")
         };
     }
