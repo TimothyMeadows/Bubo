@@ -1,6 +1,6 @@
-/* OpenCaw action presentation. Host-owned Three.js, assets and gameplay.
+/* Hephaera action presentation. Host-owned Three.js, assets and gameplay.
  * No imports, network, providers, installation or authoritative simulation.
- * Lifecycle/identity rules follow OpenCaw's existing motion presentation.
+ * Lifecycle/identity rules follow Hephaera's existing motion presentation.
  */
 const EPS = 1e-8;
 const activeRoots = new WeakMap();
@@ -35,7 +35,7 @@ export function validateActionPresentation(input, selection) {
   if (selection?.effectiveEngine !== 'THREEJS') throw new Error('Resolve THREEJS before using this adapter');
   hash(selection.definitionSha256, 'engine definition'); hash(selection.registrySha256, 'engine registry');
   if (selection.selectionSource !== 'default') hash(selection.contractSha256, 'engine contract');
-  if (input?.schemaVersion !== 'opencaw-action-package/v1') throw new Error('Expected opencaw-action-package/v1');
+  if (input?.schemaVersion !== 'hephaera-action-package/v1') throw new Error('Expected hephaera-action-package/v1');
   if (!['skinned', 'articulated', 'rigid'].includes(input.profile)) throw new Error('Unknown action profile');
   if (input.engine?.effectiveEngine !== 'THREEJS') throw new Error('Package engine conflicts with current selection');
   for (const field of ['contractSha256', 'definitionSha256', 'registrySha256']) if (input.engine[field] !== selection[field]) throw new Error(`Stale package engine ${field}`);
@@ -150,7 +150,7 @@ function effect(THREE, cue, anchor, parent, target, time, quality, reduced, acco
       material = new THREE.MeshBasicMaterial({color: cue.color, transparent: true, opacity: reduced ? .35 : .7, depthWrite: false}); account.created++;
       object = new THREE.Mesh(geometry, material);
     }
-    object.userData.opencawActionCue = cue.id;
+    object.userData.hephaeraActionCue = cue.id;
     if (cue.type === 'orb') anchor.add(object); else parent.add(object);
   } catch (error) {
     try { object?.removeFromParent(); } catch { /* Preserve original acquisition failure. */ }

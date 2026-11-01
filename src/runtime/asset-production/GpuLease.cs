@@ -1,7 +1,7 @@
 using System.Net.Sockets;
 using System.Diagnostics;
 
-namespace OpenCaw.AssetProduction;
+namespace Hephaera.AssetProduction;
 
 /// <summary>Conservative cooperative exclusion for all Bubo GPU jobs in this OS namespace.</summary>
 public static class GpuLease

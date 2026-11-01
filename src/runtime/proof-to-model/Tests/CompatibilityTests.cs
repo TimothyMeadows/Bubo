@@ -1,4 +1,4 @@
-using OpenCaw.ProofToModel.Domain;
+using Hephaera.ProofToModel.Domain;
 static class CompatibilityTests
 {
     public static int Run()

@@ -217,7 +217,7 @@ def main():
     for item in bpy.data.node_groups:
         policy = None
         if item.bl_idname == "GeometryNodeTree":
-            policy = item.get("opencaw_realization_policy") if item.get("opencaw_realization_policy") in {"keep-instances","realize-for-edit","realize-for-simulation","realize-for-render","realize-for-export","frozen-output"} else None
+            policy = item.get("hephaera_realization_policy") if item.get("hephaera_realization_policy") in {"keep-instances","realize-for-edit","realize-for-simulation","realize-for-render","realize-for-export","frozen-output"} else None
         node_groups.append({"id": node_id[item.name], "name": item.name, "type": item.bl_idname, "realizationPolicy": policy})
 
     findings = []
@@ -235,7 +235,7 @@ def main():
     scene_data = bpy.context.scene
     camera = scene_data.camera
     report = {
-        "schemaVersion": "opencaw-blender-scene/v1", "profile": args["--profile"], "blenderVersion": version,
+        "schemaVersion": "hephaera-blender-scene/v1", "profile": args["--profile"], "blenderVersion": version,
         "source": {"path": scene_relative.as_posix(), "sha256": sha256_file(scene)},
         "units": {"system": scene_data.unit_settings.system, "scaleLength": float(scene_data.unit_settings.scale_length)},
         "render": {"engine": scene_data.render.engine, "resolutionX": int(scene_data.render.resolution_x), "resolutionY": int(scene_data.render.resolution_y), "fps": float(scene_data.render.fps) / float(scene_data.render.fps_base), "activeCamera": object_id.get(camera.name) if camera else None},

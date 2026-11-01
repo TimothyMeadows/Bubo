@@ -1,6 +1,6 @@
 using System.Text.Json.Nodes;
 
-namespace OpenCaw.ProofToModel.Application;
+namespace Hephaera.ProofToModel.Application;
 
 public sealed partial class Pipeline
 {
@@ -18,7 +18,7 @@ public sealed partial class Pipeline
         using var donorLock = w.LockRead(donor.State + "/asset.lock");
         // Another approved native operation may have atomically saved the donor
         // between discovery and lock acquisition. Bind the locked snapshot only.
-        donor.m = w.Load<OpenCaw.ProofToModel.Domain.Manifest>(path);
+        donor.m = w.Load<Hephaera.ProofToModel.Domain.Manifest>(path);
         donor.CheckStatePaths();
         if (!donor.IsMultiView || donor.m.Staging == m.Staging) throw new InvalidOperationException("Locked donor must remain a distinct v2 six-view asset");
         donor.Validate(); donor.RequireMultiViewToolchain();
@@ -100,7 +100,7 @@ public sealed partial class Pipeline
         var gltf = ReadGlbJson(output);
         if (gltf["asset"]?["version"]?.GetValue<string>() != "2.0" || gltf["meshes"] is not JsonArray meshes || !meshes.Any(mesh => mesh?["primitives"] is JsonArray primitives && primitives.Count > 0)) throw new InvalidOperationException("Donor reconstruction has no actual GLB mesh");
     }
-    Dictionary<string, string> CopyReuseAttempt(OpenCaw.ProofToModel.Domain.Stage target, Pipeline donor, string name, CancellationToken cancellation)
+    Dictionary<string, string> CopyReuseAttempt(Hephaera.ProofToModel.Domain.Stage target, Pipeline donor, string name, CancellationToken cancellation)
     {
         var source = donor.RequireStage(name);
         if (!source.Attempt.StartsWith(donor.m.Staging + "/attempts/", StringComparison.Ordinal)) throw new InvalidOperationException("Donor attempt escapes its immutable staging tree");
@@ -160,7 +160,7 @@ public sealed partial class Pipeline
                 else RebindReusePaths(array[index], map);
             }
     }
-    Task ImportReusePreprocessing(OpenCaw.ProofToModel.Domain.Stage stage, Pipeline donor, JsonObject donorDataset, JsonObject ownSet, string sourceManifestHash, CancellationToken cancellation)
+    Task ImportReusePreprocessing(Hephaera.ProofToModel.Domain.Stage stage, Pipeline donor, JsonObject donorDataset, JsonObject ownSet, string sourceManifestHash, CancellationToken cancellation)
     {
         var copies = CopyReuseAttempt(stage, donor, "preprocess", cancellation);
         var paths = new Dictionary<string, string>(copies, StringComparer.Ordinal);
@@ -186,7 +186,7 @@ public sealed partial class Pipeline
         WriteReuseReceipt(stage, donor, "preprocess", copies, sourceManifestHash);
         return Task.CompletedTask;
     }
-    Task ImportReuseReconstruction(OpenCaw.ProofToModel.Domain.Stage stage, Pipeline donor, string sourceManifestHash, CancellationToken cancellation)
+    Task ImportReuseReconstruction(Hephaera.ProofToModel.Domain.Stage stage, Pipeline donor, string sourceManifestHash, CancellationToken cancellation)
     {
         var copies = CopyReuseAttempt(stage, donor, "reconstruct", cancellation);
         var sourceSubmitted = w.Load<JsonObject>(donor.Artifact("reconstruct", "submittedDataset"));
@@ -206,7 +206,7 @@ public sealed partial class Pipeline
         WriteReuseReceipt(stage, donor, "reconstruct", copies, sourceManifestHash);
         return Task.CompletedTask;
     }
-    void WriteReuseReceipt(OpenCaw.ProofToModel.Domain.Stage stage, Pipeline donor, string name, Dictionary<string, string> copies, string sourceManifestHash)
+    void WriteReuseReceipt(Hephaera.ProofToModel.Domain.Stage stage, Pipeline donor, string name, Dictionary<string, string> copies, string sourceManifestHash)
     {
         var receipt = stage.Attempt + "/reuse.json";
         w.Save(receipt, new JsonObject { ["schemaVersion"] = 1, ["operation"] = "reuse", ["nativeExecution"] = false, ["sourceManifest"] = donor.manifestPath, ["sourceManifestHash"] = sourceManifestHash, ["sourceStage"] = name, ["sourceAttempt"] = donor.RequireStage(name).Attempt, ["sourceFingerprint"] = donor.RequireStage(name).Fingerprint, ["ownProofSet"] = m.ProofSet, ["ownProofSetHash"] = Hash(m.ProofSet), ["copies"] = new JsonArray(copies.Select(pair => (JsonNode)new JsonObject { ["source"] = pair.Key, ["destination"] = pair.Value, ["sha256"] = Hash(pair.Value) }).ToArray()), ["preprocessingApproval"] = "pending", ["independentReview"] = "pending", ["humanAcceptance"] = "pending" });

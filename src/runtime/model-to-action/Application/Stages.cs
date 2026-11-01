@@ -1,9 +1,9 @@
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
-using OpenCaw.AssetProduction;
-using OpenCaw.ModelAction.Domain;
-using static OpenCaw.ModelAction.Application.ActionValidation;
-namespace OpenCaw.ModelAction.Application;
+using Hephaera.AssetProduction;
+using Hephaera.ModelAction.Domain;
+using static Hephaera.ModelAction.Application.ActionValidation;
+namespace Hephaera.ModelAction.Application;
 
 public sealed partial class Pipeline
 {
@@ -74,7 +74,7 @@ public sealed partial class Pipeline
             var jobPath = stage.Attempt + "/job.json"; w.Save(jobPath, job); stage.Inputs[jobPath] = HashFile(jobPath);
             await native.Run(m.Blender, ["--factory-startup", "--background", "--disable-autoexec", "--python-exit-code", "1", "--python", w.Resolve(scripts + "/action.py"), "--", "--job", w.Resolve(jobPath)], w.Root, w.Resolve(stage.Attempt + "/process.log"), Budget["timeoutSeconds"]!.GetValue<int>(), cancellation, (long)Budget["maxLogBytes"]!.GetValue<double>());
             var result = LoadObject(stage.Attempt + "/result.json");
-            if (Text(result, "schemaVersion") != "opencaw-action-stage/v1" || Text(result, "operation") != name || Text(result, "inputSha256") != HashFile(input)) throw new InvalidOperationException("Native action result does not match invoked operation/input");
+            if (Text(result, "schemaVersion") != "hephaera-action-stage/v1" || Text(result, "operation") != name || Text(result, "inputSha256") != HashFile(input)) throw new InvalidOperationException("Native action result does not match invoked operation/input");
             if (result["findings"] is not JsonArray findings) throw new InvalidOperationException("Native action findings are incomplete");
             foreach (var finding in findings)
             {
@@ -148,7 +148,7 @@ public sealed partial class Pipeline
     {
         ValidateVerificationArtifacts(stage);
         var plan = Plan(); ValidateActions(Array(package, "actions"), plan);
-        if (Text(package, "schemaVersion") != "opencaw-action-package/v1") throw new InvalidOperationException("Unsupported action package");
+        if (Text(package, "schemaVersion") != "hephaera-action-package/v1") throw new InvalidOperationException("Unsupported action package");
         foreach (var key in new[] { "asset", "version", "profile", "fps", "rig", "coordinateSystem", "sourceMotion", "anchors", "targets", "budgets", "motion", "engine" })
             if (!JsonNode.DeepEquals(package[key], plan[key])) throw new InvalidOperationException("Action package differs from source plan: " + key);
         foreach (var pair in new[] { ("model", "glb"), ("source", "blend") })
@@ -219,7 +219,7 @@ public sealed partial class Pipeline
                 if (info.Extension.Equals(".bin", StringComparison.OrdinalIgnoreCase))
                 {
                     using var stream = File.OpenRead(file);
-                    var signature = System.Text.Encoding.ASCII.GetBytes("OPENCAW-POSE-V1\0\0");
+                    var signature = System.Text.Encoding.ASCII.GetBytes("HEPHAERA-POSE-V1\0\0");
                     var header = new byte[signature.Length];
                     if (stream.Read(header) != header.Length || !header.SequenceEqual(signature))
                         throw new InvalidOperationException("Invalid action verification binary header");

@@ -2,7 +2,7 @@
   "type": "object",
   "properties": {
     "schemaVersion": {
-      "const": "opencaw-motion-package/v1"
+      "const": "hephaera-motion-package/v1"
     },
     "profile": {
       "enum": [
@@ -612,6 +612,6 @@
   ],
   "additionalProperties": false,
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://opencaw.local/schemas/motion/package-v1",
+  "$id": "https://hephaera.local/schemas/motion/package-v1",
   "title": "Profiled motion model, semantic clips and selected-engine bindings"
 }

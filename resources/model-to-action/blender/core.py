@@ -1,4 +1,4 @@
-"""Fixed action batch guards and scene primitives, adapted from OpenCaw motion core.
+"""Fixed action batch guards and scene primitives, adapted from Hephaera motion core.
 
 Internal reuse: model-to-animation/blender/core.py helpers are adapted locally so
 the action batch has a complete separately pinned bundle and no dynamic imports.
@@ -138,7 +138,7 @@ def read_glb(path, maximum=512 * 1024 * 1024):
 
 def objects():
     import bpy
-    return [obj for obj in bpy.context.scene.objects if obj.type not in ('CAMERA', 'LIGHT') and not obj.get('opencaw_cue_proxy')]
+    return [obj for obj in bpy.context.scene.objects if obj.type not in ('CAMERA', 'LIGHT') and not obj.get('hephaera_cue_proxy')]
 
 
 def meshes():
@@ -269,7 +269,7 @@ def load_job():
     if job['operation'] == 'export' and source.suffix.lower() != '.blend':
         raise ValueError('Export requires a composed working blend')
     plan = job.get('plan'); motion = job.get('motionPackage')
-    if not isinstance(plan, dict) or not isinstance(motion, dict) or motion.get('schemaVersion') != 'opencaw-motion-package/v1':
+    if not isinstance(plan, dict) or not isinstance(motion, dict) or motion.get('schemaVersion') != 'hephaera-motion-package/v1':
         raise ValueError('Missing compiled plan or reviewed motion metadata')
     if job.get('profile') not in ('skinned','articulated','rigid') or motion.get('profile') != job['profile']:
         raise ValueError('Action profile disagrees with source motion')

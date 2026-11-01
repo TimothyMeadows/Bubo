@@ -103,7 +103,7 @@ optional `rigidParts.sourceTopology` explicitly selects:
 ```json
 {
   "method": "reviewed-source-corners-v1",
-  "receipt": ".opencaw/.cache/tasks/TASK/source-topology.json",
+  "receipt": ".hephaera/.cache/tasks/TASK/source-topology.json",
   "receiptSha256": "<lowercase SHA256>"
 }
 ```

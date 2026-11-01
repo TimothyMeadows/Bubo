@@ -2,9 +2,9 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using OpenCaw.ProofToModel.Application;
-using OpenCaw.ProofToModel.Domain;
-using OpenCaw.ProofToModel.Infrastructure;
+using Hephaera.ProofToModel.Application;
+using Hephaera.ProofToModel.Domain;
+using Hephaera.ProofToModel.Infrastructure;
 
 static class FinishingSettingsTests
 {
@@ -29,7 +29,7 @@ static class FinishingSettingsTests
         return value.ToJsonString();
     }
     static readonly string[] ChildEnvironmentKeys = ["TEMP", "TMP", "TMPDIR", "PYTHONDONTWRITEBYTECODE"];
-    const string InheritedMarker = "OPENCAW_BLENDER_TEMP_TEST_SENTINEL";
+    const string InheritedMarker = "HEPHAERA_BLENDER_TEMP_TEST_SENTINEL";
     public static int ObserveChildEnvironment(string[] args)
     {
         // Actual subprocess observation, not a Blender/mesh producer or a human
@@ -152,7 +152,7 @@ static class FinishingSettingsTests
         // Actual application/state/file guards with an explicitly SIMULATED Blender producer.
         var directory = parent.Resolve("finishing-settings-fixtures"); Directory.CreateDirectory(directory);
         var w = new Workspace(directory);
-        File.WriteAllText(w.Resolve("STYLE.md"), "Primary OpenCaw art pipeline:\n- PROOF_TO_MODEL\n");
+        File.WriteAllText(w.Resolve("STYLE.md"), "Primary Hephaera art pipeline:\n- PROOF_TO_MODEL\n");
         RgbaPng.Write(w.Resolve("source.png"), new RgbaPng.Image(2, 2, Enumerable.Repeat((byte)255, 16).ToArray()));
         w.Save("rights.json", new { authorized = true });
         w.Save("recipe.json", parent.Load<JsonObject>("recipe.json"));
@@ -163,7 +163,7 @@ static class FinishingSettingsTests
         var opts = new Dictionary<string, string> { ["mode"] = "single-view-diagnostic", ["asset"] = "finishing", ["version"] = "v1", ["task"] = "tests", ["proof"] = "source.png", ["rights"] = "rights.json", ["recipe"] = "recipe.json", ["toolchain"] = "toolchain.json", ["actor"] = "fixture-builder", ["baseline-root"] = baseline };
         var native = new SimulatedFinisher(w);
         await new Pipeline(w, opts, native, new AlphaProcessor()).Execute("init", default);
-        var manifest = ".opencaw/.cache/tasks/tests/proof-to-model/finishing/v1/manifest.json"; opts["manifest"] = manifest;
+        var manifest = ".hephaera/.cache/tasks/tests/proof-to-model/finishing/v1/manifest.json"; opts["manifest"] = manifest;
         var state = w.Load<Manifest>(manifest);
         Directory.CreateDirectory(w.Resolve(state.Staging + "/fixture"));
         var raw = state.Staging + "/fixture/raw.glb"; WriteSyntheticGlb(w.Resolve(raw));
@@ -174,7 +174,7 @@ static class FinishingSettingsTests
         string Fingerprint(IEnumerable<string> files) => Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(string.Join("\n", files.Order().Select(path => path + ":" + Workspace.Hash(w.Resolve(path)))))));
         foreach (var kind in new[] { "proof", "preprocessing" })
         {
-            var path = ".opencaw/.cache/tasks/tests/reviews/synthetic-" + kind + ".json";
+            var path = ".hephaera/.cache/tasks/tests/reviews/synthetic-" + kind + ".json";
             w.Save(path, new { kind, reason = "SIMULATED human assertion; no real approval or inference" });
             state.Approvals.Add(new(kind, "synthetic-only", path, Workspace.Hash(w.Resolve(path)), Fingerprint(kind == "proof" ? core : core.Append(normalized)), DateTimeOffset.UtcNow));
         }
@@ -253,7 +253,7 @@ static class FinishingSettingsTests
         File.WriteAllBytes(w.Resolve(snapshot), snapshotBytes);
         state.Stages["review"] = new Stage { Status = "complete", Attempt = "synthetic-review", Outputs = new() { [normalized] = Workspace.Hash(w.Resolve(normalized)) } };
         state.Stages["guided"] = new Stage { Status = "complete", Attempt = "synthetic-guided", Outputs = new() { [raw] = Workspace.Hash(w.Resolve(raw)) } };
-        var dependentReceipt = ".opencaw/.cache/tasks/tests/reviews/synthetic-independent.json";
+        var dependentReceipt = ".hephaera/.cache/tasks/tests/reviews/synthetic-independent.json";
         w.Save(dependentReceipt, new { reason = "SIMULATED dependent approval for invalidation only" });
         state.Approvals.Add(new("independent", "synthetic", dependentReceipt, Workspace.Hash(w.Resolve(dependentReceipt)), "not-real", DateTimeOffset.UtcNow)); w.Save(manifest, state);
         File.WriteAllText(w.Resolve("finishing.json"), Legacy);
@@ -540,7 +540,7 @@ static class FinishingSettingsTests
             var output = Path.Combine(root, Path.GetRelativePath(original, file)); Directory.CreateDirectory(Path.GetDirectoryName(output)!); File.Copy(file, output);
         }
         var w = new Workspace(root);
-        var manifest = ".opencaw/.cache/tasks/multiview-runtime-tests/proof-to-model/valid/v1/manifest.json";
+        var manifest = ".hephaera/.cache/tasks/multiview-runtime-tests/proof-to-model/valid/v1/manifest.json";
         var state = w.Load<Manifest>(manifest); var toolchain = w.Load<JsonObject>(state.Toolchain);
         toolchain["blender"] = new JsonObject { ["path"] = Environment.ProcessPath! }; w.Save(state.Toolchain, toolchain);
         foreach (var stage in state.Stages.Values)
@@ -557,7 +557,7 @@ static class FinishingSettingsTests
             try { Console.SetOut(output); await new Pipeline(w, opts, native, new AlphaProcessor()).Execute("status", default); }
             finally { Console.SetOut(previous); }
             var status = JsonNode.Parse(output.ToString())!;
-            var receipt = ".opencaw/.cache/tasks/multiview-runtime-tests/reviews/synthetic-finisher-" + kind + ".json";
+            var receipt = ".hephaera/.cache/tasks/multiview-runtime-tests/reviews/synthetic-finisher-" + kind + ".json";
             w.Save(receipt, new { kind, reviewer = "synthetic-only", decision = "approved", human = true,
                 reason = "SIMULATED test receipt; not production human acceptance",
                 fingerprint = status["approvalFingerprints"]![kind == "proof-set" ? "proofSet" : "preprocessing"]!.GetValue<string>() });

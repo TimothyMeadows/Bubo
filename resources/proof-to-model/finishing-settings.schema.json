@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://opencaw.dev/schemas/proof-to-model/finishing-settings.schema.json",
+  "$id": "https://hephaera.dev/schemas/proof-to-model/finishing-settings.schema.json",
   "title": "Explicit finishing-only settings",
   "$comment": "Native parsing additionally limits the settings file to 65536 UTF-8 bytes and depth16, rejects duplicate keys and requires a confined project-relative regular file. Integer types follow JSON Schema numeric integer semantics. V2 explicitly selects reviewed rigid HIGH/LOW pairs and an enforced Windows owned-job aggregate committed-memory ceiling; unsupported enforcement blocks before launch. Existing v1 remains unchanged.",
   "oneOf": [
@@ -401,7 +401,7 @@
                   "type": "string",
                   "minLength": 1,
                   "maxLength": 4096,
-                  "pattern": "^\\.opencaw/\\.cache/tasks/[^/]+/.+\\.json$"
+                  "pattern": "^\\.hephaera/\\.cache/tasks/[^/]+/.+\\.json$"
                 },
                 "receiptSha256": {
                   "type": "string",

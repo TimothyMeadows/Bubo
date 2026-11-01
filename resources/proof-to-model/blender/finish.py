@@ -682,10 +682,10 @@ def simplify_quadriflow_input(low, selection, coordinate_scale=1, require_region
                                         "sourceToCandidate": dict(identity_measure), "candidateToSource": dict(identity_measure),
                                         "limits": "No BVH queries or simplification ran. Exact identity proves zero vertex-to-same-surface error, not continuous-surface or visual quality."}})
         return report
-    attribute_name = "_opencaw_prepared_component_id"
-    held_attribute_name = "_opencaw_prepared_vertex_id"
-    retained_point_attribute = "_opencaw_retained_vertex_id"
-    retained_face_attribute = "_opencaw_retained_face_id"
+    attribute_name = "_hephaera_prepared_component_id"
+    held_attribute_name = "_hephaera_prepared_vertex_id"
+    retained_point_attribute = "_hephaera_retained_vertex_id"
+    retained_face_attribute = "_hephaera_retained_face_id"
     if low.data.attributes.get(attribute_name):
         raise ValueError("Prepared mesh already contains the reserved simplification component attribute")
     if len(held_reference["ids"]) and low.data.attributes.get(held_attribute_name):
@@ -746,7 +746,7 @@ def simplify_quadriflow_input(low, selection, coordinate_scale=1, require_region
             identities[protected] = held_reference["ids"]
             held_attribute = candidate.data.attributes.new(held_attribute_name, "INT", "POINT")
             held_attribute.data.foreach_set("value", identities)
-            group = candidate.vertex_groups.new(name="OpenCawHeldDetailVertices")
+            group = candidate.vertex_groups.new(name="HephaeraHeldDetailVertices")
             group.add(list(range(len(points))), 1.0, "REPLACE")
             group.add(np.flatnonzero(protected).tolist(), 0.0, "REPLACE")
             group_name = group.name
@@ -771,7 +771,7 @@ def simplify_quadriflow_input(low, selection, coordinate_scale=1, require_region
                 bpy.data.meshes.remove(candidate_mesh)
         main_has_protected_vertices = bool(np.any(protected & (component_ids == main_identity)))
         operator_input_mesh = candidate.data
-        modifier = candidate.modifiers.new("OpenCawExplicitInputCollapse", "DECIMATE")
+        modifier = candidate.modifiers.new("HephaeraExplicitInputCollapse", "DECIMATE")
         modifier.decimate_type = "COLLAPSE"
         modifier.ratio = main_target_triangles / main_input_triangles
         modifier.use_collapse_triangulate = True
@@ -1708,7 +1708,7 @@ def main():
                 obj.matrix_world = mapping @ obj.matrix_world
         bpy.context.view_layer.update()
         stages.append({"stage": "engineExportToProofFrame", "inputFrame": "pixal3d-mv-export",
-                       "outputFrame": "opencaw-proof-z-up", "matrix": [list(row) for row in mapping],
+                       "outputFrame": "hephaera-proof-z-up", "matrix": [list(row) for row in mapping],
                        "basis": "pinned MV projection/reference-frame/glTF axis composition; no per-view fitting"})
     total_high = sum(len(o.data.polygons) for o in highs)
     exports, lows, textures, part_reports = [], [], [], []

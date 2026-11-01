@@ -1,9 +1,9 @@
 using System.Text.Json;
-using OpenCaw.ProofToModel.Domain;
-namespace OpenCaw.ProofToModel.Application;
+using Hephaera.ProofToModel.Domain;
+namespace Hephaera.ProofToModel.Application;
 
-public interface IWorkspace : OpenCaw.AssetProduction.IWorkspace;
-public interface INativeProcess : OpenCaw.AssetProduction.INativeProcess;
+public interface IWorkspace : Hephaera.AssetProduction.IWorkspace;
+public interface INativeProcess : Hephaera.AssetProduction.INativeProcess;
 public interface IAlphaProcessor
 {
     AlphaMatte? Inspect(string path);

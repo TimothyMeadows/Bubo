@@ -1,6 +1,6 @@
 # Selected-engine action presentation
 
-`threejs-action.mjs` is an executable presentation adapter over actual baked composite GLB clips and an `opencaw-action-package/v1` timeline. The host provides its locked Three.js APIs, loaded GLB, canonical engine receipt and separate authoritative movement root. The reusable module imports nothing and performs no network access, installation, provider calls or simulation mutations.
+`threejs-action.mjs` is an executable presentation adapter over actual baked composite GLB clips and an `hephaera-action-package/v1` timeline. The host provides its locked Three.js APIs, loaded GLB, canonical engine receipt and separate authoritative movement root. The reusable module imports nothing and performs no network access, installation, provider calls or simulation mutations.
 
 ## Integration
 

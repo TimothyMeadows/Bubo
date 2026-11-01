@@ -2,10 +2,13 @@
 **/obj/
 artifacts/
 .local/
-.opencaw/.cache/
+.hephaera/.cache/
 .bubo/
 .art-staging/
 **/__pycache__/
 *.pyc
 node_modules/
 *.log
+
+# Preserve historical private state during the explicit host-name transition.
+/.opencaw/

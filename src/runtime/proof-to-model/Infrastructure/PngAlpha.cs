@@ -1,7 +1,7 @@
 using System.Buffers.Binary;
 using System.IO.Compression;
-using OpenCaw.ProofToModel.Domain;
-namespace OpenCaw.ProofToModel.Infrastructure;
+using Hephaera.ProofToModel.Domain;
+namespace Hephaera.ProofToModel.Infrastructure;
 // Explicit alpha inspection, not foreground inference. Unsupported encodings require
 // the configured BiRefNet stage; opaque RGBA never counts as an existing matte.
 public static class PngAlpha

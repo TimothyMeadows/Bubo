@@ -10,7 +10,7 @@ dotnet build Bubo.slnx -c "$configuration" --no-restore --nologo
 dotnet publish src/Bubo.Cli/Bubo.Cli.csproj -c "$configuration" --no-build --no-restore -o artifacts/bubo --nologo
 binary='./artifacts/bubo/bubo'
 [[ -f "$binary" ]] || binary='./artifacts/bubo/bubo.exe'
-"$binary" capabilities --api-version 1 > artifacts/bubo/capabilities.json
+"$binary" capabilities --api-version 2 > artifacts/bubo/capabilities.json
 python3 - <<'PY'
 from pathlib import Path
 import json, subprocess

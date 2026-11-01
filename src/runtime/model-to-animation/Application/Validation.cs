@@ -2,8 +2,8 @@ using System.Buffers.Binary;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
-using OpenCaw.AssetProduction;
-namespace OpenCaw.ModelAnimation.Application;
+using Hephaera.AssetProduction;
+namespace Hephaera.ModelAnimation.Application;
 
 public static class MotionValidation
 {

@@ -2,7 +2,7 @@ using System.Security.Cryptography;
 using System.Text.Json;
 using Bubo.Host;
 using HostExecutionContext = Bubo.Host.HostExecutionContext;
-namespace OpenCaw.AssetProduction;
+namespace Hephaera.AssetProduction;
 // Adapted from Bubo WorkspaceGuard at the attributed commit. Guards native file access,
 // and deliberately makes no claim of providing an operating-system sandbox.
 public class Workspace(string root, HostExecutionContext? hostContext = null) : IWorkspace

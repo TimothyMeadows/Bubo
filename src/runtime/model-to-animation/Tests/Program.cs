@@ -1,11 +1,11 @@
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using OpenCaw.AssetProduction;
-using OpenCaw.ModelAnimation.Application;
-using OpenCaw.ModelAnimation.Domain;
+using Hephaera.AssetProduction;
+using Hephaera.ModelAnimation.Application;
+using Hephaera.ModelAnimation.Domain;
 
-var evidence = Path.Combine(Directory.GetCurrentDirectory(), ".opencaw/.cache/tasks/model-to-animation-design/evidence/runtime-unit-" + Guid.NewGuid().ToString("N"));
+var evidence = Path.Combine(Directory.GetCurrentDirectory(), ".hephaera/.cache/tasks/model-to-animation-design/evidence/runtime-unit-" + Guid.NewGuid().ToString("N"));
 Directory.CreateDirectory(evidence);
 var w = new Workspace(evidence);
 var fake = new FakeProcess(w);
@@ -31,7 +31,7 @@ async Task<Dictionary<string, string>> New(string name)
 {
     var options = Settings(name);
     await Run(options, "init");
-    options["manifest"] = ".opencaw/.cache/tasks/motion-tests/model-to-animation/" + name + "/v1/manifest.json";
+    options["manifest"] = ".hephaera/.cache/tasks/motion-tests/model-to-animation/" + name + "/v1/manifest.json";
     return options;
 }
 Manifest State(Dictionary<string, string> options) => w.Load<Manifest>(options["manifest"]);
@@ -56,7 +56,7 @@ async Task Approve(Dictionary<string, string> options, string kind, string revie
         var proofs = new JsonArray();
         foreach (var type in new[] { "runtime-test", "runtime-capture", "performance-profile" })
         {
-            var file = ".opencaw/.cache/tasks/motion-tests/reviews/" + state.Asset + "-" + type + ".json";
+            var file = ".hephaera/.cache/tasks/motion-tests/reviews/" + state.Asset + "-" + type + ".json";
             w.Save(file, new
             {
                 simulationOnly = true,
@@ -66,7 +66,7 @@ async Task Approve(Dictionary<string, string> options, string kind, string revie
         }
         receipt["runtime"] = new JsonObject { ["status"] = "passed", ["engine"] = "THREEJS", ["modelSha256"] = Workspace.Hash(w.Resolve(state.Stages["export"].Artifacts["glb"])), ["packageSha256"] = Workspace.Hash(w.Resolve(state.Stages["export"].Artifacts["package"])), ["evidence"] = proofs };
     }
-    var path = ".opencaw/.cache/tasks/motion-tests/reviews/" + state.Asset + "-" + kind + ".json";
+    var path = ".hephaera/.cache/tasks/motion-tests/reviews/" + state.Asset + "-" + kind + ".json";
     w.Save(path, receipt);
     options["kind"] = kind;
     options["reviewer"] = reviewer;
@@ -230,7 +230,7 @@ try
     var bounded = Settings("bounded");
     bounded["recipe"] = "bounded.json";
     await Run(bounded, "init");
-    bounded["manifest"] = ".opencaw/.cache/tasks/motion-tests/model-to-animation/bounded/v1/manifest.json";
+    bounded["manifest"] = ".hephaera/.cache/tasks/motion-tests/model-to-animation/bounded/v1/manifest.json";
     await Ready(bounded);
     fake.Mode = "exit-after-output";
     await Reject(() => Run(bounded, "author"), "bounded producer retains first failed attempt");
@@ -246,7 +246,7 @@ try
     var revising = Settings("targeted-revision");
     revising["recipe"] = "revision-base.json";
     await Run(revising, "init");
-    revising["manifest"] = ".opencaw/.cache/tasks/motion-tests/model-to-animation/targeted-revision/v1/manifest.json";
+    revising["manifest"] = ".hephaera/.cache/tasks/motion-tests/model-to-animation/targeted-revision/v1/manifest.json";
     await Ready(revising);
     await Run(revising, "author");
     var prior = State(revising);
@@ -400,7 +400,7 @@ sealed class FakeProcess(Workspace workspace) : INativeProcess
             var glb = output + "/model.glb";
             File.Copy(workspace.Resolve("model.glb"), workspace.Resolve(glb), false);
             artifacts["glb"] = glb;
-            var package = new JsonObject { ["schemaVersion"] = "opencaw-motion-package/v1", ["profile"] = job["profile"]!.DeepClone(), ["model"] = new JsonObject { ["path"] = glb, ["sha256"] = Workspace.Hash(workspace.Resolve(glb)) }, ["source"] = new JsonObject { ["path"] = artifacts["blend"]!.GetValue<string>(), ["sha256"] = Workspace.Hash(workspace.Resolve(artifacts["blend"]!.GetValue<string>())) }, ["clips"] = new JsonArray(new JsonObject { ["id"] = "idle", ["action"] = "idle", ["duration"] = .5, ["role"] = "idle", ["loop"] = true, ["rootMotion"] = "in-place" }) };
+            var package = new JsonObject { ["schemaVersion"] = "hephaera-motion-package/v1", ["profile"] = job["profile"]!.DeepClone(), ["model"] = new JsonObject { ["path"] = glb, ["sha256"] = Workspace.Hash(workspace.Resolve(glb)) }, ["source"] = new JsonObject { ["path"] = artifacts["blend"]!.GetValue<string>(), ["sha256"] = Workspace.Hash(workspace.Resolve(artifacts["blend"]!.GetValue<string>())) }, ["clips"] = new JsonArray(new JsonObject { ["id"] = "idle", ["action"] = "idle", ["duration"] = .5, ["role"] = "idle", ["loop"] = true, ["rootMotion"] = "in-place" }) };
             package["coordinateSystem"] = new JsonObject { ["sourceUp"] = "Z", ["runtimeUp"] = "Y" };
             package["rig"] = new JsonObject { ["mode"] = "preserve" };
             package["provenance"] = new JsonObject { ["provider"] = "owned", ["license"] = "synthetic" };
@@ -430,7 +430,7 @@ sealed class FakeProcess(Workspace workspace) : INativeProcess
         if (Mode == "empty-output")
             File.WriteAllText(workspace.Resolve(output + "/source.blend"), "");
         var inputHash = Mode == "wrong-input" ? new string('0', 64) : Workspace.Hash(workspace.Resolve(input));
-        workspace.Save(job["result"]!.GetValue<string>(), new JsonObject { ["schemaVersion"] = "opencaw-motion-stage/v1", ["operation"] = operation, ["profile"] = job["profile"]!.DeepClone(), ["inputSha256"] = inputHash, ["artifacts"] = artifacts, ["metrics"] = new JsonObject(), ["findings"] = Mode == "blocking-finding" ? new JsonArray(new JsonObject { ["severity"] = "fatal" }) : new JsonArray(), ["clips"] = new JsonArray() });
+        workspace.Save(job["result"]!.GetValue<string>(), new JsonObject { ["schemaVersion"] = "hephaera-motion-stage/v1", ["operation"] = operation, ["profile"] = job["profile"]!.DeepClone(), ["inputSha256"] = inputHash, ["artifacts"] = artifacts, ["metrics"] = new JsonObject(), ["findings"] = Mode == "blocking-finding" ? new JsonArray(new JsonObject { ["severity"] = "fatal" }) : new JsonArray(), ["clips"] = new JsonArray() });
         if (Mode == "mutate-tool")
             File.AppendAllText(executable, "mutation");
         if (Mode == "mutate-input")

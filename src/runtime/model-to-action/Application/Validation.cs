@@ -1,9 +1,9 @@
 using System.Buffers.Binary;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
-using OpenCaw.AssetProduction;
-using OpenCaw.ModelAction.Domain;
-namespace OpenCaw.ModelAction.Application;
+using Hephaera.AssetProduction;
+using Hephaera.ModelAction.Domain;
+namespace Hephaera.ModelAction.Application;
 
 public static class ActionValidation
 {
@@ -85,7 +85,7 @@ public static class ActionValidation
     }
     public static void Source(JsonObject motion, JsonObject glb)
     {
-        if (Text(motion, "schemaVersion") != "opencaw-motion-package/v1" || Text(motion, "profile") is not ("skinned" or "articulated" or "rigid")) throw new InvalidOperationException("Reviewed motion package/profile required");
+        if (Text(motion, "schemaVersion") != "hephaera-motion-package/v1" || Text(motion, "profile") is not ("skinned" or "articulated" or "rigid")) throw new InvalidOperationException("Reviewed motion package/profile required");
         NoExcludedOrigins(motion);
         Unique(Array(motion, "clips"), "id"); Unique(Array(motion, "anchors"), "id");
         var animations = Array(glb, "animations").Select(node => Text(node!.AsObject(), "name")).ToHashSet(StringComparer.Ordinal);

@@ -56,7 +56,7 @@ def _path(value, *, receipt=False):
     if receipt:
         parts = path.parts
         roots = [i for i in range(len(parts) - 3)
-                 if parts[i:i + 3] == ('.opencaw', '.cache', 'tasks')]
+                 if parts[i:i + 3] == ('.hephaera', '.cache', 'tasks')]
         if not roots or any(i + 4 >= len(parts) for i in roots) or path.suffix != '.json':
             raise ValueError('Receipt must be a confined task-local .json dependency')
     return path

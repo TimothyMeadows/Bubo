@@ -2,7 +2,7 @@
   "type": "object",
   "properties": {
     "schemaVersion": {
-      "const": "opencaw-model-animation/v1"
+      "const": "hephaera-model-animation/v1"
     },
     "task": {
       "type": "string",
@@ -215,7 +215,7 @@
   ],
   "additionalProperties": false,
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://opencaw.local/schemas/motion/manifest-v1",
+  "$id": "https://hephaera.local/schemas/motion/manifest-v1",
   "title": "Persistent guarded native model-to-animation state",
   "$defs": {
     "stage": {

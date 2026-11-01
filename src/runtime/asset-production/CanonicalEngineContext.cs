@@ -1,6 +1,6 @@
 using System.Text.Json.Nodes;
 
-namespace OpenCaw.AssetProduction;
+namespace Hephaera.AssetProduction;
 
 // Compatibility name retained; only caller-supplied engine evidence is used.
 public static class CanonicalEngineContext

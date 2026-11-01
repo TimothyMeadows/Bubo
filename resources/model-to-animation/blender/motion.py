@@ -50,7 +50,7 @@ def main():
         # Review helper cameras/lights are evidence, not runtime mesh/rig changes.
         measured["reviewFrames"]=len([key for key in artifacts if key.startswith("frame-")])
     if digest(source)!=before:raise ValueError("Native stage modified its immutable input")
-    report={"schemaVersion":"opencaw-motion-stage/v1","operation":operation,"profile":recipe["profile"],"inputSha256":before,"artifacts":artifacts,"metrics":measured,"findings":findings,"clips":clips,"blenderVersion":bpy.app.version_string,"rig":rig_identity(),"verification":{"human":"pending","independent":"pending","runtime":"not-run"}}
+    report={"schemaVersion":"hephaera-motion-stage/v1","operation":operation,"profile":recipe["profile"],"inputSha256":before,"artifacts":artifacts,"metrics":measured,"findings":findings,"clips":clips,"blenderVersion":bpy.app.version_string,"rig":rig_identity(),"verification":{"human":"pending","independent":"pending","runtime":"not-run"}}
     report_path=output/"report.json"
     save_json(report_path,report)
     report["artifacts"]["report"]=relative(root,report_path)

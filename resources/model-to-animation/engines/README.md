@@ -1,6 +1,6 @@
 # Selected-engine motion and presentation
 
-`threejs-motion.mjs` is an executable Three.js adapter, independently authored for OpenCaw. Host applications supply a version-locked Three.js module, an actually loaded GLB, its motion package, canonical engine selection and separate authoritative movement owner. There are no runtime imports, remote assets, implicit package installs, CDN dependencies or provider calls.
+`threejs-motion.mjs` is an executable Three.js adapter, independently authored for Hephaera. Host applications supply a version-locked Three.js module, an actually loaded GLB, its motion package, canonical engine selection and separate authoritative movement owner. There are no runtime imports, remote assets, implicit package installs, CDN dependencies or provider calls.
 
 Resolve `ENGINE.md` and the compatible engine feature before loading or writing. The host verifies current contract/definition/registry hashes and model/package hashes. The adapter checks THREEJS compatibility and receipt agreement, but cannot authenticate arbitrary caller data or replace the canonical resolver. Native publication/promotion approvals remain separate.
 

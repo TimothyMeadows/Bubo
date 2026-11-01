@@ -1,7 +1,7 @@
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
-using static OpenCaw.ModelAction.Application.ActionValidation;
-namespace OpenCaw.ModelAction.Application;
+using static Hephaera.ModelAction.Application.ActionValidation;
+namespace Hephaera.ModelAction.Application;
 
 public static class ActionCompiler
 {
@@ -148,7 +148,7 @@ public static class ActionCompiler
         if (previewFrames * resolution[0]!.GetValue<int>() * resolution[1]!.GetValue<int>() > 1073741824) throw new InvalidOperationException("Complete technical review exceeds fixed pixel budget");
         if (used.Sum(name => (long)Math.Round(source[name]["duration"]!.GetValue<double>() * fps) + 1) > budget["maxFrames"]!.GetValue<int>()) throw new InvalidOperationException("Complete source inspection exceeds frame budget");
         var ancestry = new JsonArray(used.Order(StringComparer.Ordinal).Select(name => (JsonNode)new JsonObject { ["id"] = name, ["motionSha256"] = Text(source[name], "motionSha256") }).ToArray());
-        return new JsonObject { ["schemaVersion"] = "opencaw-action-package/v1", ["asset"] = Id(asset), ["version"] = Id(version), ["profile"] = Text(motion, "profile"), ["fps"] = fps,
+        return new JsonObject { ["schemaVersion"] = "hephaera-action-package/v1", ["asset"] = Id(asset), ["version"] = Id(version), ["profile"] = Text(motion, "profile"), ["fps"] = fps,
             ["rig"] = motion["rig"]!.DeepClone(), ["coordinateSystem"] = new JsonObject { ["runtimeUp"] = "+Y", ["runtimeForward"] = "+Z" },
             ["sourceMotion"] = new JsonObject { ["rigId"] = Text(motion["rig"]!.AsObject(), "id"), ["clips"] = ancestry }, ["anchors"] = motion["anchors"]!.DeepClone(), ["targets"] = targets.DeepClone(), ["budgets"] = effectiveBudget, ["actions"] = actions, ["verification"] = new JsonObject { ["status"] = "pending" } };
     }

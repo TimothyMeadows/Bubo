@@ -2,7 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 
-namespace OpenCaw.ProofToModel.Domain;
+namespace Hephaera.ProofToModel.Domain;
 
 /// <summary>Closed authored rigid HIGH/LOW handoffs; no engine or human-acceptance selector.</summary>
 public static class RigidHandoff
@@ -17,7 +17,7 @@ public static class RigidHandoff
         FinishingSettings.Fields(root, "rigid handoff", "schemaVersion", "profile", "coordinateFrame", "sourceRawSha256", "preparedGlb", "preparedGlbSha256", "sourceToPreparedMatrix", "authoringEvidence", "authoringEvidenceSha256", "parts");
         FinishingSettings.Integer(root.GetProperty("schemaVersion"), "handoff schemaVersion", 1, 1);
         Literal(root.GetProperty("profile"), "profile", "articulated");
-        Literal(root.GetProperty("coordinateFrame"), "coordinateFrame", "opencaw-proof-z-up");
+        Literal(root.GetProperty("coordinateFrame"), "coordinateFrame", "hephaera-proof-z-up");
         Digest(root.GetProperty("sourceRawSha256"), "sourceRawSha256");
         Digest(root.GetProperty("preparedGlbSha256"), "preparedGlbSha256");
         Digest(root.GetProperty("authoringEvidenceSha256"), "authoringEvidenceSha256");

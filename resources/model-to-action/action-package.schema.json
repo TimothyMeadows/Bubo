@@ -2,7 +2,7 @@
   "type": "object",
   "properties": {
     "schemaVersion": {
-      "const": "opencaw-action-package/v1"
+      "const": "hephaera-action-package/v1"
     },
     "asset": {
       "type": "string",
@@ -654,6 +654,6 @@
   ],
   "additionalProperties": false,
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://opencaw.local/schemas/model-to-action/action-package.schema.json",
+  "$id": "https://hephaera.local/schemas/model-to-action/action-package.schema.json",
   "title": "Reviewed compound action and presentation package"
 }

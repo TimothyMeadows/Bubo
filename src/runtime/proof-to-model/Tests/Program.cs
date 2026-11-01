@@ -1,7 +1,7 @@
 using System.Text.Json.Nodes;
-using OpenCaw.ProofToModel.Application;
-using OpenCaw.ProofToModel.Domain;
-using OpenCaw.ProofToModel.Infrastructure;
+using Hephaera.ProofToModel.Application;
+using Hephaera.ProofToModel.Domain;
+using Hephaera.ProofToModel.Infrastructure;
 if (args.Length > 0 && args[0] == "--compatibility") { CompatibilityTests.Run(); return 0; }
 if (args.Length > 0 && args[0] == "--echo") { Console.Write(args[1]); return 0; }
 if (args.Length > 0 && args[0] == "--sleep") { await Task.Delay(TimeSpan.FromSeconds(30)); return 0; }
@@ -18,7 +18,7 @@ if (args.Length > 0 && args[0] == "--blender-environment-probe")
     return FinishingSettingsTests.ObserveChildEnvironment(args);
 if (args.Length > 0 && args[0] is "--rigid-memory-allocate" or "--rigid-memory-parent")
     return RigidFinishingTests.ObserveAllocation(args);
-var root = Path.Combine(Path.GetTempPath(), "opencaw-proof-tests-" + Guid.NewGuid().ToString("N"));
+var root = Path.Combine(Path.GetTempPath(), "hephaera-proof-tests-" + Guid.NewGuid().ToString("N"));
 Directory.CreateDirectory(root);
 var w = new Workspace(root);
 var passed = 0;
@@ -38,7 +38,7 @@ try
         value = "persistent"
     });
     Check(w.Load<JsonObject>("roundtrip.json")["value"]!.GetValue<string>() == "persistent", "atomic state roundtrip");
-    File.WriteAllText(w.Resolve("STYLE.md"), "Primary OpenCaw art pipeline:\n- PROOF_TO_MODEL\n");
+    File.WriteAllText(w.Resolve("STYLE.md"), "Primary Hephaera art pipeline:\n- PROOF_TO_MODEL\n");
     File.WriteAllText(w.Resolve("proof.png"), "fixture deliberately not production PNG");
     w.Save("rights.json", new
     {
@@ -68,7 +68,7 @@ try
     });
     var opts = new Dictionary<string, string> { { "mode", "single-view-diagnostic" }, { "asset", "fixture" }, { "version", "v1" }, { "task", "tests" }, { "proof", "proof.png" }, { "rights", "rights.json" }, { "recipe", "recipe.json" }, { "toolchain", "toolchain.json" }, { "actor", "builder" } };
     await new Pipeline(w, opts, new NativeProcess(), new AlphaProcessor()).Execute("init", default);
-    var manifest = ".opencaw/.cache/tasks/tests/proof-to-model/fixture/v1/manifest.json";
+    var manifest = ".hephaera/.cache/tasks/tests/proof-to-model/fixture/v1/manifest.json";
     opts["manifest"] = manifest;
     Check(File.Exists(w.Resolve(manifest)), "init persists manifest");
     Check(w.Load<Manifest>(manifest).Proof.StartsWith(".art-staging/"), "proof preserved in versioned immutable staging");
@@ -76,7 +76,7 @@ try
     await Reject(() => new Pipeline(w, opts, new NativeProcess(), new AlphaProcessor()).Execute("reconstruct", default), "reconstruction cannot skip proof approval");
     await Reject(() => new Pipeline(w, opts, new NativeProcess(), new AlphaProcessor()).Execute("promote", default), "promotion cannot skip production stages");
     var proofFingerprint = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(string.Join("\n", new[] { w.Load<Manifest>(manifest).Proof, w.Load<Manifest>(manifest).ProofMetadata, "rights.json", "recipe.json", "toolchain.json", "STYLE.md" }.Order().Select(x => x + ":" + Workspace.Hash(w.Resolve(x)))))));
-    var approvalPath = ".opencaw/.cache/tasks/tests/reviews/proof.json";
+    var approvalPath = ".hephaera/.cache/tasks/tests/reviews/proof.json";
     w.Save(approvalPath, new
     {
         kind = "proof",

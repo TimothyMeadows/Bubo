@@ -249,7 +249,7 @@ def read_inputs(job, root, source, settings):
     fields(handoff, ("schemaVersion", "profile", "coordinateFrame", "sourceRawSha256", "preparedGlb", "preparedGlbSha256",
                      "sourceToPreparedMatrix", "authoringEvidence", "authoringEvidenceSha256", "parts"), "Rigid handoff")
     integer(handoff["schemaVersion"], 1, 1, "handoff schemaVersion")
-    if handoff["profile"] != "articulated" or handoff["coordinateFrame"] != "opencaw-proof-z-up":
+    if handoff["profile"] != "articulated" or handoff["coordinateFrame"] != "hephaera-proof-z-up":
         raise ValueError("Rigid handoff must explicitly declare articulated proof-frame geometry")
     if hash_value(handoff["sourceRawSha256"], "sourceRawSha256") != digest(source):
         raise ValueError("Rigid handoff raw ancestry differs from the actual reconstruction")
@@ -285,11 +285,11 @@ def read_inputs(job, root, source, settings):
         source_names.add(dependency["path"])
         dependencies[dependency["path"]] = dependency["sha256"]
     review_path = checked_file(root, configuration["reviewEvidence"], configuration["reviewEvidenceSha256"])
-    if len(review_path.relative_to(root).parts) < 5 or tuple(review_path.relative_to(root).parts[:3]) != (".opencaw", ".cache", "tasks"):
+    if len(review_path.relative_to(root).parts) < 5 or tuple(review_path.relative_to(root).parts[:3]) != (".hephaera", ".cache", "tasks"):
         raise ValueError("Rigid preparation review must be task-local")
     # Match the active task directory from the stage job path, not another task.
     task_prefix = relative_path(job.get("taskEvidenceRoot"),"taskEvidenceRoot")
-    if (len(task_prefix.split("/")) != 4 or task_prefix.split("/")[:3] != [".opencaw",".cache","tasks"]
+    if (len(task_prefix.split("/")) != 4 or task_prefix.split("/")[:3] != [".hephaera",".cache","tasks"]
             or not configuration["reviewEvidence"].startswith(task_prefix+"/")):
         raise ValueError("Review belongs to a different task")
     if "sourceTopology" in configuration:
@@ -2254,7 +2254,7 @@ def _snv_verify_native_geometry_uv_materials(expected, obj):
     normal = float(np.max(np.abs(expected['normals'] - actual['normals'])))
     return {'geometryUvMaterialsPassed': True, 'maxPositionDifferenceMetres': position, 'maxUvDifference': uv, 'dccReencodedNormalComponentDifference': normal, 'oldStrictNormalLimit': _snv_RESIDUAL_LIMIT, 'oldStrictNormalPassed': normal <= _snv_RESIDUAL_LIMIT, 'nativeNormalLosslessClaim': False}
 
-_snv_CONTRACT_ID = 'opencaw-rigid-static-normals/v1'
+_snv_CONTRACT_ID = 'hephaera-rigid-static-normals/v1'
 _snv_EXPORT_OPTIONS = {'export_format':'GLB','use_selection':True,'export_extras':True,
     'export_yup':True,'export_materials':'EXPORT','export_texcoords':True,'export_normals':True,
     'export_tangents':False,'export_attributes':False,'export_apply':False,
@@ -3183,7 +3183,7 @@ def _normal_all_corner_loss(context,actual,actual_frame):
 
 
 """Private staged transaction: prepare copied meshes, then commit object.data."""
-_normal_IMPORT_CONTRACT='opencaw-rigid-input-normals/v1'
+_normal_IMPORT_CONTRACT='hephaera-rigid-input-normals/v1'
 
 def _normal_ui(obj):
     return {'hideViewport':obj.hide_viewport,'hideRender':obj.hide_render,'hidden':obj.hide_get(),'selected':obj.select_get()}
@@ -3743,7 +3743,7 @@ def _clod_ix_classify(a, b):
     return dict(base, kind='PROPER_TRANSVERSE_INTERIOR_CROSSING' if proper else 'NONCOPLANAR_NONSHARED_SEGMENT_CONTACT', dimension=1, intersection=points)
 
 _clod_CONTACT_POLICY = 'protected-contact-rings-v1'
-_clod_OWNER_ATTRIBUTE = 'opencaw_contact_owner'
+_clod_OWNER_ATTRIBUTE = 'hephaera_contact_owner'
 _clod_CONTACT_LIMITS = {'inputTriangles':262144,'nodePairs':16777216,'leafPairs':67108864,'exactPairs':16777216}
 
 def _clod_contact_tick(work, kind, cancel=None):

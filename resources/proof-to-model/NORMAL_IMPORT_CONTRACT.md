@@ -1,6 +1,6 @@
 # Rigid stored-normal import contract
 
-Identifier: `opencaw-rigid-input-normals/v1`.
+Identifier: `hephaera-rigid-input-normals/v1`.
 
 Rigid-v2 settings may explicitly select
 `rigidParts.importNormals: {"method":"stored-corner-fan-v1"}`. No other fields,

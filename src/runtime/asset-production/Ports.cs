@@ -1,6 +1,6 @@
 using Bubo.Host;
 using HostExecutionContext = Bubo.Host.HostExecutionContext;
-namespace OpenCaw.AssetProduction;
+namespace Hephaera.AssetProduction;
 
 public interface IWorkspace
 {

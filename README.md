@@ -10,13 +10,13 @@ Prerequisites are an existing .NET 10 SDK and Python for source/resource verific
 
 ```powershell
 ./scripts/build.ps1 -Configuration Release
-./artifacts/bubo/bubo.exe capabilities --api-version 1
+./artifacts/bubo/bubo.exe capabilities --api-version 2
 ./scripts/test.ps1 -Configuration Release
 ```
 
 ```bash
 bash scripts/build.sh Release
-./artifacts/bubo/bubo capabilities --api-version 1
+./artifacts/bubo/bubo capabilities --api-version 2
 bash scripts/test.sh Release
 ```
 
@@ -27,11 +27,11 @@ Each downloaded CI artifact contains a complete `.tar.gz` runtime archive. Extra
 ## Execution boundary
 
 ```text
-bubo <workflow> <operation> --api-version 1 --root PROJECT_ROOT \
+bubo <workflow> <operation> --api-version 2 --root PROJECT_ROOT \
   --host-context PROJECT_CONTEXT_JSON --manifest PROJECT_MANIFEST [operation options]
 ```
 
-Workflows are `proof-to-model`, `model-to-animation`, `model-to-action`, `blender-inspection` and `media`. `capabilities --api-version 1` advertises the supported API/backends and exact build/resource identities without a host project. API v1 results are JSON on stdout; logs are on stderr and bounded task-local files. The result's `data` contains workflow status data; exported motion/action package formats retain their existing versioned schemas.
+Workflows are `proof-to-model`, `model-to-animation`, `model-to-action`, `blender-inspection` and `media`. `capabilities --api-version 2` advertises the supported API/backends and exact build/resource identities without a host project. API v2 results are JSON on stdout; logs are on stderr and bounded task-local files. The result's `data` contains workflow status data; exported motion/action package formats use their new Hephaera identities. API 1 is rejected; existing historical packages and approvals are not silently relabeled.
 
 The host-context contract is implemented in `src/Bubo.Host/` and exercised by its executable tests. Its `bubo-host-context/v1` object contains the absolute project root and task, declared state/staging/tool/input/output roots, selected pipeline/engine and policy fingerprints, hash-bound rights/consent/review/input references, explicit existing native executable hashes, finite process budgets, and provisioning/promotion permissions. Permissions default false. References and input-only roots remain read-only; paths cannot escape or traverse Git metadata, aliases or reparse points. These cooperative checks and native process ownership are not an OS sandbox.
 
@@ -45,7 +45,7 @@ Example host context for an owned fixture (replace hashes and paths with actual 
   "projectRoot": "ABSOLUTE_PROJECT_ROOT",
   "task": "example",
   "roots": {
-    "state": ".opencaw/.cache/tasks/example", "staging": ".art-staging",
+    "state": ".hephaera/.cache/tasks/example", "staging": ".art-staging",
     "tools": [".local/tools"], "inputs": ["inputs"], "outputs": ["assets/models"]
   },
   "policy": {
@@ -61,7 +61,7 @@ Example host context for an owned fixture (replace hashes and paths with actual 
 }
 ```
 
-Historical `.opencaw/.cache/` state keys and `opencaw-*` package identifiers are retained for consumer compatibility; an OpenCaw checkout or bootstrap is not required. Host policy documents are interpreted by the host adapter. Bubo validates supplied data and referenced hashes; it never loads instruction documents, invokes an engine selector, discovers a host installation, or executes recipe callbacks.
+Current host examples use `.hephaera/.cache/` state keys and `hephaera-*` package identifiers. A Hephaera checkout or bootstrap is not required. The deliberate rename is exposed as execution API 2; preserve older receipts and packages byte-for-byte and use explicitly reviewed new versions when crossing this boundary. Host policy documents are interpreted by the host adapter. Bubo validates supplied data and referenced hashes; it never loads instruction documents, invokes an engine selector, discovers a host installation, or executes recipe callbacks.
 
 ## Workflows and review
 
@@ -77,7 +77,7 @@ Initial assets bind canonical host selection and exact runtime build fingerprint
 
 ## Verification and provenance
 
-`provenance/opencaw-extraction.json` records the exact source repository/revision, source paths, Git blobs and working-byte SHA-256 identities for the 16 imported .NET projects, 14 fixed Blender scripts and supporting execution resources. MIT notices and the original Bubo adaptation receipts are preserved. Source-derived namespaces and technical contracts retain their original attribution.
+`provenance/hephaera-extraction.json` records the exact source repository/revision, source paths, Git blobs and working-byte SHA-256 identities for the 16 imported .NET projects, 14 fixed Blender scripts and supporting execution resources. MIT notices and the original Bubo adaptation receipts are preserved. The extraction ledger retains original attribution and import hashes; current namespaces/contracts use Hephaera under API 2.
 
 The compiled runtime catalog checks all shipped resources before execution. Normal builds only validate it; resource changes require explicit source review and a deliberate catalog/code identity update. Blender production uses only its fixed audited bundles, immutable attempts and exact executable/script hashes.
 

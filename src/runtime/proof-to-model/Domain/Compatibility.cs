@@ -1,5 +1,5 @@
 using System.Text.RegularExpressions;
-namespace OpenCaw.ProofToModel.Domain;
+namespace Hephaera.ProofToModel.Domain;
 
 public static class Compatibility
 {

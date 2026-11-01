@@ -1,5 +1,5 @@
 using System.Text.Json;
-namespace OpenCaw.AssetProduction;
+namespace Hephaera.AssetProduction;
 
 public static class AuditJournal
 {

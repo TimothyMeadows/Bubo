@@ -7,7 +7,7 @@ using System.Text.Json.Serialization;
 using System.Threading.Channels;
 using HostExecutionContext = Bubo.Host.HostExecutionContext;
 
-namespace OpenCaw.AssetProduction;
+namespace Hephaera.AssetProduction;
 
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed record GpuGuardianJob(string SchemaVersion,string Id,string Root,string ContextPath,string ContextSha256,int ClientPid,
@@ -36,7 +36,7 @@ public static class GpuGuardian
         if (!OperatingSystem.IsWindows() && !linux) throw new PlatformNotSupportedException("GPU guardian supports Windows and Linux only");
         var info=new ProcessStartInfo(linux?"/usr/bin/setsid":apphost) {WorkingDirectory=context.Root,UseShellExecute=false,CreateNoWindow=true,RedirectStandardInput=true,RedirectStandardOutput=true,RedirectStandardError=true};
         if(linux) info.ArgumentList.Add(apphost);
-        foreach(var arg in new[]{"gpu-guardian","run","--api-version","1","--root",context.Root,"--host-context",context.ContextPath,"--job",jobPath,"--job-sha256",jobSha}) info.ArgumentList.Add(arg);
+        foreach(var arg in new[]{"gpu-guardian","run","--api-version","2","--root",context.Root,"--host-context",context.ContextPath,"--job",jobPath,"--job-sha256",jobSha}) info.ArgumentList.Add(arg);
         using var process=Process.Start(info) ?? throw new InvalidOperationException("GPU guardian did not start");
         using var sending=new SemaphoreSlim(1,1);
         using var stopped=new CancellationTokenSource();
@@ -123,7 +123,7 @@ public static class GpuGuardian
             var options=new Dictionary<string,string>(StringComparer.Ordinal);
             for(var i=0;i<args.Length;i+=2)
                 if(i+1>=args.Length || !args[i].StartsWith("--",StringComparison.Ordinal) || !options.TryAdd(args[i][2..],args[i+1])) throw new InvalidOperationException("Invalid guardian options");
-            if(options.Count!=5 || options.GetValueOrDefault("api-version")!="1") throw new InvalidOperationException("Explicit guardian APIv1 and exact job arguments required");
+            if(options.Count!=5 || options.GetValueOrDefault("api-version")!="2") throw new InvalidOperationException("Explicit guardian APIv2 and exact job arguments required");
             var context=HostExecutionContext.Load(options["root"],options["host-context"]);
             workspace=new Workspace(context.Root,context);
             var path=workspace.Resolve(options["job"]);

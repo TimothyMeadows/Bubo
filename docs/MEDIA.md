@@ -1,16 +1,16 @@
-# Local media API v1
+# Local media execution API 2
 
 Bubo owns execution, pinned dependencies and fixed workers. A caller supplies its own hash-bound policy, rights, tool registration, paths and budgets through `bubo-host-context/v1`. Images use native stable-diffusion.cpp with FLUX.1-schnell Q8 diffusion weights. Stable Audio Open 1.0 SFX and ACE-Step 1.5 Turbo music each use a separate pinned CPython 3.12.16 environment. Qwen3-TTS12Hz1.7B CustomVoice preset speech and Base local-reference cloning use a dedicated voice environment.
 
 Use a prebuilt apphost (`bubo.exe` on Windows, `bubo` on Linux):
 
 ```text
-bubo capabilities --api-version 1
-bubo media setup --api-version 1 --root PROJECT --host-context CONTEXT.json --manifest SETUP.json
-bubo media setup --api-version 1 --root PROJECT --host-context CONTEXT.json --manifest SETUP.json --execute
-bubo media inspect --api-version 1 --root PROJECT --host-context CONTEXT.json --manifest REQUEST.json
-bubo media inspect --api-version 1 --root PROJECT --host-context CONTEXT.json --manifest REQUEST.json --load true
-bubo media generate --api-version 1 --root PROJECT --host-context CONTEXT.json --manifest REQUEST.json
+bubo capabilities --api-version 2
+bubo media setup --api-version 2 --root PROJECT --host-context CONTEXT.json --manifest SETUP.json
+bubo media setup --api-version 2 --root PROJECT --host-context CONTEXT.json --manifest SETUP.json --execute
+bubo media inspect --api-version 2 --root PROJECT --host-context CONTEXT.json --manifest REQUEST.json
+bubo media inspect --api-version 2 --root PROJECT --host-context CONTEXT.json --manifest REQUEST.json --load true
+bubo media generate --api-version 2 --root PROJECT --host-context CONTEXT.json --manifest REQUEST.json
 ```
 
 Stdout contains one versioned JSON result. Diagnostics use stderr and task-owned bounded log files. `inspect` verifies files without loading models; `--load true` loads and unloads one model with zero items and no sampling. It does not consume acceptance budget. No setup operation occurs during inspection or generation.

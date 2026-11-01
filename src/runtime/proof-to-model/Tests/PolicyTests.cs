@@ -2,9 +2,9 @@ using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json.Nodes;
-using OpenCaw.ProofToModel.Application;
-using OpenCaw.ProofToModel.Domain;
-using OpenCaw.ProofToModel.Infrastructure;
+using Hephaera.ProofToModel.Application;
+using Hephaera.ProofToModel.Domain;
+using Hephaera.ProofToModel.Infrastructure;
 static class PolicyTests
 {
     public static async Task Run(Workspace w, Action<bool, string> check, Func<Func<Task>, string, Task> reject)
@@ -17,7 +17,7 @@ static class PolicyTests
         w.Save("toolchain.json", cfg);
         var opts = new Dictionary<string, string> { { "mode", "single-view-diagnostic" }, { "asset", "budgets" }, { "version", "v1" }, { "task", "tests" }, { "proof", "matte.png" }, { "rights", "rights.json" }, { "recipe", "recipe.json" }, { "toolchain", "toolchain.json" }, { "actor", "builder" } };
         await new Pipeline(w, opts, new NativeProcess(), new AlphaProcessor()).Execute("init", default);
-        var manifest = ".opencaw/.cache/tasks/tests/proof-to-model/budgets/v1/manifest.json";
+        var manifest = ".hephaera/.cache/tasks/tests/proof-to-model/budgets/v1/manifest.json";
         opts["manifest"] = manifest;
         string Fingerprint(string kind)
         {
@@ -27,7 +27,7 @@ static class PolicyTests
         }
         async Task Approve(string kind, string reviewer = "human", string? artifact = null)
         {
-            var receipt = ".opencaw/.cache/tasks/tests/reviews/policy-" + kind + ".json";
+            var receipt = ".hephaera/.cache/tasks/tests/reviews/policy-" + kind + ".json";
             var evidence = new JsonObject { ["kind"] = kind, ["reviewer"] = reviewer, ["decision"] = "approved", ["fingerprint"] = Fingerprint(kind), ["reason"] = "Synthetic policy test receipt; not production acceptance", ["human"] = true };
             if (artifact is not null)
             {
@@ -138,7 +138,7 @@ static class PolicyTests
         donorOptions["asset"] = "donor-reused";
         donorOptions["rights"] = "reuse-rights.json";
         await new Pipeline(w, donorOptions, new NativeProcess(), new AlphaProcessor()).Execute("init", default);
-        var reusedPath = ".opencaw/.cache/tasks/tests/proof-to-model/donor-reused/v1/manifest.json";
+        var reusedPath = ".hephaera/.cache/tasks/tests/proof-to-model/donor-reused/v1/manifest.json";
         var reused = w.Load<Manifest>(reusedPath);
         check(reused.Stages["reconstruct"].Status == "complete" && reused.History.Any(entry => entry["event"]?.GetValue<string>() == "reuse"), "fully approved donor copies reconstruction with durable ancestry");
         await reject(() => new Pipeline(w, new Dictionary<string, string> { { "manifest", reusedPath } }, new NativeProcess(), new AlphaProcessor()).Execute("finish", default), "reused asset requires its own current proof and preprocessing approvals");
@@ -179,7 +179,7 @@ static class PolicyTests
         await reject(() => Task.Run(() => w.Resolve("junction/file")), "symlink or junction segment rejected");
         await reject(() => Task.Run(() => new Workspace(link).Resolve("file")), "symlink or junction project root rejected");
         Directory.Delete(link, false);
-        foreach (var component in new[] { ".opencaw", ".opencaw/.cache" })
+        foreach (var component in new[] { ".hephaera", ".hephaera/.cache" })
         {
             var project = w.Resolve("cache-layout-" + Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(project);
@@ -189,7 +189,7 @@ static class PolicyTests
                 await new NativeProcess().Run(Environment.GetEnvironmentVariable("COMSPEC")!, ["/d", "/c", "mklink", "/J", componentLink, target], w.Root, w.Resolve("cache-junction-" + Guid.NewGuid().ToString("N") + ".log"), 5);
             else
                 Directory.CreateSymbolicLink(componentLink, target);
-            await reject(() => Task.Run(() => new Workspace(project).Save(".opencaw/.cache/tasks/blocked/manifest.json", new { blocked = true })), "native cache component junction rejected: " + component);
+            await reject(() => Task.Run(() => new Workspace(project).Save(".hephaera/.cache/tasks/blocked/manifest.json", new { blocked = true })), "native cache component junction rejected: " + component);
             check(!Directory.EnumerateFileSystemEntries(target).Any(), "cache junction rejection preserves its target: " + component);
             Directory.Delete(componentLink, false);
         }
@@ -204,7 +204,7 @@ static class PolicyTests
         });
         libraryOpts["library-search"] = "library-search.json";
         await new Pipeline(w, libraryOpts, new NativeProcess(), new AlphaProcessor()).Execute("init", default);
-        var libraryManifest = w.Load<Manifest>(".opencaw/.cache/tasks/tests/proof-to-model/library-test/v1/manifest.json");
+        var libraryManifest = w.Load<Manifest>(".hephaera/.cache/tasks/tests/proof-to-model/library-test/v1/manifest.json");
         check(w.Load<JsonObject>(libraryManifest.ProofMetadata)["librarySearch"] is JsonObject, "search result bound into immutable proof metadata");
         var unavailable = w.Load<JsonObject>("library-search.json");
         unavailable["libraries"]![0]!["available"] = false;
@@ -226,13 +226,13 @@ static class PolicyTests
             interfaces = Array.Empty<string>()
         });
         await reject(() => new Pipeline(w, briefOpts, new NativeProcess(), new AlphaProcessor()).Execute("init", default), "unsupported brief unit scale rejected before creating asset");
-        File.WriteAllText(w.Resolve("STYLE.md"), "Primary OpenCaw art pipeline:\n- CLOUD\n");
+        File.WriteAllText(w.Resolve("STYLE.md"), "Primary Hephaera art pipeline:\n- CLOUD\n");
         var selection = new JsonObject { ["pipeline"] = "PROOF_TO_MODEL", ["selectionSource"] = "prompt", ["styleContract"] = "STYLE.md", ["styleSha256"] = Workspace.Hash(w.Resolve("STYLE.md")), ["fallbackPolicy"] = "stop", ["resolvedAt"] = DateTimeOffset.UtcNow.ToString("O") };
         w.Save("selection.json", selection);
         var overrideOpts = new Dictionary<string, string>(libraryOpts) { ["asset"] = "prompt-override", ["selection"] = "selection.json" };
         overrideOpts.Remove("library-search");
         await new Pipeline(w, overrideOpts, new NativeProcess(), new AlphaProcessor()).Execute("init", default);
-        var overridden = w.Load<Manifest>(".opencaw/.cache/tasks/tests/proof-to-model/prompt-override/v1/manifest.json");
+        var overridden = w.Load<Manifest>(".hephaera/.cache/tasks/tests/proof-to-model/prompt-override/v1/manifest.json");
         check(w.Load<JsonObject>(overridden.ProofMetadata)["pipelineSelection"]?["styleSha256"]?.GetValue<string>() == Workspace.Hash(w.Resolve("STYLE.md")), "canonical resolver-shaped prompt selection accepted and preserved");
         selection["styleSha256"] = new string('0', 64);
         w.Save("selection.json", selection);

@@ -3,7 +3,7 @@ using System.Text.Json;
 using Bubo.Media.Application;
 using Bubo.Media.Domain;
 using Bubo.Media.Infrastructure;
-using OpenCaw.AssetProduction;
+using Hephaera.AssetProduction;
 
 static class AdapterFixtures
 {

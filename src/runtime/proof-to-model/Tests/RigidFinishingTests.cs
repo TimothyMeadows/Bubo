@@ -5,9 +5,9 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using OpenCaw.ProofToModel.Application;
-using OpenCaw.ProofToModel.Domain;
-using OpenCaw.ProofToModel.Infrastructure;
+using Hephaera.ProofToModel.Application;
+using Hephaera.ProofToModel.Domain;
+using Hephaera.ProofToModel.Infrastructure;
 
 static class RigidFinishingTests
 {
@@ -23,7 +23,7 @@ static class RigidFinishingTests
     };
     static JsonObject Handoff() => new()
     {
-        ["schemaVersion"] = 1, ["profile"] = "articulated", ["coordinateFrame"] = "opencaw-proof-z-up",
+        ["schemaVersion"] = 1, ["profile"] = "articulated", ["coordinateFrame"] = "hephaera-proof-z-up",
         ["sourceRawSha256"] = ZeroHash, ["preparedGlb"] = ".art-staging/prepared.glb", ["preparedGlbSha256"] = ZeroHash,
         ["sourceToPreparedMatrix"] = Identity, ["authoringEvidence"] = "authoring.json", ["authoringEvidenceSha256"] = ZeroHash,
         ["parts"] = new JsonArray(Part())
@@ -35,7 +35,7 @@ static class RigidFinishingTests
         ["rigidParts"] = new JsonObject
         {
             ["handoff"] = "handoff.json", ["handoffSha256"] = ZeroHash,
-            ["reviewEvidence"] = ".opencaw/.cache/tasks/tests/reviews/rigid.json", ["reviewEvidenceSha256"] = ZeroHash,
+            ["reviewEvidence"] = ".hephaera/.cache/tasks/tests/reviews/rigid.json", ["reviewEvidenceSha256"] = ZeroHash,
             ["maxLod0Triangles"] = 100, ["maxGlbBytes"] = 1_000_000
         },
         ["resources"] = new JsonObject { ["maxPrivateBytes"] = 536_870_912L }
@@ -161,7 +161,7 @@ static class RigidFinishingTests
         await CheckMemoryProcess(parent, check, reject);
     }
 
-    static JsonObject SourceTopologySelection(string receipt = ".opencaw/.cache/tasks/tests/source-topology.json", string? hash = null) => new()
+    static JsonObject SourceTopologySelection(string receipt = ".hephaera/.cache/tasks/tests/source-topology.json", string? hash = null) => new()
     {
         ["method"] = "reviewed-source-corners-v1", ["receipt"] = receipt, ["receiptSha256"] = hash ?? ZeroHash
     };
@@ -284,7 +284,7 @@ static class RigidFinishingTests
 
     static void SaveSourceTopology(Fixture fixture, JsonObject receipt, bool reviewedSource = true)
     {
-        const string path = ".opencaw/.cache/tasks/tests/source-topology.json";
+        const string path = ".hephaera/.cache/tasks/tests/source-topology.json";
         fixture.W.Save(path, receipt);
         var hash = Workspace.Hash(fixture.W.Resolve(path));
         var authoring = fixture.W.Load<JsonObject>("authoring.json");
@@ -305,7 +305,7 @@ static class RigidFinishingTests
         var isolated = new Workspace(directory); isolated.Save("recipe.json", parent.Load<JsonObject>("recipe.json"));
         var fixture = await Fixture.Create(isolated);
         var w = fixture.W;
-        const string path = ".opencaw/.cache/tasks/tests/source-topology.json";
+        const string path = ".hephaera/.cache/tasks/tests/source-topology.json";
         var receipt = SourceTopologyReceipt(); receipt["preparedGlbSha256"] = Workspace.Hash(w.Resolve(".art-staging/prepared.glb"));
         SaveSourceTopology(fixture, receipt);
         var originals = Directory.GetFiles(w.Root,"*",SearchOption.AllDirectories).ToDictionary(file => file,File.ReadAllBytes);
@@ -337,7 +337,7 @@ static class RigidFinishingTests
         }, "reviewed authoring sources", "receipt authoring path must match exactly, even on case-insensitive filesystems");
         await BeforeLaunch(() =>
         {
-            var settings = w.Load<JsonObject>("settings.json"); settings["rigidParts"]!["sourceTopology"]!["receipt"] = ".opencaw/.cache/tasks/another/source-topology.json";
+            var settings = w.Load<JsonObject>("settings.json"); settings["rigidParts"]!["sourceTopology"]!["receipt"] = ".hephaera/.cache/tasks/another/source-topology.json";
             w.Save("settings.json",settings);
         }, "task", "selected receipt belongs to another task");
         foreach (var (label,change,expected) in new (string,Action<JsonObject>,string)[]
@@ -727,7 +727,7 @@ static class RigidFinishingTests
         foreach (var (change, expected) in new (Action<JsonObject>, string)[]
         {
             (p => p.Remove("sourceTopology"), "contactPolicy requires explicitly reviewed sourceTopology"),
-            (p => p["sourceTopology"]!["receipt"] = ".opencaw/.cache/tasks/tests/missing.json", "Missing rigid JSON"),
+            (p => p["sourceTopology"]!["receipt"] = ".hephaera/.cache/tasks/tests/missing.json", "Missing rigid JSON"),
             (p => p["sourceTopology"]!["method"] = "coordinate-weld", "sourceTopology must explicitly select"),
             (p => p["lods"]!["contactPolicy"] = false, "contactPolicy must explicitly select"),
             (p => p["lods"]!["contactRingWidth"] = .001, "Unknown or duplicate rigidParts.lods")
@@ -977,7 +977,7 @@ static class RigidFinishingTests
         }, "different retained raw", "different reconstruction ancestry");
         await BeforeLaunch(() =>
         {
-            var other = ".opencaw/.cache/tasks/other/review.json"; w.Save(other, w.Load<JsonObject>(fixture.ReviewPath));
+            var other = ".hephaera/.cache/tasks/other/review.json"; w.Save(other, w.Load<JsonObject>(fixture.ReviewPath));
             var settings = w.Load<JsonObject>("settings.json"); settings["rigidParts"]!["reviewEvidence"] = other;
             settings["rigidParts"]!["reviewEvidenceSha256"] = w.HashFile(w.Resolve(other)); w.Save("settings.json", settings);
         }, "task-local", "another task's technical review");
@@ -1040,7 +1040,7 @@ static class RigidFinishingTests
         check(stage.Status == "complete" && fixture.Native.BoundedCalls == 2 && fixture.Native.UnboundedCalls == 0,
             "SIMULATED reviewed rigid finish uses explicit resource enforcement for version probe and producer");
         check(fixture.Native.LastJob!["rigidHandoff"]!["profile"]!.GetValue<string>() == "articulated"
-            && fixture.Native.LastJob["taskEvidenceRoot"]!.GetValue<string>() == ".opencaw/.cache/tasks/tests",
+            && fixture.Native.LastJob["taskEvidenceRoot"]!.GetValue<string>() == ".hephaera/.cache/tasks/tests",
             "SIMULATED native job carries exact reviewed handoff and active task, without applying another engine selector");
         check(stage.Artifacts.Keys.Contains("rigidHandoff") && stage.Artifacts.Keys.Contains("rigidPreparedSource")
             && stage.Artifacts.Keys.Contains("rigidAuthoringEvidence") && stage.Artifacts.Keys.Contains("rigidPreparationReview"),
@@ -1072,7 +1072,7 @@ static class RigidFinishingTests
         public required Workspace W { get; init; }
         public required Dictionary<string, string> Options { get; init; }
         public required SimulatedRigid Native { get; init; }
-        public string ReviewPath => ".opencaw/.cache/tasks/tests/reviews/rigid.json";
+        public string ReviewPath => ".hephaera/.cache/tasks/tests/reviews/rigid.json";
         public string ManifestPath => Options["manifest"];
         public Manifest State => W.Load<Manifest>(ManifestPath);
         public Task Run() => Command("finish");
@@ -1102,7 +1102,7 @@ static class RigidFinishingTests
         public static async Task<Fixture> Create(Workspace parent)
         {
             var root = parent.Resolve("rigid-admission"); Directory.CreateDirectory(root); var w = new Workspace(root);
-            File.WriteAllText(w.Resolve("STYLE.md"), "Primary OpenCaw art pipeline:\n- PROOF_TO_MODEL\n");
+            File.WriteAllText(w.Resolve("STYLE.md"), "Primary Hephaera art pipeline:\n- PROOF_TO_MODEL\n");
             RgbaPng.Write(w.Resolve("source.png"), new RgbaPng.Image(2, 2, Enumerable.Repeat((byte)255, 16).ToArray()));
             w.Save("rights.json", new { authorized = true, source = "SIMULATED test only" }); w.Save("recipe.json", parent.Load<JsonObject>("recipe.json"));
             w.Save("toolchain.json", new { schemaVersion = 1, files = Array.Empty<object>(), models = Array.Empty<object>(), blender = new { path = Environment.ProcessPath! }, limits = new { maxAttempts = 20, timeoutSeconds = 10 } });
@@ -1112,7 +1112,7 @@ static class RigidFinishingTests
             var options = new Dictionary<string, string> { ["mode"] = "single-view-diagnostic", ["asset"] = "rigid", ["version"] = "v1", ["task"] = "tests", ["proof"] = "source.png", ["rights"] = "rights.json", ["recipe"] = "recipe.json", ["toolchain"] = "toolchain.json", ["actor"] = "SIMULATED-builder", ["baseline-root"] = baseline };
             var native = new SimulatedRigid(w);
             await new Pipeline(w, options, native, new AlphaProcessor()).Execute("init", default);
-            var manifest = ".opencaw/.cache/tasks/tests/proof-to-model/rigid/v1/manifest.json"; options["manifest"] = manifest;
+            var manifest = ".hephaera/.cache/tasks/tests/proof-to-model/rigid/v1/manifest.json"; options["manifest"] = manifest;
             var state = w.Load<Manifest>(manifest); Directory.CreateDirectory(w.Resolve(state.Staging + "/fixture"));
             var normalized = state.Staging + "/fixture/input.dat"; File.WriteAllText(w.Resolve(normalized), "SIMULATED preprocessing");
             var raw = state.Staging + "/fixture/raw.glb"; WriteGlb(w.Resolve(raw));
@@ -1121,7 +1121,7 @@ static class RigidFinishingTests
             var core = new[] { state.Proof, state.ProofMetadata, state.Rights, state.Recipe, state.Toolchain, "STYLE.md" };
             foreach (var kind in new[] { "proof", "preprocessing" })
             {
-                var path = ".opencaw/.cache/tasks/tests/reviews/" + kind + ".json"; w.Save(path, new { reason = "SIMULATED test approval, not a real human decision" });
+                var path = ".hephaera/.cache/tasks/tests/reviews/" + kind + ".json"; w.Save(path, new { reason = "SIMULATED test approval, not a real human decision" });
                 var paths = kind == "proof" ? core : core.Append(normalized);
                 var fingerprint = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(string.Join("\n", paths.Order().Select(file => file + ":" + Workspace.Hash(w.Resolve(file)))))));
                 state.Approvals.Add(new(kind, "SIMULATED", path, Workspace.Hash(w.Resolve(path)), fingerprint, DateTimeOffset.UtcNow));
@@ -1133,7 +1133,7 @@ static class RigidFinishingTests
             var authoring = Authoring(); authoring["sourceRawSha256"] = handoff["sourceRawSha256"]!.DeepClone();
             authoring["sources"]![0]!["sha256"] = Workspace.Hash(w.Resolve("master.txt"));
             w.Save("handoff.json", handoff); w.Save("authoring.json", authoring);
-            var reviewPath = ".opencaw/.cache/tasks/tests/reviews/rigid.json"; w.Save(reviewPath, Review());
+            var reviewPath = ".hephaera/.cache/tasks/tests/reviews/rigid.json"; w.Save(reviewPath, Review());
             w.Save("settings.json", Settings()); options["finish-settings"] = "settings.json";
             var result = new Fixture { W = w, Options = options, Native = native };
             result.RefreshBindings();

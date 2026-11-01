@@ -1,5 +1,5 @@
 using System.Text.Json.Nodes;
-namespace OpenCaw.ModelAction.Domain;
+namespace Hephaera.ModelAction.Domain;
 
 public static class ActionVerificationBudget
 {
@@ -13,7 +13,7 @@ public sealed class Manifest
     public string? HostPolicySha256 { get; set; }
     [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
     public string? RuntimeBuildSha256 { get; set; }
-    public string SchemaVersion { get; set; } = "opencaw-model-action/v1";
+    public string SchemaVersion { get; set; } = "hephaera-model-action/v1";
     public string Task { get; set; } = "";
     public string Asset { get; set; } = "";
     public string Version { get; set; } = "";

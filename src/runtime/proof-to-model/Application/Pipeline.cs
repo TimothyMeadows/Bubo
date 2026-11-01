@@ -2,9 +2,9 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using System.IO.Compression;
-using OpenCaw.ProofToModel.Domain;
+using Hephaera.ProofToModel.Domain;
 
-namespace OpenCaw.ProofToModel.Application;
+namespace Hephaera.ProofToModel.Application;
 
 public sealed partial class Pipeline(IWorkspace w, Dictionary<string, string> options, INativeProcess native, IAlphaProcessor alpha)
 {
@@ -24,7 +24,7 @@ public sealed partial class Pipeline(IWorkspace w, Dictionary<string, string> op
         w.ResolveWrite(State + "/audit.jsonl");
         w.Save(manifestPath, m);
         var audit = new AuditEvent { Type = "state", Message = "Asset state persisted", Data = new Dictionary<string, string> { { "asset", m.Asset }, { "manifest", manifestPath } } };
-        OpenCaw.AssetProduction.AuditJournal.Append(w, State + "/audit.jsonl", audit);
+        Hephaera.AssetProduction.AuditJournal.Append(w, State + "/audit.jsonl", audit);
     }
     JsonObject Toolchain => w.Load<JsonObject>(m.Toolchain);
     bool IsMultiView => m.SchemaVersion == 2;
@@ -33,7 +33,7 @@ public sealed partial class Pipeline(IWorkspace w, Dictionary<string, string> op
     Bubo.Host.HostExecutionContext Host => w.HostContext ?? throw new InvalidOperationException("Validated Bubo host context required");
     string CurrentStyle => Host.StyleSha256;
     IEnumerable<string> PolicyPaths => Host.References.Where(reference => reference.Kind == "policy" && reference.Sha256 == CurrentStyle).Select(reference => reference.Path);
-    string TaskRoot(string task) => options.GetValueOrDefault("state-root", ".opencaw/.cache/tasks/" + task);
+    string TaskRoot(string task) => options.GetValueOrDefault("state-root", ".hephaera/.cache/tasks/" + task);
     string StagingRoot => options.GetValueOrDefault("staging-root", ".art-staging");
     IEnumerable<string> MetadataPaths => new[] { m.ProofMetadata, m.Brief }.Where(path => !string.IsNullOrEmpty(path));
     void Fresh(string? rerun = null)
@@ -212,13 +212,13 @@ public sealed partial class Pipeline(IWorkspace w, Dictionary<string, string> op
         var task = Id(Need("task"));
         manifestPath = w.Relative(options.GetValueOrDefault("manifest", $"{TaskRoot(task)}/proof-to-model/{asset}/{version}/manifest.json"));
         if (!manifestPath.StartsWith($"{TaskRoot(task)}/", StringComparison.Ordinal))
-            throw new InvalidOperationException("Manifest must remain under its .opencaw/.cache/tasks/<task>/ directory");
+            throw new InvalidOperationException("Manifest must remain under its .hephaera/.cache/tasks/<task>/ directory");
         if (File.Exists(w.Resolve(manifestPath)))
             throw new InvalidOperationException("Asset version already exists");
         using var assetLock = w.Lock(Path.GetDirectoryName(manifestPath) + "/asset.lock");
         m = new()
         {
-            HostPolicySha256 = OpenCaw.AssetProduction.HostPolicyIdentity.Fingerprint(Host),
+            HostPolicySha256 = Hephaera.AssetProduction.HostPolicyIdentity.Fingerprint(Host),
             RuntimeBuildSha256 = options.GetValueOrDefault("runtime-build-sha256"),
             SchemaVersion = selectedMode == "multi-view" ? 2 : 1,
             Asset = asset,
@@ -317,7 +317,7 @@ public sealed partial class Pipeline(IWorkspace w, Dictionary<string, string> op
                 throw new InvalidOperationException("Library result must be selected or no-suitable-match");
             var evidence = w.Relative(entry["copyEvidence"]?.GetValue<string>() ?? throw new InvalidOperationException("Selected library asset requires existing copyEvidence"));
             var copy = w.Load<JsonObject>(evidence);
-            if (copy["schemaVersion"]?.GetValue<string>() != "opencaw-external-asset-copy/v1" || copy["libraryId"]?.GetValue<string>() != id || copy["styleSha256"]?.GetValue<string>() != CurrentStyle || copy["sourceReadOnly"]?.GetValue<bool>() != true)
+            if (copy["schemaVersion"]?.GetValue<string>() != "hephaera-external-asset-copy/v1" || copy["libraryId"]?.GetValue<string>() != id || copy["styleSha256"]?.GetValue<string>() != CurrentStyle || copy["sourceReadOnly"]?.GetValue<bool>() != true)
                 throw new InvalidOperationException("Invalid library copy ancestry");
             foreach (var file in copy["files"]!.AsArray())
             {
@@ -354,7 +354,7 @@ public sealed partial class Pipeline(IWorkspace w, Dictionary<string, string> op
     void RequireTaskEvidence(string evidence)
     {
         if (!w.Relative(evidence).StartsWith($"{TaskRoot(m.Task)}/", StringComparison.Ordinal))
-            throw new InvalidOperationException("Review evidence must remain under its .opencaw/.cache/tasks/<task>/ directory; create fresh task-local evidence");
+            throw new InvalidOperationException("Review evidence must remain under its .hephaera/.cache/tasks/<task>/ directory; create fresh task-local evidence");
     }
     Pipeline OpenDonor(string path)
     {
@@ -616,8 +616,8 @@ public sealed partial class Pipeline(IWorkspace w, Dictionary<string, string> op
             osSandbox = false
         });
         stage.Artifacts["execution"] = receipt;
-        var inputs=stage.ExternalInputs.Select(x=>new OpenCaw.AssetProduction.GpuInputIdentity(x.Key,x.Value)).ToArray();
-        await native.RunGpu(new OpenCaw.AssetProduction.GpuProcessSpec(executable,arguments,w.Root,w.Resolve(stage.Attempt+"/process.log"),Timeout,LogBudget,w.HostContext?.MaxPrivateBytes,
+        var inputs=stage.ExternalInputs.Select(x=>new Hephaera.AssetProduction.GpuInputIdentity(x.Key,x.Value)).ToArray();
+        await native.RunGpu(new Hephaera.AssetProduction.GpuProcessSpec(executable,arguments,w.Root,w.Resolve(stage.Attempt+"/process.log"),Timeout,LogBudget,w.HostContext?.MaxPrivateBytes,
             new Dictionary<string,string>{{"CUDA_VISIBLE_DEVICES",device}},inputs,w.ResolveWrite(".local/tools/proof-to-model/gpu-"+device+".lock"),Math.Min(300,Timeout)),cancellation);
     }
     async Task Preprocess(Stage s, CancellationToken c)
@@ -865,7 +865,7 @@ public sealed partial class Pipeline(IWorkspace w, Dictionary<string, string> op
             mode = IsMultiView ? "multi-view" : "single-view-diagnostic",
             root = w.Root,
             input,
-            inputFrame = IsMultiView ? mode == "finish" ? "pixal3d-mv-export" : "opencaw-proof-z-up" : "legacy-native",
+            inputFrame = IsMultiView ? mode == "finish" ? "pixal3d-mv-export" : "hephaera-proof-z-up" : "legacy-native",
             engineToProofScale = IsMultiView ? 1.0 / CurrentProofSet()["camera"]!["meshScale"]!.GetValue<double>() : 1.0,
             proof = IsMultiView ? CurrentFrontProof() : m.Proof,
             proofSet = IsMultiView && mode == "review" ? w.Load<JsonObject>(Artifact("preprocess", "dataset")) : null,
