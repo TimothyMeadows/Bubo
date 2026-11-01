@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://opencaw.local/schemas/proof-to-model/proof-set-v1",
+  "$id": "https://hephaera.local/schemas/proof-to-model/proof-set-v1",
   "title": "Six-angle proof selection with immutable revisions and explicit generation authority",
   "type": "object",
   "additionalProperties": false,

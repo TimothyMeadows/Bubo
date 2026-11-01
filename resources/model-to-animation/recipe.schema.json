@@ -945,6 +945,6 @@
   ],
   "additionalProperties": false,
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://opencaw.local/schemas/motion/recipe-v1",
+  "$id": "https://hephaera.local/schemas/motion/recipe-v1",
   "title": "Explicit native skinned/articulated/rigid animation production recipe"
 }

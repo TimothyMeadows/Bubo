@@ -2,9 +2,9 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using OpenCaw.ProofToModel.Application;
-using OpenCaw.ProofToModel.Domain;
-using OpenCaw.ProofToModel.Infrastructure;
+using Hephaera.ProofToModel.Application;
+using Hephaera.ProofToModel.Domain;
+using Hephaera.ProofToModel.Infrastructure;
 
 static class FinishAttemptBudgetTests
 {
@@ -84,7 +84,7 @@ static class FinishAttemptBudgetTests
         check(fixture.Upstream() == upstream && fixture.Approvals() == approvals && fixture.W.HashFile(fixture.W.Resolve("toolchain.json")) == config, "SIMULATED budget grant preserves upstream stages, proof approvals and original toolchain");
         var after = fixture.Hash; var calls = fixture.Native.Calls;
         await reject(() => fixture.Run(), "SIMULATED same budget receipt cannot be replayed after success");
-        var copiedReceipt = ".opencaw/.cache/tasks/tests/reviews/copied-budget.json"; File.WriteAllBytes(fixture.W.Resolve(copiedReceipt), originalBytes);
+        var copiedReceipt = ".hephaera/.cache/tasks/tests/reviews/copied-budget.json"; File.WriteAllBytes(fixture.W.Resolve(copiedReceipt), originalBytes);
         fixture.Options["finish-budget"] = copiedReceipt;
         await reject(() => fixture.Run(), "SIMULATED identical receipt bytes at a different task path cannot be replayed");
         check(fixture.Hash == after && fixture.Native.Calls == calls && fixture.Count == 4, "SIMULATED replay rejections do not write state or launch tools");
@@ -123,10 +123,10 @@ static class FinishAttemptBudgetTests
         }
         invalid.Options["finish-budget"] = permitted;
         var junctionTarget = parent.Resolve("budget-junction-target"); Directory.CreateDirectory(junctionTarget); File.WriteAllText(Path.Combine(junctionTarget, "receipt.json"), Receipt(baseline).ToJsonString());
-        var junction = invalid.W.Resolve(".opencaw/.cache/tasks/tests/reviews/link");
+        var junction = invalid.W.Resolve(".hephaera/.cache/tasks/tests/reviews/link");
         if (OperatingSystem.IsWindows()) await new NativeProcess().Run(Environment.GetEnvironmentVariable("COMSPEC")!, ["/d", "/c", "mklink", "/J", junction, junctionTarget], invalid.W.Root, invalid.W.Resolve("junction.log"), 5);
         else Directory.CreateSymbolicLink(junction, junctionTarget);
-        invalid.Options["finish-budget"] = ".opencaw/.cache/tasks/tests/reviews/link/receipt.json";
+        invalid.Options["finish-budget"] = ".hephaera/.cache/tasks/tests/reviews/link/receipt.json";
         await reject(() => invalid.Run(), "SIMULATED actual task-local junction escape cannot provide budget authority"); Directory.Delete(junction);
         invalid.Options["finish-budget"] = permitted;
         foreach (var command in new[] { "init", "status", "doctor", "setup", "classify", "prepare-proofs", "preprocess", "reconstruct", "review", "record", "validate", "promote" })
@@ -180,13 +180,13 @@ static class FinishAttemptBudgetTests
         public string Approvals() => JsonSerializer.Serialize(State.Approvals, Serialization.Json);
         public string WriteReceipt()
         {
-            var path = ".opencaw/.cache/tasks/tests/reviews/budget.json";
+            var path = ".hephaera/.cache/tasks/tests/reviews/budget.json";
             W.Save(path, Receipt(Hash, Count)); return path;
         }
         public static async Task<Fixture> Create(Workspace parent, string name, int consumed = 3)
         {
             var root = parent.Resolve("finish-budget-" + name); Directory.CreateDirectory(root); var w = new Workspace(root);
-            File.WriteAllText(w.Resolve("STYLE.md"), "Primary OpenCaw art pipeline:\n- PROOF_TO_MODEL\n");
+            File.WriteAllText(w.Resolve("STYLE.md"), "Primary Hephaera art pipeline:\n- PROOF_TO_MODEL\n");
             RgbaPng.Write(w.Resolve("source.png"), new RgbaPng.Image(2, 2, Enumerable.Repeat((byte)255, 16).ToArray()));
             w.Save("rights.json", new { authorized = true, source = "SIMULATED fixture only" }); w.Save("recipe.json", parent.Load<JsonObject>("recipe.json"));
             w.Save("toolchain.json", new { schemaVersion = 1, files = Array.Empty<object>(), models = Array.Empty<object>(), blender = new { path = Environment.ProcessPath! }, limits = new { maxAttempts = 3, timeoutSeconds = 10 } });
@@ -194,7 +194,7 @@ static class FinishAttemptBudgetTests
             foreach (var file in new[] { "finish.py", "review.py", "common.py" }) File.WriteAllText(Path.Combine(scripts, file), "# SIMULATED fixed producer fixture, not Blender code\n");
             var options = new Dictionary<string, string> { ["mode"] = "single-view-diagnostic", ["asset"] = "budget", ["version"] = "v1", ["task"] = "tests", ["proof"] = "source.png", ["rights"] = "rights.json", ["recipe"] = "recipe.json", ["toolchain"] = "toolchain.json", ["actor"] = "synthetic-builder", ["baseline-root"] = baseline };
             var native = new SimulatedFinish(w); await new Pipeline(w, options, native, new AlphaProcessor()).Execute("init", default);
-            var manifest = ".opencaw/.cache/tasks/tests/proof-to-model/budget/v1/manifest.json"; options["manifest"] = manifest;
+            var manifest = ".hephaera/.cache/tasks/tests/proof-to-model/budget/v1/manifest.json"; options["manifest"] = manifest;
             var state = w.Load<Manifest>(manifest); Directory.CreateDirectory(w.Resolve(state.Staging + "/fixture"));
             var normalized = state.Staging + "/fixture/input.dat"; File.WriteAllText(w.Resolve(normalized), "SIMULATED preprocessing");
             var raw = state.Staging + "/fixture/raw.glb"; SyntheticGlb(w.Resolve(raw));
@@ -203,7 +203,7 @@ static class FinishAttemptBudgetTests
             var core = new[] { state.Proof, state.ProofMetadata, state.Rights, state.Recipe, state.Toolchain, "STYLE.md" };
             foreach (var kind in new[] { "proof", "preprocessing" })
             {
-                var path = ".opencaw/.cache/tasks/tests/reviews/" + kind + ".json"; w.Save(path, new { reason = "SIMULATED approval only" });
+                var path = ".hephaera/.cache/tasks/tests/reviews/" + kind + ".json"; w.Save(path, new { reason = "SIMULATED approval only" });
                 var paths = kind == "proof" ? core : core.Append(normalized);
                 var fingerprint = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(string.Join("\n", paths.Order().Select(file => file + ":" + w.HashFile(w.Resolve(file)))))));
                 state.Approvals.Add(new(kind, "synthetic", path, w.HashFile(w.Resolve(path)), fingerprint, DateTimeOffset.UtcNow));

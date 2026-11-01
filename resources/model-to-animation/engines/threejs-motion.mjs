@@ -1,4 +1,4 @@
-/* OpenCaw motion presentation for a host-owned, version-locked Three.js runtime.
+/* Hephaera motion presentation for a host-owned, version-locked Three.js runtime.
  * This module owns local animation/effects. The host owns movement and gameplay.
  * It performs no imports, network access, installation, provider calls or uploads.
  */
@@ -59,7 +59,7 @@ export function validateMotionPresentation(motionPackage, engineSelection) {
   const hash = value => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
   if ((!hash(engineSelection.contractSha256) && engineSelection.selectionSource !== 'default')
     || !hash(engineSelection.registrySha256) || !hash(engineSelection.definitionSha256)) throw new Error('Canonical engine selection evidence is required');
-  if (!motionPackage || motionPackage.schemaVersion !== 'opencaw-motion-package/v1') throw new Error('Expected opencaw-motion-package/v1');
+  if (!motionPackage || motionPackage.schemaVersion !== 'hephaera-motion-package/v1') throw new Error('Expected hephaera-motion-package/v1');
   if (!PROFILES.has(motionPackage.profile)) throw new Error('Unknown motion profile');
   if (motionPackage.engine && motionPackage.engine.effectiveEngine !== engineSelection.effectiveEngine) throw new Error('Package engine conflicts with effective selection');
   if (motionPackage.engine?.contractSha256 && motionPackage.engine.contractSha256 !== engineSelection.contractSha256) throw new Error('Package engine evidence is stale');
@@ -187,7 +187,7 @@ function makeParticles(THREE, binding, anchor, effectParent) {
   geometry.setAttribute('position', attribute); geometry.setDrawRange(0, 0);
   const selectedColor = Array.isArray(binding.color) ? new THREE.Color().setRGB(...binding.color) : binding.color || '#70baff';
   const material = new THREE.PointsMaterial({color: selectedColor, size: binding.size || 0.05, transparent: true, opacity: 0.85, depthWrite: false, sizeAttenuation: true});
-  const points = new THREE.Points(geometry, material); points.name = `opencaw.effect.${binding.id}`; points.frustumCulled = false;
+  const points = new THREE.Points(geometry, material); points.name = `hephaera.effect.${binding.id}`; points.frustumCulled = false;
   const parent = binding.space === 'local' ? anchor : effectParent;
   parent.add(points);
   const position = new THREE.Vector3(), velocity = new THREE.Vector3(), endpoint = new THREE.Vector3();

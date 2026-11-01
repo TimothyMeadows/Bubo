@@ -1,5 +1,5 @@
 using System.Text.Json.Nodes;
-namespace OpenCaw.ProofToModel.Domain;
+namespace Hephaera.ProofToModel.Domain;
 
 public sealed class Manifest
 {

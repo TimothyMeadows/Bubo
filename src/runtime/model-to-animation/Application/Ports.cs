@@ -1,5 +1,5 @@
 using System.Text.Json.Nodes;
-namespace OpenCaw.ModelAnimation.Application;
+namespace Hephaera.ModelAnimation.Application;
 
 public interface IEngineResolver
 {

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://opencaw.dev/schemas/proof-to-model/rigid-handoff.schema.json",
+  "$id": "https://hephaera.dev/schemas/proof-to-model/rigid-handoff.schema.json",
   "title": "Reviewed articulated HIGH/LOW source handoff",
   "$comment": "Native parsing limits handoff/authoring to524288 UTF-8 bytes, review to65536; rejects duplicates, invalid paths, cyclic/unknown parent IDs, reused mesh names, stale hashes/reviews and malformed affine matrices. Independent preparation review binds the full handoff and authoring hashes; it is never human model/runtime acceptance. Actual Blender checks imported triangle counts, HIGH/LOW surfaces, materials, UVs, hierarchy and exports.",
   "type": "object",
@@ -26,7 +26,7 @@
       "const": "articulated"
     },
     "coordinateFrame": {
-      "const": "opencaw-proof-z-up"
+      "const": "hephaera-proof-z-up"
     },
     "sourceRawSha256": {
       "type": "string",

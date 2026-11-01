@@ -13,7 +13,7 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Publish failed.' }
     $buboExecutable=Join-Path $buboRepositoryRoot 'artifacts/bubo/bubo.exe'
     if (-not (Test-Path -LiteralPath $buboExecutable)) { $buboExecutable=Join-Path $buboRepositoryRoot 'artifacts/bubo/bubo' }
-    $buboCapabilities=& $buboExecutable capabilities --api-version 1
+    $buboCapabilities=& $buboExecutable capabilities --api-version 2
     if ($LASTEXITCODE -ne 0) { throw 'Published runtime verification failed.' }
     $buboReceipt=[ordered]@{schemaVersion='bubo-build/v1'; sourceRevision=(git rev-parse HEAD); sourceDirty=[bool](git status --porcelain); capabilities=($buboCapabilities -join "`n" | ConvertFrom-Json)}
     [IO.File]::WriteAllText((Join-Path $buboRepositoryRoot 'artifacts/bubo/build-info.json'), ($buboReceipt | ConvertTo-Json -Depth 20), [Text.UTF8Encoding]::new($false))

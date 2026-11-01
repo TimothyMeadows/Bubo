@@ -1,6 +1,6 @@
 # Actual direct-music backend QA artifacts
 
-These are unchanged native48kHz stereo FLOAT WAV outputs and settings from actual complete public API executions at da3afd20b66320681d212915da5010554e82c977. ACE-Step1.5Turbo runs CUDA/bfloat16 with no planning LM, CoT, normalization or CPU model-decode fallback. acceptance.json binds original requests, claims, model/source/environment/build identities, exact output hashes, load/inference/unload times and measured zero-ending-allocation cleanup. Portable evidence omits absolute loaded-module paths and GPU UUID; original full manifests remain in the OpenCaw task145 evidence.
+These are unchanged native48kHz stereo FLOAT WAV outputs and settings from actual complete public API executions at da3afd20b66320681d212915da5010554e82c977. ACE-Step1.5Turbo runs CUDA/bfloat16 with no planning LM, CoT, normalization or CPU model-decode fallback. acceptance.json binds original requests, claims, model/source/environment/build identities, exact output hashes, load/inference/unload times and measured zero-ending-allocation cleanup. Portable evidence omits absolute loaded-module paths and GPU UUID; original full manifests remain in the Hephaera task145 evidence.
 
 The user accepted the20-second instrumental's musical content. Its successful technical revision has byte-identical format/sample data to the reviewed original; only the ancillary PEAK timestamp differs. The original run failed its old unload check and remains failed. Raw peak1.109375 and0.0211979% at/above full scale are retained; no normalization or loop claim.
 

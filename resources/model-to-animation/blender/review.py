@@ -22,8 +22,8 @@ def restore_imported_actions(recipe):
                 owners.append(obj.name)
         if not owners or not list(all_curves(action)):
             raise ValueError("Re-imported action has no real bindings")
-        action["opencaw_clip_id"] = clip["id"]
-        action["opencaw_owners"] = json.dumps(owners)
+        action["hephaera_clip_id"] = clip["id"]
+        action["hephaera_owners"] = json.dumps(owners)
         begin,end=action.frame_range
         actual=(end-begin)/recipe["fps"]
         expected=(clip["endFrame"]-clip["startFrame"])/recipe["fps"]
@@ -175,7 +175,7 @@ def review(job, root, source, output, recipe):
             for view in cameras:
                 packet["frames"].append({**render_frame(output/"f"/("t"+str(index).zfill(3)),sample,view),"time":fraction*transition["duration"]})
         packets.append(packet)
-    data = {"schemaVersion":"opencaw-motion-review/v1","asset":job["asset"],"profile":recipe["profile"],"inputSha256":digest(source),"frameCount":len(artifacts),"requestedFrameCount":requested,"renderer":review_spec["renderer"],"previewFps":review_spec["fps"],"resolution":review_spec["resolution"],"cameras":cameras,"fit":{"kind":"one shared full-motion bounds fit","min":list(minimum),"max":list(maximum),"center":list(center),"orthoScale":camera_data.ortho_scale},"clips":clips,"packets":packets,"metrics":measured,"independentReimport":{"actualGlb":True,"skinCount":len(document.get("skins",[])),"animationCount":len(document.get("animations",[]))},"limits":["Sampled playback covers the complete declared duration; it is not a native engine transition/collision/feel verdict.","Workbench previews assess form/deformation; final materials and target rendering require actual engine evidence."],"humanApproval":"pending","independentReview":"pending","runtimeVerification":"not-run"}
+    data = {"schemaVersion":"hephaera-motion-review/v1","asset":job["asset"],"profile":recipe["profile"],"inputSha256":digest(source),"frameCount":len(artifacts),"requestedFrameCount":requested,"renderer":review_spec["renderer"],"previewFps":review_spec["fps"],"resolution":review_spec["resolution"],"cameras":cameras,"fit":{"kind":"one shared full-motion bounds fit","min":list(minimum),"max":list(maximum),"center":list(center),"orthoScale":camera_data.ortho_scale},"clips":clips,"packets":packets,"metrics":measured,"independentReimport":{"actualGlb":True,"skinCount":len(document.get("skins",[])),"animationCount":len(document.get("animations",[]))},"limits":["Sampled playback covers the complete declared duration; it is not a native engine transition/collision/feel verdict.","Workbench previews assess form/deformation; final materials and target rendering require actual engine evidence."],"humanApproval":"pending","independentReview":"pending","runtimeVerification":"not-run"}
     path=output/"motion-review.json";save_json(path,data);artifacts["reviewReport"]=relative(root,path)
     # Scripts consume only JSON we author and relative local images; content is escaped.
     html_packets=[]

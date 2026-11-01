@@ -1,9 +1,9 @@
 using System.Text.Json.Nodes;
-using OpenCaw.AssetProduction;
+using Hephaera.AssetProduction;
 
 static class RuntimeCatalog
 {
-    public const string ExpectedSha256 = "4bd6ead00e0601c3bc0a4b17b5ca3e708a91566a22caa17867f1c56fbf771491";
+    public const string ExpectedSha256 = "adf79c40dbf0bb334fecbcd405e7bdb5c777e09127bb19094519d3ab0a28b367";
     public static void Verify()
     {
         var root = Path.GetFullPath(AppContext.BaseDirectory);

@@ -1,7 +1,7 @@
 using System.Text.Json.Nodes;
-using OpenCaw.ProofToModel.Application;
-using OpenCaw.ProofToModel.Domain;
-using OpenCaw.ProofToModel.Infrastructure;
+using Hephaera.ProofToModel.Application;
+using Hephaera.ProofToModel.Domain;
+using Hephaera.ProofToModel.Infrastructure;
 static class ExtendedTests
 {
     public static async Task Run(Workspace w, Action<bool, string> check, Func<Func<Task>, string, Task> reject)
@@ -12,7 +12,7 @@ static class ExtendedTests
         check(PngAlpha.Inspect(w.Resolve("opaque.png"))?.Suitable == false, "opaque RGBA never treated as matte");
         var opts = new Dictionary<string, string> { { "mode", "single-view-diagnostic" }, { "asset", "matte" }, { "version", "v1" }, { "task", "tests" }, { "proof", "matte.png" }, { "rights", "rights.json" }, { "recipe", "recipe.json" }, { "toolchain", "toolchain.json" }, { "actor", "builder" } };
         await new Pipeline(w, opts, new NativeProcess(), new AlphaProcessor()).Execute("init", default);
-        var manifest = ".opencaw/.cache/tasks/tests/proof-to-model/matte/v1/manifest.json";
+        var manifest = ".hephaera/.cache/tasks/tests/proof-to-model/matte/v1/manifest.json";
         opts["manifest"] = manifest;
         string Fingerprint(string kind)
         {
@@ -22,7 +22,7 @@ static class ExtendedTests
         }
         opts["kind"] = "proof";
         opts["reviewer"] = "human";
-        var approvalPath = ".opencaw/.cache/tasks/tests/reviews/matte-approval.json";
+        var approvalPath = ".hephaera/.cache/tasks/tests/reviews/matte-approval.json";
         opts["evidence"] = approvalPath;
         w.Save(approvalPath, new
         {

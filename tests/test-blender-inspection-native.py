@@ -23,7 +23,7 @@ def main():
     inspection_context['permissions']={'provisioning':False,'promotion':False}
     context.write_text(json.dumps(inspection_context,indent=2)+'\n',encoding='utf-8')
     assert not (project/'STYLE.md').exists() and not (project/'ENGINE.md').exists()
-    result=subprocess.run(['dotnet',str(CLI),'blender-inspection','inspect','--api-version','1','--root',str(project),'--host-context',str(context),'--manifest','job.json','--blender',BLENDER],capture_output=True,timeout=120)
+    result=subprocess.run(['dotnet',str(CLI),'blender-inspection','inspect','--api-version','2','--root',str(project),'--host-context',str(context),'--manifest','job.json','--blender',BLENDER],capture_output=True,timeout=120)
     (project/'result.json').write_bytes(result.stdout); (project/'inspection.log').write_bytes(result.stderr)
     assert result.returncode==0,result.stderr.decode(errors='replace')
     report=json.loads((project/'.art-staging/report.json').read_text())

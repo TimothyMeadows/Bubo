@@ -88,7 +88,7 @@ def main():
                    "human": True, "fingerprint": current["approvalFingerprints"][kind]}
         if runtime is not None:
             receipt["runtime"] = runtime
-        relative = ".opencaw/.cache/tasks/fixture/reviews/" + state(manifest)["asset"] + "-" + kind + ".json"
+        relative = ".hephaera/.cache/tasks/fixture/reviews/" + state(manifest)["asset"] + "-" + kind + ".json"
         write(relative, receipt)
         command("record", manifest, "--kind", kind, "--reviewer", receipt["reviewer"], "--evidence", relative)
 
@@ -106,7 +106,7 @@ def main():
             recipe_path = "inputs/" + source_name + "-recipe.json"
         command("init", None, "--task", "fixture", "--asset", name, "--version", "v1", "--actor", "fixture-builder",
                 "--model", "inputs/" + source_name + ".glb", "--rights", rights, "--recipe", recipe_path, "--blender", BLENDER)
-        return ".opencaw/.cache/tasks/fixture/model-to-animation/" + name + "/v1/manifest.json"
+        return ".hephaera/.cache/tasks/fixture/model-to-animation/" + name + "/v1/manifest.json"
 
     # Actual provider exclusion and profile selection are checked before production.
     write("excluded-rights.json", {"authorized": True, "provider": "Adobe", "license": "unsupported test input"})
@@ -213,7 +213,7 @@ def main():
     check(True, "changed original source is rejected and exact byte restoration restores freshness")
 
     packages = [str(project / artifact(fixtures[name], "export", "package")) for name in ("humanoid", "ship", "car", "humanoid-extract")]
-    browser_output = project / ".opencaw/.cache/tasks/fixture/engine"
+    browser_output = project / ".hephaera/.cache/tasks/fixture/engine"
     browser_args = [sys.executable, ROOT / "tests/test-model-animation-engine.py", "--project-root", project, "--output", browser_output]
     for package in packages:
         browser_args += ["--package", package]
@@ -222,7 +222,7 @@ def main():
     actual_browser = browser.returncode == 0
     if browser.returncode not in (0, 77):
         raise AssertionError(browser.stdout.decode(errors="replace")[-7000:])
-    if browser.returncode == 77 and os.environ.get("OPENCAW_REQUIRE_MOTION_BROWSER") == "1":
+    if browser.returncode == 77 and os.environ.get("HEPHAERA_REQUIRE_MOTION_BROWSER") == "1":
         raise AssertionError("Required actual browser acceptance is blocked; see engine-bridge.log")
     if actual_browser:
         observed = json.loads((browser_output / "engine-evidence.json").read_text())
@@ -237,7 +237,7 @@ def main():
             source = Path(item["path"])
             if not source.is_absolute():
                 source = (project if observed.get("pathBase") == "project-root" else ROOT) / source
-            relative = ".opencaw/.cache/tasks/fixture/runtime/" + str(index) + source.suffix
+            relative = ".hephaera/.cache/tasks/fixture/runtime/" + str(index) + source.suffix
             target = project / relative
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(source, target)

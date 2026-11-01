@@ -1,6 +1,6 @@
-using OpenCaw.ProofToModel.Application;
-using OpenCaw.ProofToModel.Domain;
-namespace OpenCaw.ProofToModel.Infrastructure;
+using Hephaera.ProofToModel.Application;
+using Hephaera.ProofToModel.Domain;
+namespace Hephaera.ProofToModel.Infrastructure;
 
 public sealed class AlphaProcessor : IAlphaProcessor
 {

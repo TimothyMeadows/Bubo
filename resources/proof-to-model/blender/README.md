@@ -27,7 +27,7 @@ LOD0/all-LOD budgets, colliders and actual re-import. Default/v1 QuadriFlow and
 its completion checks remain separate. No failure selects another method.
 
 The rigid static exporter implements
-[`opencaw-rigid-static-normals/v1`](../NORMAL_EXPORT_CONTRACT.md). Pivot parenting
+[`hephaera-rigid-static-normals/v1`](../NORMAL_EXPORT_CONTRACT.md). Pivot parenting
 and UV scatter preserve actual LOW data and world normals. A pre-export source
 snapshot and pinned native codec independently verify stored GLB NORMAL data;
 native reimport retains geometry/UV/material/hierarchy/collision checks and

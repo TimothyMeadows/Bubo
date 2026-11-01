@@ -1,9 +1,9 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Security.Cryptography;
-using OpenCaw.ProofToModel.Domain;
+using Hephaera.ProofToModel.Domain;
 
-namespace OpenCaw.ProofToModel.Application;
+namespace Hephaera.ProofToModel.Application;
 
 public sealed partial class Pipeline
 {

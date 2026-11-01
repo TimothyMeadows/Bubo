@@ -1,5 +1,5 @@
 using System.Diagnostics;
-namespace OpenCaw.AssetProduction;
+namespace Hephaera.AssetProduction;
 
 public class NativeProcess : INativeProcess
 {

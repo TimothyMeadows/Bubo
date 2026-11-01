@@ -3,10 +3,10 @@ using System.Text.Json.Nodes;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
-using OpenCaw.AssetProduction;
-using OpenCaw.ModelAction.Domain;
-using static OpenCaw.ModelAction.Application.ActionValidation;
-namespace OpenCaw.ModelAction.Application;
+using Hephaera.AssetProduction;
+using Hephaera.ModelAction.Domain;
+using static Hephaera.ModelAction.Application.ActionValidation;
+namespace Hephaera.ModelAction.Application;
 
 public sealed partial class Pipeline(IWorkspace w, Dictionary<string, string> options, INativeProcess native, IEngineResolver engines)
 {
@@ -15,7 +15,7 @@ public sealed partial class Pipeline(IWorkspace w, Dictionary<string, string> op
     string Need(string key) => options.GetValueOrDefault(key) ?? throw new InvalidOperationException("Missing --" + key);
     string Baseline => Path.GetFullPath(Need("baseline-root"));
     string State => Path.GetDirectoryName(path)!.Replace('\\', '/');
-    string TaskRoot(string task) => options.GetValueOrDefault("state-root", ".opencaw/.cache/tasks/" + task);
+    string TaskRoot(string task) => options.GetValueOrDefault("state-root", ".hephaera/.cache/tasks/" + task);
     string TaskPrefix => TaskRoot(m.Task) + "/";
     string StagingRoot => options.GetValueOrDefault("staging-root", ".art-staging");
     string HashFile(string value) => w.HashProjectFile(value);
@@ -36,7 +36,7 @@ public sealed partial class Pipeline(IWorkspace w, Dictionary<string, string> op
     }
     void CheckLayout()
     {
-        if (m.SchemaVersion != "opencaw-model-action/v1") throw new InvalidOperationException("Unsupported action manifest");
+        if (m.SchemaVersion != "hephaera-model-action/v1") throw new InvalidOperationException("Unsupported action manifest");
         Id(m.Task); Id(m.Asset); Id(m.Version);
         if (path != $"{TaskPrefix}model-to-action/{m.Asset}/{m.Version}/manifest.json" || m.Staging != $"{StagingRoot}/model-to-action/{m.Asset}/{m.Version}") throw new InvalidOperationException("Action state violates repository-local layout");
         foreach (var input in new[] { m.Model, m.Motion, m.Recipe, m.SourceReview, m.EngineReceipt }.Concat(m.Originals.Keys))

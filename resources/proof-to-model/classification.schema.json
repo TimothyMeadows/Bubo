@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://opencaw.local/schemas/proof-to-model/classification-v1",
+  "$id": "https://hephaera.local/schemas/proof-to-model/classification-v1",
   "title": "Original-source-only anatomy and structure classification",
   "type": "object",
   "additionalProperties": false,

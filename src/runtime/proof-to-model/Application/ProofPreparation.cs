@@ -1,9 +1,9 @@
 using System.Buffers.Binary;
 using System.Net;
 using System.Text.Json.Nodes;
-using OpenCaw.ProofToModel.Domain;
+using Hephaera.ProofToModel.Domain;
 
-namespace OpenCaw.ProofToModel.Application;
+namespace Hephaera.ProofToModel.Application;
 
 // Registers actual assistant/provider artifacts. This code performs neither vision
 // nor image generation and cannot authenticate the assertions in supplied receipts.

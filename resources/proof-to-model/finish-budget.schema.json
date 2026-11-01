@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://opencaw.dev/schemas/proof-to-model/finish-budget.schema.json",
+  "$id": "https://hephaera.dev/schemas/proof-to-model/finish-budget.schema.json",
   "title": "One additional human-authorized finishing attempt",
   "$comment": "Native parsing caps UTF-8 at16384 bytes and rejects duplicate keys. Evidence must be a task-local regular confined file. Native context validation requires an exhausted configured finish budget, the exact current manifest hash and consumed count, and maxFinishAttempts=consumedFinishAttempts+1; a subsequent history/manifest change makes the receipt stale. This assertion does not authenticate a human or accept model quality.",
   "type": "object",

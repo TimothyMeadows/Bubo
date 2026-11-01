@@ -35,9 +35,9 @@ def main():
     if digest(source)!=before:raise ValueError('Fixed authoring changed its immutable input')
     if source_check is not None:measured['sourceRootChannelValidation']=source_check
     report=output/'report.json'
-    save_json(report,{'schemaVersion':'opencaw-action-stage-summary/v1','operation':operation,'metrics':measured,'findings':findings,'humanApproval':'pending'})
+    save_json(report,{'schemaVersion':'hephaera-action-stage-summary/v1','operation':operation,'metrics':measured,'findings':findings,'humanApproval':'pending'})
     artifacts.setdefault('report',relative(root,report))
-    save_json(result,{'schemaVersion':'opencaw-action-stage/v1','operation':operation,'inputSha256':before,'artifacts':artifacts,'actions':actions,'metrics':measured,'findings':findings})
+    save_json(result,{'schemaVersion':'hephaera-action-stage/v1','operation':operation,'inputSha256':before,'artifacts':artifacts,'actions':actions,'metrics':measured,'findings':findings})
     print(json.dumps({'operation':operation,'status':'produced','humanApproval':'pending','result':relative(root,result)}))
 
 

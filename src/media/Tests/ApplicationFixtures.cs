@@ -4,7 +4,7 @@ using System.Text.Json.Nodes;
 using Bubo.Media.Application;
 using Bubo.Media.Domain;
 using Bubo.Media.Infrastructure;
-using OpenCaw.AssetProduction;
+using Hephaera.AssetProduction;
 using HostExecutionContext = Bubo.Host.HostExecutionContext;
 
 static class ApplicationFixtures

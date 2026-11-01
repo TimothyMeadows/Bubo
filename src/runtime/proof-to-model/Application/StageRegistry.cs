@@ -1,4 +1,4 @@
-namespace OpenCaw.ProofToModel.Application;
+namespace Hephaera.ProofToModel.Application;
 // Adapted from Bubo ToolRegistry: deterministic, case-insensitive registered names,
 // duplicate registration rejected by ToDictionary. No coding-agent tool registrations.
 public sealed class StageRegistry(IEnumerable<(string Name, Func<CancellationToken, Task> Run)> stages)

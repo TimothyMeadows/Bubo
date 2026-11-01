@@ -1,7 +1,7 @@
 """Explicit host adapter for owned engineering fixtures, not a policy resolver.
 
 It supplies synthetic host policy and receipt assertions to the real standalone
-Bubo CLI. No OpenCaw checkout or instructions are loaded. Native fixture inference
+Bubo CLI. No Hephaera checkout or instructions are loaded. Native fixture inference
 and human receipts retain their explicit simulation labels.
 """
 from pathlib import Path
@@ -25,7 +25,7 @@ def initialize(project, engine='THREEJS'):
     project = Path(project)
     file = project / POLICY
     # These are actual hash identities of explicitly synthetic local fixture
-    # records, never claims of an OpenCaw definition or production acceptance.
+    # records, never claims of an Hephaera definition or production acceptance.
     identities = {}
     for label, payload in (
         ('definition', {'id':engine,'kind':'owned-engine-fixture-definition'}),
@@ -91,14 +91,14 @@ def context(project, task, arguments=()):
         if file.is_file() and str(file.resolve()) not in tools:
             relative = file.resolve().relative_to(project).as_posix()
             references[relative] = {'path': relative, 'sha256': sha(file), 'kind': 'rights' if str(argument)=='--rights' else 'review' if str(argument) in ('--evidence','--source-review') else 'input'}
-    inputs = [path.name for path in project.iterdir() if path.is_dir() and path.name not in ('.git','.opencaw','.art-staging','.local','assets')]
+    inputs = [path.name for path in project.iterdir() if path.is_dir() and path.name not in ('.git','.hephaera','.art-staging','.local','assets')]
     # Existing originals may be direct root files; each is an exact read-only
     # reference instead of a broad project-root grant.
     for file in project.iterdir():
         if file.is_file() and file.name != 'host-context.json' and str(file.resolve()) not in tools and file.name not in references:
             references[file.name] = {'path':file.name,'sha256':sha(file),'kind':'policy' if file.name.startswith('fixture-engine-') else 'input'}
     value = {'schemaVersion':'bubo-host-context/v1','projectRoot':str(project),'task':task,
-             'roots':{'state':f'.opencaw/.cache/tasks/{task}','staging':'.art-staging','tools':['.local/tools'], 'inputs':inputs, 'outputs':['assets/models']},
+             'roots':{'state':f'.hephaera/.cache/tasks/{task}','staging':'.art-staging','tools':['.local/tools'], 'inputs':inputs, 'outputs':['assets/models']},
              'policy':{'pipeline':policy['pipeline'],'styleSha256':sha(project/POLICY),'engine':policy['engine'],'libraries':[]},
              'references':list(references.values()), 'tools':list(tools.values()),
              'budgets':{'timeoutSeconds':3600,'maxLogBytes':67108864},
@@ -114,7 +114,7 @@ def context(project, task, arguments=()):
 def prepare(arguments, project, workflow):
     arguments = list(map(str, arguments))
     try:
-        index = next(i for i, value in enumerate(arguments) if value.endswith(('bubo.dll','bubo.exe')))
+        index = next(i for i, value in enumerate(arguments) if Path(value).name in ('bubo','bubo.dll','bubo.exe'))
     except StopIteration:
         return arguments, False
     operation = arguments[index+1]
@@ -129,11 +129,11 @@ def prepare(arguments, project, workflow):
             task = json.loads(manifest.read_text(encoding='utf-8'))['task']
     task = task or 'test'
     host = context(project,task,tail)
-    return arguments[:index+1] + [workflow,operation,'--api-version','1','--host-context',str(host),*tail], True
+    return arguments[:index+1] + [workflow,operation,'--api-version','2','--host-context',str(host),*tail], True
 
 
 def unwrap(result):
-    """Translate v1 result data only for unchanged legacy fixture assertions."""
+    """Translate v2 result data only for unchanged legacy fixture assertions."""
     raw = result.stdout.decode('utf-8') if isinstance(result.stdout,bytes) else result.stdout
     if not raw.strip():
         return result

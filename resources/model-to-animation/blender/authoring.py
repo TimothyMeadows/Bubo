@@ -15,8 +15,8 @@ def node(name):
 
 def remember_rest():
     for obj in objects():
-        if "opencaw_rest_matrix" not in obj:
-            obj["opencaw_rest_matrix"] = json.dumps([list(row) for row in obj.matrix_basis])
+        if "hephaera_rest_matrix" not in obj:
+            obj["hephaera_rest_matrix"] = json.dumps([list(row) for row in obj.matrix_basis])
 
 
 def reset_pose():
@@ -26,8 +26,8 @@ def reset_pose():
         if obj.animation_data:
             obj.animation_data.action = None
             obj.animation_data.use_nla = False
-        if "opencaw_rest_matrix" in obj:
-            obj.matrix_basis = Matrix(json.loads(obj["opencaw_rest_matrix"]))
+        if "hephaera_rest_matrix" in obj:
+            obj.matrix_basis = Matrix(json.loads(obj["hephaera_rest_matrix"]))
         if obj.type == "ARMATURE":
             for bone in obj.pose.bones:
                 bone.matrix_basis = Matrix.Identity(4)
@@ -255,7 +255,7 @@ def target_for(channel):
 def new_action(identifier):
     import bpy
     action = bpy.data.actions.new(identifier)
-    action["opencaw_clip_id"] = identifier
+    action["hephaera_clip_id"] = identifier
     return action
 
 
@@ -274,7 +274,7 @@ def finalize_action(action, owners):
         for key in curve.keyframe_points:
             key.interpolation = "LINEAR"
     action.use_fake_user = True
-    action["opencaw_owners"] = json.dumps(sorted(owner.name for owner in owners))
+    action["hephaera_owners"] = json.dumps(sorted(owner.name for owner in owners))
 
 
 def author(recipe,only_clip=None):
@@ -345,7 +345,7 @@ def author(recipe,only_clip=None):
 
 def find_action(identifier):
     import bpy
-    values = [action for action in bpy.data.actions if action.get("opencaw_clip_id") == identifier]
+    values = [action for action in bpy.data.actions if action.get("hephaera_clip_id") == identifier]
     if len(values) != 1:
         raise ValueError("Expected exactly one authored action for " + identifier)
     return values[0]
@@ -354,7 +354,7 @@ def find_action(identifier):
 def activate(clip):
     reset_pose()
     action = find_action(clip["id"])
-    for name in json.loads(action["opencaw_owners"]):
+    for name in json.loads(action["hephaera_owners"]):
         assign_action(node(name), action)
     return action
 
@@ -390,7 +390,7 @@ def analyze_clips(recipe):
         joint_angles = {}
         sampled_hash=__import__('hashlib').sha256()
         sampled_hash.update(json.dumps({"role":clip["role"],"fps":recipe["fps"],"durationFrames":clip["endFrame"]-clip["startFrame"],"loop":clip["loop"],"rootMotion":clip["rootMotion"],"markers":clip["markers"]},sort_keys=True,separators=(",",":")).encode())
-        owner_names=json.loads(action["opencaw_owners"])
+        owner_names=json.loads(action["hephaera_owners"])
         for frame in range(clip["startFrame"], clip["endFrame"] + 1):
             bpy.context.scene.frame_set(frame)
             bpy.context.view_layer.update()
@@ -462,7 +462,7 @@ def analyze_clips(recipe):
                 penetration=max(0,ground-min(point[0].z for point in locations))
                 if penetration>finite(contact.get("maxPenetration",.001),"Contact penetration limit",0,100)+1e-6:raise ValueError("Contact penetrates declared ground")
             contacts.append({"target":contact["target"],"start":begin,"end":end,"maxTravel":drift,"penetration":penetration,"referenceVelocity":list(velocity)})
-        bindings = [{"node": owner, "paths": sorted({curve.data_path for curve in curves})} for owner in json.loads(action["opencaw_owners"])]
+        bindings = [{"node": owner, "paths": sorted({curve.data_path for curve in curves})} for owner in json.loads(action["hephaera_owners"])]
         results.append({"id": clip["id"], "role": clip["role"], "action": action.name, "startFrame": clip["startFrame"], "endFrame": clip["endFrame"], "fps": recipe["fps"], "duration": (clip["endFrame"] - clip["startFrame"]) / recipe["fps"], "loop": clip["loop"], "rootMotion": clip["rootMotion"], "sourceRootDisplacement": list(displacement), "rootDisplacement": [displacement.x,displacement.z,-displacement.y], "maxRootTranslation": max_root, "loopSeam": seam, "bindings": bindings, "markers": clip["markers"], "samples": clip["endFrame"] - clip["startFrame"] + 1,"jointMaxAngles":joint_angles,"contacts":contacts,"motionSha256":sampled_hash.hexdigest()})
     reset_pose()
     return results
@@ -557,7 +557,7 @@ def bake(recipe):
     staged = []
     for clip in recipe["clips"]:
         action = activate(clip)
-        owners = [node(name) for name in json.loads(action["opencaw_owners"])]
+        owners = [node(name) for name in json.loads(action["hephaera_owners"])]
         samples = []
         for frame in range(clip["startFrame"], clip["endFrame"] + 1):
             bpy.context.scene.frame_set(frame)
@@ -625,14 +625,14 @@ def export_package(job, root, source, output, recipe):
                 obj.animation_data.nla_tracks.remove(track)
     for clip in recipe["clips"]:
         action = find_action(clip["id"])
-        for name in json.loads(action["opencaw_owners"]):
+        for name in json.loads(action["hephaera_owners"]):
             owner = node(name)
             owner.animation_data_create()
             track = owner.animation_data.nla_tracks.new()
             track.name = clip["id"]
             strip = track.strips.new(clip["id"], clip["startFrame"], action)
             strip.action_slot = next(slot for slot in action.slots if slot.identifier == "OB" + owner.name)
-    bpy.context.scene["opencaw_clips"] = json.dumps(clips)
+    bpy.context.scene["hephaera_clips"] = json.dumps(clips)
     blend = save_blend(root, output)
     glb = output / "asset.glb"
     if glb.exists():
@@ -665,7 +665,7 @@ def export_package(job, root, source, output, recipe):
     if recipe["profile"]=="skinned":
         runtime_rig["rootBone"]=recipe["rig"]["rootBone"]
         runtime_rig["node"]=armatures()[0].name
-    package = {"schemaVersion": "opencaw-motion-package/v1", "asset": job["asset"], "version": job["version"], "profile": recipe["profile"],
+    package = {"schemaVersion": "hephaera-motion-package/v1", "asset": job["asset"], "version": job["version"], "profile": recipe["profile"],
                "model": {"path": relative(root, glb), "sha256": digest(glb)}, "source": {"path": blend, "sha256": digest(root / blend)},
                "sourceInput": {"path": relative(root, source), "sha256": digest(source)},
                "coordinateSystem": {"units": "metres", "sourceUp": "+Z", "sourceForward": "-Y", "runtimeUp": "+Y", "runtimeForward": "+Z", "exportTransform": [[1,0,0],[0,0,1],[0,-1,0]]},

@@ -1,6 +1,6 @@
 # Rigid static normal export contract
 
-Contract identifier: `opencaw-rigid-static-normals/v1`.
+Contract identifier: `hephaera-rigid-static-normals/v1`.
 
 This contract applies to the fixed rigid-parts finisher's static GLB export.
 It distinguishes preservation of the working mesh, serialization into glTF,

@@ -1,7 +1,7 @@
 using System.Text.Json.Nodes;
-using OpenCaw.ModelAnimation.Domain;
-using static OpenCaw.ModelAnimation.Application.MotionValidation;
-namespace OpenCaw.ModelAnimation.Application;
+using Hephaera.ModelAnimation.Domain;
+using static Hephaera.ModelAnimation.Application.MotionValidation;
+namespace Hephaera.ModelAnimation.Application;
 
 public sealed partial class Pipeline
 {

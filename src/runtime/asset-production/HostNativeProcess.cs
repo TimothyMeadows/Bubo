@@ -1,6 +1,6 @@
 using Bubo.Host;
 using HostExecutionContext = Bubo.Host.HostExecutionContext;
-namespace OpenCaw.AssetProduction;
+namespace Hephaera.AssetProduction;
 
 /// <summary>Applies the caller's exact tool identities and process ceilings.</summary>
 public sealed class HostNativeProcess(HostExecutionContext context, INativeProcess inner) : INativeProcess

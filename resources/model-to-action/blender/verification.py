@@ -19,7 +19,7 @@ from core import confined, digest, finite, relative
 DEFAULT_MAX_BYTES = 8 * 1024**3
 MAX_BYTES = 64 * 1024**3
 MAX_FRAME_BYTES = 256 * 1024**2
-MAGIC = b'OPENCAW-POSE-V1\x00\x00'
+MAGIC = b'HEPHAERA-POSE-V1\x00\x00'
 NAMES = ('poses.bin', 'frames.jsonl', 'index.json')
 
 
@@ -78,7 +78,7 @@ def preflight(plan, plan_hash, first):
         for frame in range(action['frames']):
             index_bytes += len(compact(frame_record(action['id'], frame, offset, payload, '0' * 64)))
             offset += payload
-    metadata = {'schemaVersion': 'opencaw-action-pose-spool/v1', 'planSha256': plan_hash,
+    metadata = {'schemaVersion': 'hephaera-action-pose-spool/v1', 'planSha256': plan_hash,
                 'format': 'float64-le', 'dataFile': NAMES[0], 'framesFile': NAMES[1],
                 'meshes': meshes, 'anchors': anchors, 'actions': actions,
                 'frameCount': count, 'framePayloadBytes': payload, 'dataBytes': offset,
@@ -172,7 +172,7 @@ def read_spool(root, directory, plan, plan_hash):
     if not all(path.is_file() for path in files) or files[2].stat().st_size > 1024 * 1024:
         raise ValueError('Incomplete or oversized verification completion index')
     metadata = json.loads(files[2].read_text(encoding='utf-8'))
-    if (metadata.get('schemaVersion') != 'opencaw-action-pose-spool/v1' or metadata.get('planSha256') != plan_hash
+    if (metadata.get('schemaVersion') != 'hephaera-action-pose-spool/v1' or metadata.get('planSha256') != plan_hash
             or metadata.get('format') != 'float64-le' or metadata.get('dataFile') != NAMES[0]
             or metadata.get('framesFile') != NAMES[1] or metadata.get('actions') != schedule(plan)):
         raise ValueError('Verification completion index disagrees with the current plan')

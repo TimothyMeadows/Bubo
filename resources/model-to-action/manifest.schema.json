@@ -2,7 +2,7 @@
   "type": "object",
   "properties": {
     "schemaVersion": {
-      "const": "opencaw-model-action/v1"
+      "const": "hephaera-model-action/v1"
     },
     "task": {
       "type": "string",
@@ -413,6 +413,6 @@
   ],
   "additionalProperties": false,
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://opencaw.local/schemas/model-to-action/manifest.schema.json",
+  "$id": "https://hephaera.local/schemas/model-to-action/manifest.schema.json",
   "title": "Persistent native model-to-action state"
 }

@@ -2,7 +2,7 @@ using System.Text.Json.Nodes;
 using System.Text.Json;
 using System.Globalization;
 
-namespace OpenCaw.ProofToModel.Domain;
+namespace Hephaera.ProofToModel.Domain;
 
 /// <summary>The prescribed Blender/NeRF Z-up rig. A generated camera is nominal, not measured.</summary>
 public static class MultiViewGeometry

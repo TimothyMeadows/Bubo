@@ -3,7 +3,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
-namespace OpenCaw.ProofToModel.Domain;
+namespace Hephaera.ProofToModel.Domain;
 
 /// <summary>A recorded human assertion for one extra finish start, not an asset approval or identity authentication.</summary>
 public sealed record FinishAttemptBudget(string Reviewer, string Reason, string ManifestSha256, int ConsumedFinishAttempts, int MaxFinishAttempts)

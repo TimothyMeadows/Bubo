@@ -2,11 +2,11 @@ using System.Buffers.Binary;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using OpenCaw.AssetProduction;
-using OpenCaw.ModelAction.Application;
-using OpenCaw.ModelAction.Domain;
+using Hephaera.AssetProduction;
+using Hephaera.ModelAction.Application;
+using Hephaera.ModelAction.Domain;
 
-var root = Path.Combine(Directory.GetCurrentDirectory(), ".opencaw/.cache/tasks/model-to-action/evidence/native-tests-" + Guid.NewGuid().ToString("N"));
+var root = Path.Combine(Directory.GetCurrentDirectory(), ".hephaera/.cache/tasks/model-to-action/evidence/native-tests-" + Guid.NewGuid().ToString("N"));
 Directory.CreateDirectory(root);
 var w = new Workspace(root);
 var engine = new FakeEngine();
@@ -26,11 +26,11 @@ Fixture.WriteGlb(w.Resolve("model.glb"), ["kick", "punch"]);
 w.Save("motion.json", Fixture.Motion(Workspace.Hash(w.Resolve("model.glb"))));
 w.Save("recipe.json", Fixture.Recipe());
 File.WriteAllText(w.Resolve("STYLE.md"), "Original controlled simulated fixture\n");
-var sourceReview = ".opencaw/.cache/tasks/fixture/source-review.json";
+var sourceReview = ".hephaera/.cache/tasks/fixture/source-review.json";
 w.Save(sourceReview, new JsonObject { ["schemaVersion"] = 1, ["kind"] = "source-motion", ["decision"] = "approved", ["human"] = true, ["reviewer"] = "fixture-human", ["reason"] = "SYNTHETIC HUMAN ASSERTION, not actual production review", ["rights"] = new JsonObject { ["authorized"] = true, ["license"] = "Original synthetic protocol fixture model and motions" }, ["motionPackageSha256"] = Workspace.Hash(w.Resolve("motion.json")), ["modelSha256"] = Workspace.Hash(w.Resolve("model.glb")), ["rigId"] = new string('a', 64), ["clips"] = new JsonArray(new JsonObject { ["id"] = "kick", ["motionSha256"] = new string('b', 64) }, new JsonObject { ["id"] = "punch", ["motionSha256"] = new string('c', 64) }) });
 Dictionary<string, string> Settings(string asset) => new() { ["task"] = "fixture", ["asset"] = asset, ["version"] = "v1", ["actor"] = "builder", ["motion-package"] = "motion.json", ["recipe"] = "recipe.json", ["source-review"] = sourceReview, ["blender"] = w.Resolve("blender.exe"), ["baseline-root"] = baseline };
 async Task Run(Dictionary<string, string> settings, string command, CancellationToken token = default) => await new Pipeline(w, settings, fake, engine).Execute(command, token);
-async Task<Dictionary<string, string>> New(string name) { var testArgs = Settings(name); await Run(testArgs, "init"); testArgs["manifest"] = ".opencaw/.cache/tasks/fixture/model-to-action/" + name + "/v1/manifest.json"; return testArgs; }
+async Task<Dictionary<string, string>> New(string name) { var testArgs = Settings(name); await Run(testArgs, "init"); testArgs["manifest"] = ".hephaera/.cache/tasks/fixture/model-to-action/" + name + "/v1/manifest.json"; return testArgs; }
 Manifest State(Dictionary<string, string> settings) => w.Load<Manifest>(settings["manifest"]);
 async Task<string> Fingerprint(Dictionary<string, string> settings)
 {
@@ -54,7 +54,7 @@ async Task Approve(Dictionary<string, string> settings, string kind, string revi
         var records = new JsonArray();
         foreach (var type in new[] { "runtime-test", "runtime-capture", "performance-profile" })
         {
-            var file = ".opencaw/.cache/tasks/fixture/reviews/" + manifest.Asset + "-" + type + ".json";
+            var file = ".hephaera/.cache/tasks/fixture/reviews/" + manifest.Asset + "-" + type + ".json";
             w.Save(file, new
             {
                 simulationOnly = true
@@ -63,7 +63,7 @@ async Task Approve(Dictionary<string, string> settings, string kind, string revi
         }
         receipt["runtime"] = new JsonObject { ["status"] = "passed", ["engine"] = "THREEJS", ["modelSha256"] = Workspace.Hash(w.Resolve(manifest.Stages["export"].Artifacts["glb"])), ["packageSha256"] = Workspace.Hash(w.Resolve(manifest.Stages["export"].Artifacts["package"])), ["evidence"] = records };
     }
-    var path = ".opencaw/.cache/tasks/fixture/reviews/" + manifest.Asset + "-" + kind + ".json";
+    var path = ".hephaera/.cache/tasks/fixture/reviews/" + manifest.Asset + "-" + kind + ".json";
     w.Save(path, receipt);
     settings["kind"] = kind;
     settings["reviewer"] = reviewer;
@@ -213,7 +213,7 @@ try
             w.Save("tiny-verification.json", tiny);
             evidenceArgs = Settings("evidence-" + mode); evidenceArgs["recipe"] = "tiny-verification.json";
             await Run(evidenceArgs, "init");
-            evidenceArgs["manifest"] = ".opencaw/.cache/tasks/fixture/model-to-action/evidence-" + mode + "/v1/manifest.json";
+            evidenceArgs["manifest"] = ".hephaera/.cache/tasks/fixture/model-to-action/evidence-" + mode + "/v1/manifest.json";
         }
         else evidenceArgs = await New("evidence-" + mode);
         await Run(evidenceArgs, "inspect"); await Run(evidenceArgs, "compose");
@@ -305,7 +305,7 @@ try
     var boundedArgs = Settings("bounded");
     boundedArgs["recipe"] = "bounded.json";
     await Run(boundedArgs, "init");
-    boundedArgs["manifest"] = ".opencaw/.cache/tasks/fixture/model-to-action/bounded/v1/manifest.json";
+    boundedArgs["manifest"] = ".hephaera/.cache/tasks/fixture/model-to-action/bounded/v1/manifest.json";
     await Run(boundedArgs, "inspect");
     fake.Mode = "missing-result";
     await Reject(() => Run(boundedArgs, "compose"), "bounded initial producer failure retained");
@@ -398,7 +398,7 @@ sealed class FakeProcess(Workspace w) : INativeProcess
                 artifacts["verificationData"] = evidence + "poses.bin";
                 artifacts["verificationFrames"] = evidence + "frames.jsonl";
                 w.Save(evidence + "index.json", new { simulationOnly = true, note = "SYNTHETIC fixture bytes; not real pose evidence" });
-                var payload = Encoding.ASCII.GetBytes("OPENCAW-POSE-V1\0\0SYNTHETIC POSE BYTES");
+                var payload = Encoding.ASCII.GetBytes("HEPHAERA-POSE-V1\0\0SYNTHETIC POSE BYTES");
                 File.WriteAllBytes(w.Resolve(evidence + "poses.bin"), payload);
                 if (Mode != "missing-verification-file") File.WriteAllText(w.Resolve(evidence + "frames.jsonl"), "{\"simulationOnly\":true}\n");
                 if (Mode == "oversized-verification")
@@ -472,7 +472,7 @@ sealed class FakeProcess(Workspace w) : INativeProcess
         var findings = new JsonArray();
         if (Mode is "critical-finding" or "unknown-finding")
             findings.Add(new JsonObject { ["severity"] = Mode == "critical-finding" ? "critical" : "not-a-known-severity" });
-        w.Save(job["result"]!.GetValue<string>(), new JsonObject { ["schemaVersion"] = Mode == "wrong-schema" ? "wrong/v1" : "opencaw-action-stage/v1", ["operation"] = op, ["inputSha256"] = Workspace.Hash(w.Resolve(job["input"]!.GetValue<string>())), ["artifacts"] = artifacts, ["actions"] = actions, ["metrics"] = Mode == "empty-metrics" ? new JsonObject() : new JsonObject { ["simulationOnly"] = true }, ["findings"] = findings });
+        w.Save(job["result"]!.GetValue<string>(), new JsonObject { ["schemaVersion"] = Mode == "wrong-schema" ? "wrong/v1" : "hephaera-action-stage/v1", ["operation"] = op, ["inputSha256"] = Workspace.Hash(w.Resolve(job["input"]!.GetValue<string>())), ["artifacts"] = artifacts, ["actions"] = actions, ["metrics"] = Mode == "empty-metrics" ? new JsonObject() : new JsonObject { ["simulationOnly"] = true }, ["findings"] = findings });
         if (Mode == "mutate-source")
             File.AppendAllText(w.Resolve("model.glb"), "mutated");
         if (Mode == "exit-after-output")
@@ -483,14 +483,14 @@ sealed class FakeProcess(Workspace w) : INativeProcess
 static class Fixture
 {
     public static JsonObject Motion(string modelHash) => JsonNode.Parse("""
-    {"schemaVersion":"opencaw-motion-package/v1","profile":"rigid","model":{"path":"model.glb","sha256":"MODEL"},"engine":{"effectiveEngine":"THREEJS"},"rig":{"id":"RIG","rootNode":"Root"},"anchors":[{"id":"hand","node":"anchor.hand","parent":"Visual","position":[0,0,0]}],"clips":[{"id":"kick","action":"kick","duration":1,"rootMotion":"in-place","motionSha256":"KICK","markers":[{"event":"release","time":0.5},{"event":"beat","time":0.25}]},{"id":"punch","action":"punch","duration":1,"rootMotion":"in-place","motionSha256":"PUNCH","markers":[]}],"provenance":{"provider":"owned","notes":"No Adobe services used"}}
+    {"schemaVersion":"hephaera-motion-package/v1","profile":"rigid","model":{"path":"model.glb","sha256":"MODEL"},"engine":{"effectiveEngine":"THREEJS"},"rig":{"id":"RIG","rootNode":"Root"},"anchors":[{"id":"hand","node":"anchor.hand","parent":"Visual","position":[0,0,0]}],"clips":[{"id":"kick","action":"kick","duration":1,"rootMotion":"in-place","motionSha256":"KICK","markers":[{"event":"release","time":0.5},{"event":"beat","time":0.25}]},{"id":"punch","action":"punch","duration":1,"rootMotion":"in-place","motionSha256":"PUNCH","markers":[]}],"provenance":{"provider":"owned","notes":"No Adobe services used"}}
     """.Replace("MODEL", modelHash).Replace("RIG", new string('a', 64)).Replace("KICK", new string('b', 64)).Replace("PUNCH", new string('c', 64)))!.AsObject();
     public static JsonObject Recipe() => JsonNode.Parse("""
     {"schemaVersion":1,"fps":4,"actions":[{"id":"combo","role":"presentation","steps":[{"id":"first","clip":"kick","from":0,"to":1,"rate":1,"repeat":2,"blendIn":0},{"id":"last","clip":"punch","from":0.25,"to":0.75,"rate":1,"repeat":1,"blendIn":0.25}],"cues":[{"id":"projectile","type":"projectile","anchor":"hand","start":{"step":"first","occurrence":0,"marker":"release"},"end":{"step":"last","occurrence":0,"offset":0.5},"color":"#ff8000","radius":0.1,"target":"point"}]}],"targets":[{"id":"point","mode":"fixed-world-point","maxDistance":100}],"budgets":{"maxActions":16,"maxStepsPerAction":64,"maxExpandedSteps":256,"maxActionSeconds":120,"maxEffects":64,"maxParticles":2048,"maxFrames":20000,"maxReviewFrames":1200,"maxRuntimeBytes":33554432,"timeoutSeconds":180,"maxLogBytes":16777216,"maxAttempts":16},"review":{"fps":4,"resolution":[128,128],"cameras":["front","three-quarter"],"targets":{"point":[2,0,0]}}}
     """)!.AsObject();
     public static void WriteGlb(string path, string[] names)
     {
-        var json = new JsonObject { ["asset"] = new JsonObject { ["version"] = "2.0", ["generator"] = "OpenCaw SYNTHETIC PROTOCOL FIXTURE" }, ["nodes"] = new JsonArray(new JsonObject { ["name"] = "Root", ["children"] = new JsonArray(1, 2) }, new JsonObject { ["name"] = "Visual", ["mesh"] = 0 }, new JsonObject { ["name"] = "anchor.hand" }), ["meshes"] = new JsonArray(new JsonObject { ["primitives"] = new JsonArray(new JsonObject { ["attributes"] = new JsonObject { ["POSITION"] = 0 } }) }), ["animations"] = new JsonArray(names.Select(name => (JsonNode)new JsonObject { ["name"] = name, ["channels"] = new JsonArray(new JsonObject { ["sampler"] = 0, ["target"] = new JsonObject { ["node"] = 1, ["path"] = "translation" } }), ["samplers"] = new JsonArray(new JsonObject { ["input"] = 1, ["output"] = 2 }) }).ToArray()), ["buffers"] = new JsonArray(new JsonObject { ["byteLength"] = 68 }), ["bufferViews"] = new JsonArray(new JsonObject { ["buffer"] = 0, ["byteOffset"] = 0, ["byteLength"] = 36 }, new JsonObject { ["buffer"] = 0, ["byteOffset"] = 36, ["byteLength"] = 8 }, new JsonObject { ["buffer"] = 0, ["byteOffset"] = 44, ["byteLength"] = 24 }), ["accessors"] = new JsonArray(new JsonObject { ["bufferView"] = 0, ["componentType"] = 5126, ["count"] = 3, ["type"] = "VEC3" }, new JsonObject { ["bufferView"] = 1, ["componentType"] = 5126, ["count"] = 2, ["type"] = "SCALAR", ["min"] = new JsonArray(0), ["max"] = new JsonArray(1) }, new JsonObject { ["bufferView"] = 2, ["componentType"] = 5126, ["count"] = 2, ["type"] = "VEC3" }) };
+        var json = new JsonObject { ["asset"] = new JsonObject { ["version"] = "2.0", ["generator"] = "Hephaera SYNTHETIC PROTOCOL FIXTURE" }, ["nodes"] = new JsonArray(new JsonObject { ["name"] = "Root", ["children"] = new JsonArray(1, 2) }, new JsonObject { ["name"] = "Visual", ["mesh"] = 0 }, new JsonObject { ["name"] = "anchor.hand" }), ["meshes"] = new JsonArray(new JsonObject { ["primitives"] = new JsonArray(new JsonObject { ["attributes"] = new JsonObject { ["POSITION"] = 0 } }) }), ["animations"] = new JsonArray(names.Select(name => (JsonNode)new JsonObject { ["name"] = name, ["channels"] = new JsonArray(new JsonObject { ["sampler"] = 0, ["target"] = new JsonObject { ["node"] = 1, ["path"] = "translation" } }), ["samplers"] = new JsonArray(new JsonObject { ["input"] = 1, ["output"] = 2 }) }).ToArray()), ["buffers"] = new JsonArray(new JsonObject { ["byteLength"] = 68 }), ["bufferViews"] = new JsonArray(new JsonObject { ["buffer"] = 0, ["byteOffset"] = 0, ["byteLength"] = 36 }, new JsonObject { ["buffer"] = 0, ["byteOffset"] = 36, ["byteLength"] = 8 }, new JsonObject { ["buffer"] = 0, ["byteOffset"] = 44, ["byteLength"] = 24 }), ["accessors"] = new JsonArray(new JsonObject { ["bufferView"] = 0, ["componentType"] = 5126, ["count"] = 3, ["type"] = "VEC3" }, new JsonObject { ["bufferView"] = 1, ["componentType"] = 5126, ["count"] = 2, ["type"] = "SCALAR", ["min"] = new JsonArray(0), ["max"] = new JsonArray(1) }, new JsonObject { ["bufferView"] = 2, ["componentType"] = 5126, ["count"] = 2, ["type"] = "VEC3" }) };
         var content = Encoding.UTF8.GetBytes(json.ToJsonString());
         var padded = (content.Length + 3) / 4 * 4;
         var bytes = new byte[20 + padded + 8 + 68];

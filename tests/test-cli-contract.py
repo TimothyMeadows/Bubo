@@ -37,13 +37,15 @@ def main():
         else:
             check(result.returncode==0,'public capabilities succeeds')
         return value
-    capabilities=invoke(['capabilities','--api-version','1'])
-    check(capabilities['apiVersions']==[1] and {b['id'] for b in capabilities['mediaBackends']}=={'flux-schnell','stable-audio-open','ace-step-turbo','qwen3-tts-customvoice','qwen3-tts-base'},'API and implemented direct-media capability identities')
+    capabilities=invoke(['capabilities','--api-version','2'])
+    check(capabilities['apiVersions']==[2] and {b['id'] for b in capabilities['mediaBackends']}=={'flux-schnell','stable-audio-open','ace-step-turbo','qwen3-tts-customvoice','qwen3-tts-base'},'API and implemented direct-media capability identities')
     check('media' in capabilities['workflows'] and all(b['maximumBatch']==4 for b in capabilities['mediaBackends']),'media workflow advertises finite backend batches')
     check(all(len(value)==64 for value in capabilities['build']['assemblies'].values()),'all shipped assemblies have build identities')
-    invoke(['capabilities','--api-version','999'],'Explicit --api-version 1')
-    invoke(['capabilities','--api-version','1','--api-version','1'],'Duplicate option')
-    invoke(['proof-to-model','finish','--api-version','1','--callback','arbitrary.py'],'Unknown or inapplicable option')
+    old_api=invoke(['capabilities','--api-version','1'],'Explicit --api-version 2')
+    check(old_api['apiVersion']==2,'API1 rejection identifies current execution API2')
+    invoke(['capabilities','--api-version','999'],'Explicit --api-version 2')
+    invoke(['capabilities','--api-version','2','--api-version','2'],'Duplicate option')
+    invoke(['proof-to-model','finish','--api-version','2','--callback','arbitrary.py'],'Unknown or inapplicable option')
     def sha(path): return hashlib.sha256(path.read_bytes()).hexdigest()
     policy=project/'policy.json'; policy.write_text('{"kind":"owned-contract-fixture"}\n',encoding='utf-8')
     context={'schemaVersion':'bubo-host-context/v1','projectRoot':str(project),'task':'contract',
@@ -55,7 +57,7 @@ def main():
     context_path=project/'context.json'
     def write_context(): context_path.write_text(json.dumps(context,indent=2)+'\n',encoding='utf-8')
     write_context()
-    common=['--api-version','1','--root',str(project),'--host-context',str(context_path)]
+    common=['--api-version','2','--root',str(project),'--host-context',str(context_path)]
     original_policy=context['policy']
     context['roots']['state']='inspection-state'
     context['policy']={'purpose':'read-only-blender-inspection','receipt':{'path':'policy.json','sha256':sha(policy)}}
@@ -98,14 +100,14 @@ def main():
     isolated=work/'runtime'; shutil.copytree(cli.parent,isolated)
     launch=isolated/'bubo.runtimeconfig.json'
     launch.write_bytes(launch.read_bytes()+b'\n')
-    changed=invoke(['capabilities','--api-version','1'],selected=isolated/cli.name)
+    changed=invoke(['capabilities','--api-version','2'],selected=isolated/cli.name)
     check(changed['build']!=capabilities['build'],'launch configuration changes the runtime build identity')
     old['runtimeBuildSha256']=hashlib.sha256(json.dumps(capabilities['build'],separators=(',',':')).encode()).hexdigest()
     manifest.write_text(json.dumps(old)+'\n',encoding='utf-8')
     invoke(['proof-to-model','status',*common,'--manifest','state/old.json'],'Bubo build identity changed',isolated/cli.name)
     resource=isolated/'resources/blender/inspect-blender-scene.py'
     resource.write_bytes(resource.read_bytes()+b'\n# altered fixture bytes\n')
-    invoke(['capabilities','--api-version','1'],'audited resource is missing or changed',isolated/cli.name)
+    invoke(['capabilities','--api-version','2'],'audited resource is missing or changed',isolated/cli.name)
     (work/'summary.json').write_text(json.dumps({'checks':len(checks),'passed':True,'nativeExecution':False,'cliSha256':sha(cli)},indent=2)+'\n',encoding='utf-8')
     print('PASS:',len(checks),'CLI contract assertions;',work/'summary.json')
 

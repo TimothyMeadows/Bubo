@@ -2,7 +2,7 @@ using System.Buffers.Binary;
 using System.IO.Compression;
 using System.Text;
 
-namespace OpenCaw.ProofToModel.Infrastructure;
+namespace Hephaera.ProofToModel.Infrastructure;
 
 /// <summary>Bounded lossless 8-bit RGBA/gray-alpha PNG input and transparent canvas padding.</summary>
 public static class RgbaPng

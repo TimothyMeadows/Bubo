@@ -4,7 +4,7 @@ using System.Text.Json.Nodes;
 using Bubo.Host;
 using HostExecutionContext = Bubo.Host.HostExecutionContext;
 
-namespace OpenCaw.AssetProduction;
+namespace Hephaera.AssetProduction;
 
 /// <summary>Stable asset-level selection identity, independent of per-operation evidence additions.</summary>
 public static class HostPolicyIdentity

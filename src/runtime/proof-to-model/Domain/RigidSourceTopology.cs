@@ -3,7 +3,7 @@ using System.Collections;
 using System.Security.Cryptography;
 using System.Text.Json;
 
-namespace OpenCaw.ProofToModel.Domain;
+namespace Hephaera.ProofToModel.Domain;
 
 /// <summary>Bounded representation evidence; actual corner correspondence and geometry require native verification.</summary>
 public static class RigidSourceTopology

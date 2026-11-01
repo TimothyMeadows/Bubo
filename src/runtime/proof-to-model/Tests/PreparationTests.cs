@@ -1,9 +1,9 @@
 using System.Buffers.Binary;
 using System.IO.Compression;
 using System.Text.Json.Nodes;
-using OpenCaw.ProofToModel.Application;
-using OpenCaw.ProofToModel.Domain;
-using OpenCaw.ProofToModel.Infrastructure;
+using Hephaera.ProofToModel.Application;
+using Hephaera.ProofToModel.Domain;
+using Hephaera.ProofToModel.Infrastructure;
 
 static class PreparationTests
 {
@@ -49,7 +49,7 @@ static class PreparationTests
     {
         var root = parent.Resolve("source-preparation-fixtures"); Directory.CreateDirectory(root);
         var w = new Workspace(root);
-        File.WriteAllText(w.Resolve("STYLE.md"), "Primary OpenCaw art pipeline:\n- PROOF_TO_MODEL\n");
+        File.WriteAllText(w.Resolve("STYLE.md"), "Primary Hephaera art pipeline:\n- PROOF_TO_MODEL\n");
         w.Save("rights.json", new { authorized = true, source = "Synthetic engineering fixtures" });
         w.Save("recipe.json", new { targetFaces = 100, textureSize = 32, cageExtrusion = .1, maxRayDistance = .1, uvMargin = .01, lodRatios = new[] { .5 }, colliderMaxFaces = 100, maxTriangles = 1000, maxMaterials = 3, maxTextureBytes = 100000, parts = Array.Empty<string>(), riggingRequired = false, animationRequired = false, proofPreparation = new { maxSetRevisions = 100 } });
         w.Save("toolchain.json", new { schemaVersion = 1, files = Array.Empty<object>(), models = Array.Empty<object>(), limits = new { maxAttempts = 100, timeoutSeconds = 10 } });
@@ -63,7 +63,7 @@ static class PreparationTests
         var options = new Dictionary<string, string> { ["task"] = "preparation", ["asset"] = "six-sources", ["version"] = "v1", ["actor"] = "fixture-builder", ["sources"] = "sources.json", ["rights"] = "rights.json", ["recipe"] = "recipe.json", ["toolchain"] = "toolchain.json" };
         async Task Run(string command) => await new Pipeline(w, options, new NativeProcess(), new AlphaProcessor()).Execute(command, default);
         await Run("init");
-        var manifestPath = ".opencaw/.cache/tasks/preparation/proof-to-model/six-sources/v1/manifest.json";
+        var manifestPath = ".hephaera/.cache/tasks/preparation/proof-to-model/six-sources/v1/manifest.json";
         options["manifest"] = manifestPath;
         Manifest State() => w.Load<Manifest>(manifestPath);
         var initial = State();
@@ -118,14 +118,14 @@ static class PreparationTests
         var statusText = new StringWriter(); var previousOutput = Console.Out;
         try { Console.SetOut(statusText); await Run("status"); } finally { Console.SetOut(previousOutput); }
         var status = JsonNode.Parse(statusText.ToString())!.AsObject();
-        var approvalPath = ".opencaw/.cache/tasks/preparation/reviews/proof-set.json";
+        var approvalPath = ".hephaera/.cache/tasks/preparation/reviews/proof-set.json";
         w.Save(approvalPath, new { kind = "proof-set", reviewer = "fixture-human", decision = "approved", human = true, reason = "SYNTHETIC TEST RECEIPT; not actual production approval", fingerprint = status["approvalFingerprints"]!["proofSet"]!.GetValue<string>() });
         options["kind"] = "proof-set"; options["reviewer"] = "fixture-human"; options["evidence"] = approvalPath; await Run("record");
         check(State().Approvals.Any(a => a.Kind == "proof-set"), "explicit whole-set synthetic human receipt is recorded separately");
         var revised = selected.DeepClone().AsObject(); revised["revision"] = 2;
         WritePng(w.Resolve("new-right.png"), 210); WritePng(w.Resolve("rejected-right.png"), 230);
         var newView = revised["views"]![1]!.AsObject(); newView["image"] = "new-right.png"; newView["sha256"] = w.HashFile(w.Resolve("new-right.png")); newView["origin"] = "generated"; newView["sourceIds"] = new JsonArray("source-0"); newView["revision"] = 2;
-        var generationReceipt = ".opencaw/.cache/tasks/preparation/generation/right.json";
+        var generationReceipt = ".hephaera/.cache/tasks/preparation/generation/right.json";
         newView["generationReceipt"] = generationReceipt;
         var batchReceipt = Receipt(w, State(), "run-right-1", "new-right.png", "rejected-right.png");
         batchReceipt["outputs"]!.AsArray().Add(batchReceipt["outputs"]![1]!.DeepClone());
@@ -133,7 +133,7 @@ static class PreparationTests
         w.Save("proofs-revised.json", revised); options["proof-set"] = "proofs-revised.json";
         await reject(() => Run("prepare-proofs"), "generated view registration requires explicit current media and generation authorization");
         File.WriteAllText(w.Resolve("MEDIA.md"), "Synthetic test media contract; no actual provider call is authorized or made.\n");
-        var authorizationPath = ".opencaw/.cache/tasks/preparation/generation/authorization.json";
+        var authorizationPath = ".hephaera/.cache/tasks/preparation/generation/authorization.json";
         var authorization = Authorization(w, State(), 1, 2); w.Save(authorizationPath, authorization);
         revised["generationPolicy"] = new JsonObject { ["pipeline"] = "CLOUD", ["mediaContract"] = "MEDIA.md", ["mediaContractHash"] = w.HashFile(w.Resolve("MEDIA.md")), ["authorization"] = authorizationPath };
         w.Save("proofs-budget.json", revised); options["proof-set"] = "proofs-budget.json";
@@ -171,7 +171,7 @@ static class PreparationTests
         w.Save("reset-proofs.json", resetSet); options["proof-set"] = "reset-proofs.json"; await Run("prepare-proofs");
         await Run("classify");
         WritePng(w.Resolve("another-right.png"), 250);
-        var anotherReceipt = ".opencaw/.cache/tasks/preparation/generation/another-right.json";
+        var anotherReceipt = ".hephaera/.cache/tasks/preparation/generation/another-right.json";
         w.Save(anotherReceipt, Receipt(w, State(), "run-right-2", "another-right.png"));
         resetSet["classificationHash"] = w.HashFile(w.Resolve(State().Classification));
         resetView["image"] = "another-right.png"; resetView["sha256"] = w.HashFile(w.Resolve("another-right.png")); resetView["generationReceipt"] = anotherReceipt;
@@ -189,7 +189,7 @@ static class PreparationTests
                 settings["sources"] = sourceInput;
             }
             await new Pipeline(w, settings, new NativeProcess(), new AlphaProcessor()).Execute("init", default);
-            var taskManifest = ".opencaw/.cache/tasks/preparation/proof-to-model/" + name + "/v1/manifest.json"; settings["manifest"] = taskManifest;
+            var taskManifest = ".hephaera/.cache/tasks/preparation/proof-to-model/" + name + "/v1/manifest.json"; settings["manifest"] = taskManifest;
             var state = w.Load<Manifest>(taskManifest); var analysis = Classification(w, state);
             if (oblique) { analysis["sourceViews"]![0]!["view"] = "oblique"; analysis["sourceViews"]![0]!["usable"] = false; }
             var report = name + "-classification.json"; w.Save(report, analysis); settings["classification"] = report;

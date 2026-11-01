@@ -1,7 +1,7 @@
 using System.Text.Json.Nodes;
-using OpenCaw.AssetProduction;
-using OpenCaw.ModelAnimation.Application;
-namespace OpenCaw.ModelAnimation.Infrastructure;
+using Hephaera.AssetProduction;
+using Hephaera.ModelAnimation.Application;
+namespace Hephaera.ModelAnimation.Infrastructure;
 
 // Compatibility adapter for the validated caller-supplied engine selection.
 // It never launches a host resolver or reads instruction documents.

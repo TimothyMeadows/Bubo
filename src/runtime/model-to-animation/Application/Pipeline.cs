@@ -2,10 +2,10 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Security.Cryptography;
 using System.Text;
-using OpenCaw.AssetProduction;
-using OpenCaw.ModelAnimation.Domain;
-using static OpenCaw.ModelAnimation.Application.MotionValidation;
-namespace OpenCaw.ModelAnimation.Application;
+using Hephaera.AssetProduction;
+using Hephaera.ModelAnimation.Domain;
+using static Hephaera.ModelAnimation.Application.MotionValidation;
+namespace Hephaera.ModelAnimation.Application;
 
 public sealed partial class Pipeline(IWorkspace w, Dictionary<string, string> options, INativeProcess native, IEngineResolver engines)
 {
@@ -17,7 +17,7 @@ public sealed partial class Pipeline(IWorkspace w, Dictionary<string, string> op
     JsonObject Recipe => LoadObject(m.EffectiveRecipe);
     JsonObject Budget => LoadObject(m.Recipe)["budgets"]!.AsObject();
     string Baseline => Path.GetFullPath(Need("baseline-root"));
-    string TaskRoot(string task) => options.GetValueOrDefault("state-root", ".opencaw/.cache/tasks/" + task);
+    string TaskRoot(string task) => options.GetValueOrDefault("state-root", ".hephaera/.cache/tasks/" + task);
     string TaskPrefix => TaskRoot(m.Task) + "/";
     string StagingRoot => options.GetValueOrDefault("staging-root", ".art-staging");
     JsonObject LoadObject(string relative)
@@ -42,7 +42,7 @@ public sealed partial class Pipeline(IWorkspace w, Dictionary<string, string> op
     }
     void CheckLayout()
     {
-        if (m.SchemaVersion != "opencaw-model-animation/v1")
+        if (m.SchemaVersion != "hephaera-model-animation/v1")
             throw new InvalidOperationException("Unsupported motion manifest");
         Id(m.Task);
         Id(m.Asset);

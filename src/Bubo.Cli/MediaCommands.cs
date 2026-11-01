@@ -2,7 +2,7 @@ using System.Text.Json.Nodes;
 using Bubo.Host;
 using Bubo.Media.Application;
 using Bubo.Media.Infrastructure;
-using OpenCaw.AssetProduction;
+using Hephaera.AssetProduction;
 using HostExecutionContext=Bubo.Host.HostExecutionContext;
 
 internal static class MediaCommands
@@ -33,7 +33,7 @@ internal static class MediaCommands
                 "setup"=>await new MediaSetup(workspace,resources).Execute(manifest,options.ContainsKey("execute"),cancellation.Token),
                 _=>throw new InvalidOperationException("Unsupported media operation")
             };
-            return new {schemaVersion="bubo-execution-result/v1",apiVersion=1,status="succeeded",workflow="media",operation,hostContextSha256=host.ContextSha256,runtime=build,data};
+            return new {schemaVersion="bubo-execution-result/v1",apiVersion=2,status="succeeded",workflow="media",operation,hostContextSha256=host.ContextSha256,runtime=build,data};
         }
         finally {Console.CancelKeyPress-=cancel;}
     }

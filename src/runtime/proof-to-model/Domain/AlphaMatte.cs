@@ -1,3 +1,3 @@
-namespace OpenCaw.ProofToModel.Domain;
+namespace Hephaera.ProofToModel.Domain;
 
 public sealed record AlphaMatte(int Width, int Height, byte[] Alpha, bool Suitable);

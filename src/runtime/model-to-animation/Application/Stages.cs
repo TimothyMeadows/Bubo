@@ -1,9 +1,9 @@
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
-using OpenCaw.AssetProduction;
-using OpenCaw.ModelAnimation.Domain;
-using static OpenCaw.ModelAnimation.Application.MotionValidation;
-namespace OpenCaw.ModelAnimation.Application;
+using Hephaera.AssetProduction;
+using Hephaera.ModelAnimation.Domain;
+using static Hephaera.ModelAnimation.Application.MotionValidation;
+namespace Hephaera.ModelAnimation.Application;
 
 public sealed partial class Pipeline
 {
@@ -143,7 +143,7 @@ public sealed partial class Pipeline
             stage.Inputs[jobPath] = HashFile(jobPath);
             await native.Run(m.Blender, ["--factory-startup", "--background", "--disable-autoexec", "--python-exit-code", "1", "--python", w.Resolve(bundle + "/motion.py"), "--", "--job", w.Resolve(jobPath)], w.Root, w.Resolve(stage.Attempt + "/process.log"), Budget["timeoutSeconds"]!.GetValue<int>(), cancellation, (long)Budget["maxLogBytes"]!.GetValue<double>());
             var result = LoadObject(stage.Attempt + "/result.json");
-            if (Text(result, "schemaVersion") != "opencaw-motion-stage/v1" || Text(result, "operation") != operation || Text(result, "profile") != m.Profile || Text(result, "inputSha256") != HashFile(input))
+            if (Text(result, "schemaVersion") != "hephaera-motion-stage/v1" || Text(result, "operation") != operation || Text(result, "profile") != m.Profile || Text(result, "inputSha256") != HashFile(input))
                 throw new InvalidOperationException("Native stage report does not match invocation/input");
             if (result["findings"] is not JsonArray findings || findings.Any(item => item?["severity"]?.GetValue<string>() is "fatal" or "error" or "blocking"))
                 throw new InvalidOperationException("Native stage has blocking or incomplete findings");
@@ -311,7 +311,7 @@ public sealed partial class Pipeline
     }
     void ValidatePackage(JsonObject package, Stage stage)
     {
-        if (Text(package, "schemaVersion") != "opencaw-motion-package/v1" || Text(package, "profile") != m.Profile)
+        if (Text(package, "schemaVersion") != "hephaera-motion-package/v1" || Text(package, "profile") != m.Profile)
             throw new InvalidOperationException("Wrong motion package profile/schema");
         NoExcludedProviders(package);
         foreach (var key in new[] { "coordinateSystem", "rig", "provenance", "budgets" })

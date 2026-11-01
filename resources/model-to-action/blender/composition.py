@@ -127,7 +127,7 @@ def assign(owner, action):
     selected = [slot for slot in action.slots if slot.identifier == 'OB' + owner.name]
     if len(selected) == 1:
         owner.animation_data.action_slot = selected[0]
-    elif action.get('opencaw_action_id'):
+    elif action.get('hephaera_action_id'):
         owner.animation_data.action_slot = action.slots.new(id_type='OBJECT', name=owner.name)
     elif len(action.slots) == 1:
         owner.animation_data.action_slot = action.slots[0]
@@ -165,8 +165,8 @@ def source_library(motion, plan):
         duration = (end - begin) / plan['fps']
         if abs(duration - finite(clip.get('duration'),'Source clip duration',.001,3600)) > 1e-4:
             raise ValueError('Actual source clip duration disagrees with reviewed metadata')
-        action['opencaw_source_clip'] = identifier
-        action['opencaw_owners'] = json.dumps(sorted(owners))
+        action['hephaera_source_clip'] = identifier
+        action['hephaera_owners'] = json.dumps(sorted(owners))
         action.use_fake_user = True
         library[identifier] = {'action': action, 'owners': sorted(owners), 'start': float(begin), 'duration': duration, 'metadata': clip}
     rest = rest_state()
@@ -328,13 +328,13 @@ def compose(job, plan):
     library, rest = source_library(motion, plan)
     verification_preflight(plan)
     for index,obj in enumerate(sorted(meshes(),key=lambda obj:obj.name)):
-        obj['opencaw_action_mesh']='mesh-'+str(index)
+        obj['hephaera_action_mesh']='mesh-'+str(index)
         # glTF's Blender importer splits skinned nodes into sibling objects.
         # Carry a mesh-datablock identity as well as the node identity so the
         # independent comparison follows geometry without trusting new names.
         if obj.data.users > 1:
             obj.data=obj.data.copy()
-        obj.data['opencaw_action_mesh']='mesh-'+str(index)
+        obj.data['hephaera_action_mesh']='mesh-'+str(index)
     # Namespace retained source actions so an action may share a source clip ID.
     for identifier, value in library.items():
         value['action'].name = 'source.' + identifier
@@ -345,7 +345,7 @@ def compose(job, plan):
     measured = []
     for declared in plan['actions']:
         composite = bpy.data.actions.new(declared['id'])
-        composite['opencaw_action_id'] = declared['id']
+        composite['hephaera_action_id'] = declared['id']
         composite.use_fake_user = True
         owners = sorted(rest)
         hasher = __import__('hashlib').sha256()
@@ -390,7 +390,7 @@ def compose(job, plan):
         for curve in all_curves(composite):
             for key in curve.keyframe_points:
                 key.interpolation = 'LINEAR'
-        composite['opencaw_owners'] = json.dumps(owners)
+        composite['hephaera_owners'] = json.dumps(owners)
         report = copy.deepcopy(declared)
         report['motionSha256'] = hasher.hexdigest()
         measured.append(report)
@@ -420,9 +420,9 @@ def compose(job, plan):
                 if index+1 < len(declared['steps']):
                     strip.blend_out = declared['steps'][index+1]['blendIn']*plan['fps']
                 editable += 1
-    bpy.context.scene['opencaw_action_plan'] = plan_signature(plan)
-    bpy.context.scene['opencaw_compiled_actions'] = json.dumps(measured)
-    bpy.context.scene['opencaw_editable_sources'] = editable
+    bpy.context.scene['hephaera_action_plan'] = plan_signature(plan)
+    bpy.context.scene['hephaera_compiled_actions'] = json.dumps(measured)
+    bpy.context.scene['hephaera_editable_sources'] = editable
     activate_composite(plan['actions'][0]['id'])
     bpy.context.scene.frame_start = 0
     bpy.context.scene.frame_end = max(round(action['duration']*plan['fps']) for action in plan['actions'])
@@ -431,7 +431,7 @@ def compose(job, plan):
 
 def composite_action(identifier):
     import bpy
-    found = [action for action in bpy.data.actions if action.get('opencaw_action_id') == identifier]
+    found = [action for action in bpy.data.actions if action.get('hephaera_action_id') == identifier]
     if len(found) != 1:
         raise ValueError('Expected exactly one real compound action: ' + identifier)
     return found[0]
@@ -443,7 +443,7 @@ def activate_composite(identifier):
         if obj.animation_data:
             obj.animation_data.action = None
             obj.animation_data.use_nla = False
-    for name in json.loads(action['opencaw_owners']):
+    for name in json.loads(action['hephaera_owners']):
         assign(node(name), action)
     return action
 
@@ -464,8 +464,8 @@ def restore_composites(plan):
         start,end = action.frame_range
         if abs(start) > 1e-4 or abs((end-start)/plan['fps']-declared['duration']) > 1e-4:
             raise ValueError('Independent re-import changed compound duration')
-        action['opencaw_action_id'] = declared['id']
-        action['opencaw_owners'] = json.dumps(sorted(owners))
+        action['hephaera_action_id'] = declared['id']
+        action['hephaera_owners'] = json.dumps(sorted(owners))
 
 
 def pose_vertices():
@@ -475,9 +475,9 @@ def pose_vertices():
     payload_bytes = 0
     for obj in meshes():
         owner=obj
-        while owner is not None and not owner.get('opencaw_action_mesh'):
+        while owner is not None and not owner.get('hephaera_action_mesh'):
             owner=owner.parent
-        identifier=obj.data.get('opencaw_action_mesh') or (owner.get('opencaw_action_mesh') if owner is not None else obj.name)
+        identifier=obj.data.get('hephaera_action_mesh') or (owner.get('hephaera_action_mesh') if owner is not None else obj.name)
         if identifier in result:
             raise ValueError('Ambiguous independently re-imported mesh ownership')
         evaluated = obj.evaluated_get(graph)
@@ -496,7 +496,7 @@ def mesh_materials():
     """Keep actual mesh/material-slot correspondence across independent import."""
     result={}
     for obj in meshes():
-        identifier=obj.data.get('opencaw_action_mesh') or obj.get('opencaw_action_mesh') or obj.name
+        identifier=obj.data.get('hephaera_action_mesh') or obj.get('hephaera_action_mesh') or obj.name
         if identifier in result:
             raise ValueError('Ambiguous material ownership')
         # glTF represents only used material slots; unused Blender slots are not
@@ -543,9 +543,9 @@ def export(job, root, source, output, plan):
     import bpy
     from core import load_scene
     from mathutils import Vector, kdtree
-    if bpy.context.scene.get('opencaw_action_plan') != plan_signature(plan):
+    if bpy.context.scene.get('hephaera_action_plan') != plan_signature(plan):
         raise ValueError('Working compound source does not match current immutable action plan')
-    actions = json.loads(bpy.context.scene['opencaw_compiled_actions'])
+    actions = json.loads(bpy.context.scene['hephaera_compiled_actions'])
     spool_dir = output / 'verification'
     spool = write_spool(root, spool_dir, plan, plan_signature(plan), sampled_compounds(plan))
     material_bindings=mesh_materials()
@@ -561,11 +561,11 @@ def export(job, root, source, output, plan):
                 obj.animation_data.nla_tracks.remove(track)
     wanted = {action['id'] for action in plan['actions']}
     for action in list(bpy.data.actions):
-        if action.get('opencaw_action_id') not in wanted:
+        if action.get('hephaera_action_id') not in wanted:
             bpy.data.actions.remove(action)
     for declared in plan['actions']:
         action = composite_action(declared['id'])
-        for name in json.loads(action['opencaw_owners']):
+        for name in json.loads(action['hephaera_owners']):
             owner = node(name); owner.animation_data_create()
             track = owner.animation_data.nla_tracks.new(); track.name = declared['id']
             strip = track.strips.new(declared['id'], 0, action)
@@ -645,7 +645,7 @@ def export(job, root, source, output, plan):
     if anchor_error>.001:
         raise ValueError('Independent re-import changed effect-anchor world transforms')
     package=copy.deepcopy(plan)
-    package.update(schemaVersion='opencaw-action-package/v1',asset=job['asset'],version=job['version'],profile=job['profile'],
+    package.update(schemaVersion='hephaera-action-package/v1',asset=job['asset'],version=job['version'],profile=job['profile'],
                    model={'path':relative(root,glb),'sha256':digest(glb)},source={'path':blend,'sha256':digest(root/blend)},actions=actions,
                    verification={'status':'pending','runtime':'not-run','human':'pending','independent':'pending'})
     package_path=output/'action-package.json';save_json(package_path,package)

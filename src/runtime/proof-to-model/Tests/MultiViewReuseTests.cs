@@ -1,8 +1,8 @@
 using System.Text;
 using System.Text.Json.Nodes;
-using OpenCaw.ProofToModel.Application;
-using OpenCaw.ProofToModel.Domain;
-using OpenCaw.ProofToModel.Infrastructure;
+using Hephaera.ProofToModel.Application;
+using Hephaera.ProofToModel.Domain;
+using Hephaera.ProofToModel.Infrastructure;
 
 static class MultiViewReuseTests
 {
@@ -33,7 +33,7 @@ static class MultiViewReuseTests
     {
         var directory = parent.Resolve("multi-view-reuse-fixtures"); Directory.CreateDirectory(directory);
         var w = new Workspace(directory); var native = new NoNative();
-        File.WriteAllText(w.Resolve("STYLE.md"), "Primary OpenCaw art pipeline:\n- PROOF_TO_MODEL\n");
+        File.WriteAllText(w.Resolve("STYLE.md"), "Primary Hephaera art pipeline:\n- PROOF_TO_MODEL\n");
         w.Save("rights.json", new { authorized = true, reuseAuthorized = true, source = "Controlled fixture, not production rights" });
         w.Save("brief.json", new { purpose = "Synthetic reuse contract fixture", scale = new { units = "metres", metersPerUnit = 1 }, interfaces = Array.Empty<string>() });
         w.Save("recipe.json", new { targetFaces = 100, textureSize = 32, cageExtrusion = .1, maxRayDistance = .1, uvMargin = .01, lodRatios = new[] { .5 }, colliderMaxFaces = 100, maxTriangles = 1000, maxMaterials = 3, maxTextureBytes = 100000, parts = Array.Empty<string>(), riggingRequired = false, animationRequired = false, proofPreparation = new { maxSetRevisions = 20 } });
@@ -63,7 +63,7 @@ static class MultiViewReuseTests
             try { Console.SetOut(capture); await Execute(settings, "status"); } finally { Console.SetOut(previous); }
             var key = kind == "proof-set" ? "proofSet" : kind;
             var fingerprint = JsonNode.Parse(capture.ToString())!["approvalFingerprints"]![key]!.GetValue<string>();
-            var path = settings.GetValueOrDefault("state-root", ".opencaw/.cache/tasks/reuse-tests") + "/reviews/" + State(settings).Asset + "-" + kind + ".json";
+            var path = settings.GetValueOrDefault("state-root", ".hephaera/.cache/tasks/reuse-tests") + "/reviews/" + State(settings).Asset + "-" + kind + ".json";
             w.Save(path, new { kind, reviewer, fingerprint, decision = "approved", human = true, reason = "SYNTHETIC FIXTURE ASSERTION; not actual person, production review or native acceptance" });
             settings["kind"] = kind; settings["reviewer"] = reviewer; settings["evidence"] = path;
             await Execute(settings, "record");
@@ -79,7 +79,7 @@ static class MultiViewReuseTests
                 settings["staging-root"] = ".bubo/custom-donor-staging";
                 settings["manifest"] = ".bubo/custom-donor-state/donor.json";
             }
-            await Execute(settings, "init"); settings.TryAdd("manifest", settings.GetValueOrDefault("state-root", ".opencaw/.cache/tasks/reuse-tests") + "/proof-to-model/" + name + "/v1/manifest.json");
+            await Execute(settings, "init"); settings.TryAdd("manifest", settings.GetValueOrDefault("state-root", ".hephaera/.cache/tasks/reuse-tests") + "/proof-to-model/" + name + "/v1/manifest.json");
             var classification = PreparationTests.Classification(w, State(settings));
             if (differentClassification) classification["subjects"]![0]!["classification"] = "Different approved structural interpretation";
             var analysisPath = name + "-classification.json"; w.Save(analysisPath, classification); settings["classification"] = analysisPath; await Execute(settings, "classify");

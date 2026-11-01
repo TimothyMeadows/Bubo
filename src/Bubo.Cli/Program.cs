@@ -5,13 +5,13 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Bubo.Host;
 using HostExecutionContext = Bubo.Host.HostExecutionContext;
-using OpenCaw.AssetProduction;
-using ProofApplication = OpenCaw.ProofToModel.Application;
-using ProofInfrastructure = OpenCaw.ProofToModel.Infrastructure;
-using MotionApplication = OpenCaw.ModelAnimation.Application;
-using MotionInfrastructure = OpenCaw.ModelAnimation.Infrastructure;
-using ActionApplication = OpenCaw.ModelAction.Application;
-using ActionInfrastructure = OpenCaw.ModelAction.Infrastructure;
+using Hephaera.AssetProduction;
+using ProofApplication = Hephaera.ProofToModel.Application;
+using ProofInfrastructure = Hephaera.ProofToModel.Infrastructure;
+using MotionApplication = Hephaera.ModelAnimation.Application;
+using MotionInfrastructure = Hephaera.ModelAnimation.Infrastructure;
+using ActionApplication = Hephaera.ModelAction.Application;
+using ActionInfrastructure = Hephaera.ModelAction.Infrastructure;
 
 var resultOutput = Console.Out;
 var workflow = args.Length > 0 ? args[0] : "help";
@@ -25,13 +25,13 @@ try
 {
     if (args.Length == 0 || args is ["--help"] or ["help"])
     {
-        resultOutput.WriteLine("bubo <proof-to-model|model-to-animation|model-to-action|blender-inspection|media> <operation> --api-version 1 --root ROOT --host-context PROJECT_JSON [--manifest PROJECT_JSON] [operation options]\nbubo capabilities --api-version 1\nmedia: inspect [--load true], generate, setup [--execute]. Explicit build/setup precedes production. Host context supplies policy, permitted roots, rights/consent, tool hashes, budgets and reviews. Results are JSON on stdout; logs use stderr. No host instruction loading, implicit installation, provider fallback or automatic asset acceptance.");
+        resultOutput.WriteLine("bubo <proof-to-model|model-to-animation|model-to-action|blender-inspection|media> <operation> --api-version 2 --root ROOT --host-context PROJECT_JSON [--manifest PROJECT_JSON] [operation options]\nbubo capabilities --api-version 2\nmedia: inspect [--load true], generate, setup [--execute]. Explicit build/setup precedes production. Host context supplies policy, permitted roots, rights/consent, tool hashes, budgets and reviews. Results are JSON on stdout; logs use stderr. No host instruction loading, implicit installation, provider fallback or automatic asset acceptance.");
         return 0;
     }
     var capability = workflow == "capabilities";
     var options = ParseOptions(args, capability ? 1 : 2);
-    if (options.GetValueOrDefault("api-version") != "1")
-        throw new InvalidOperationException("Explicit --api-version 1 is required");
+    if (options.GetValueOrDefault("api-version") != "2")
+        throw new InvalidOperationException("Explicit --api-version 2 is required");
     RuntimeCatalog.Verify();
     var capabilities = Capabilities();
     if (capability)
@@ -150,7 +150,7 @@ try
     finally { Console.CancelKeyPress -= cancel; Console.SetOut(resultOutput); }
     var result = new JsonObject
     {
-        ["schemaVersion"] = "bubo-execution-result/v1", ["apiVersion"] = 1,
+        ["schemaVersion"] = "bubo-execution-result/v1", ["apiVersion"] = 2,
         ["status"] = "succeeded", ["workflow"] = workflow, ["operation"] = operation,
         ["manifest"] = pipelineOptions.GetValueOrDefault("manifest"),
         ["hostContextSha256"] = context.ContextSha256, ["executionReceipt"] = attempt + "/request.json",
@@ -164,7 +164,7 @@ catch (Exception error)
 {
     Console.SetOut(resultOutput);
     Console.Error.WriteLine(error.Message);
-    resultOutput.WriteLine(new JsonObject { ["schemaVersion"] = "bubo-execution-result/v1", ["apiVersion"] = 1, ["status"] = "failed", ["workflow"] = workflow, ["operation"] = operation, ["error"] = error.Message }.ToJsonString(Workspace.Json));
+    resultOutput.WriteLine(new JsonObject { ["schemaVersion"] = "bubo-execution-result/v1", ["apiVersion"] = 2, ["status"] = "failed", ["workflow"] = workflow, ["operation"] = operation, ["error"] = error.Message }.ToJsonString(Workspace.Json));
     return 1;
 }
 
@@ -236,7 +236,7 @@ static JsonObject Capabilities()
     }
     return new JsonObject
     {
-        ["schemaVersion"] = "bubo-capabilities/v1", ["apiVersions"] = new JsonArray(1),
+        ["schemaVersion"] = "bubo-capabilities/v1", ["apiVersions"] = new JsonArray(2),
         ["workflows"] = new JsonArray("proof-to-model","model-to-animation","model-to-action","blender-inspection","media"),
         ["modelRuntime"] = "pinned-native-tools", ["mediaBackends"] = JsonSerializer.SerializeToNode(Bubo.Media.Domain.MediaCapabilities.Implemented,Bubo.Media.Domain.MediaJson.Options),
         ["build"] = new JsonObject { ["cliSha256"] = Workspace.Hash(Assembly.GetExecutingAssembly().Location), ["resourceCatalogSha256"] = RuntimeCatalog.ExpectedSha256, ["assemblies"] = assemblies, ["launch"] = launch },

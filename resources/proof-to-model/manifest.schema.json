@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://opencaw.local/schemas/proof-to-model/manifest-v2",
+  "$id": "https://hephaera.local/schemas/proof-to-model/manifest-v2",
   "title": "PROOF_TO_MODEL asset manifest",
   "type": "object",
   "required": [

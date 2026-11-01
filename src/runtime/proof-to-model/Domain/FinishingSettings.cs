@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
-namespace OpenCaw.ProofToModel.Domain;
+namespace Hephaera.ProofToModel.Domain;
 
 /// <summary>Explicit, bounded finishing-only choices; never reconstruction settings or a fallback.</summary>
 public static class FinishingSettings

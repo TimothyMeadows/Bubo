@@ -14,8 +14,8 @@ import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 BLENDER = os.environ.get("BLENDER_EXE", "C:/Program Files/Blender Foundation/Blender 4.5/blender.exe")
-CLI = Path(os.environ.get("PROOF_TO_MODEL_DLL", str(
-    ROOT / "src/Bubo.Cli/bin/Debug/net10.0/bubo.dll")))
+CLI = Path(os.environ.get("BUBO_TEST_CLI", str(
+    ROOT / ("src/Bubo.Cli/bin/Debug/net10.0/bubo.exe" if os.name == "nt" else "src/Bubo.Cli/bin/Debug/net10.0/bubo"))))
 VIEWS = ("front", "right", "back", "left", "top", "bottom")
 DISTANCE = 3.1192049980163574
 FOV = 0.3490658503988659
@@ -35,8 +35,8 @@ def cameras(distance=DISTANCE):
 def main():
     if not Path(BLENDER).is_file():
         raise SystemExit("BLOCKED: real Blender 4.5 unavailable; set BLENDER_EXE")
-    if not CLI.is_file():
-        raise SystemExit("BLOCKED: build the native PROOF_TO_MODEL CLI first")
+    if not CLI.is_file() or CLI.suffix.lower() == ".dll":
+        raise SystemExit("BLOCKED: explicitly build/select the Bubo apphost; GPU ownership cannot run through dotnet DLL invocation")
     evidence = ROOT / ".bubo/native-proof"
     evidence.mkdir(parents=True, exist_ok=True)
     work = Path(tempfile.mkdtemp(prefix="p-", dir=evidence))
@@ -220,10 +220,10 @@ File.WriteAllText(Path.ChangeExtension(output, ".consumed.json"), new JsonObject
         {"id": "source-" + view, "path": "source-" + view + ".png"} for view in VIEWS]}))
     check(len({digest(project / ("source-" + view + ".png")) for view in VIEWS}) == 6,
           "The six independent fixture cameras must produce six distinct real PNGs")
-    manifest = ".opencaw/.cache/tasks/test/proof-to-model/fixture/v1/manifest.json"
+    manifest = ".hephaera/.cache/tasks/test/proof-to-model/fixture/v1/manifest.json"
 
     def cli(stage, *args, success=True):
-        return command(["dotnet", CLI, stage, "--root", project, "--manifest", manifest,
+        return command([CLI, stage, "--root", project, "--manifest", manifest,
                         *args], success=success)
 
     def state():
@@ -274,7 +274,7 @@ File.WriteAllText(Path.ChangeExtension(output, ".consumed.json"), new JsonObject
         key = "proofSet" if kind == "proof-set" else kind
         fingerprint = status.get("approvalFingerprints", {}).get(key)
         check(bool(fingerprint), "status must expose the current approval fingerprint: " + key)
-        receipt = f".opencaw/.cache/tasks/test/reviews/{kind}.json"
+        receipt = f".hephaera/.cache/tasks/test/reviews/{kind}.json"
         (project / receipt).parent.mkdir(parents=True, exist_ok=True)
         (project / receipt).write_text(json.dumps({"kind": kind, "reviewer": reviewer,
             "decision": "approved", "fingerprint": fingerprint, "human": human,
@@ -334,7 +334,7 @@ File.WriteAllText(Path.ChangeExtension(output, ".consumed.json"), new JsonObject
     current = state()
     reviewed = json.loads((project / current["stages"]["review"]["artifacts"]["result"]).read_text())
     check(reviewed["mode"] == "multi-view" and reviewed["measurements"]["views"] == 6, "Actual Blender review must render six production cameras")
-    check(reviewed["alignment"]["inputFrame"] == "opencaw-proof-z-up", "Finished review must not apply raw correction twice")
+    check(reviewed["alignment"]["inputFrame"] == "hephaera-proof-z-up", "Finished review must not apply raw correction twice")
     check(reviewed["alignment"]["engineExportToProofFrame"] == [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]],
           "Already corrected finished geometry must use identity frame mapping")
     check(len([name for name in reviewed["artifacts"] if name.startswith("original-")]) == 6, "Review must show all six original source fixtures")

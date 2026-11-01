@@ -1,8 +1,8 @@
 using System.Text;
 using System.Text.Json.Nodes;
-using OpenCaw.ProofToModel.Application;
-using OpenCaw.ProofToModel.Domain;
-using OpenCaw.ProofToModel.Infrastructure;
+using Hephaera.ProofToModel.Application;
+using Hephaera.ProofToModel.Domain;
+using Hephaera.ProofToModel.Infrastructure;
 
 /// <summary>Real filesystem/PNG preparation with a deliberately simulated inference process.</summary>
 static class MultiViewPipelineTests
@@ -18,7 +18,7 @@ static class MultiViewPipelineTests
             Directory.CreateDirectory(root);
             var fixture = new Fixture(new Workspace(root), name);
             var workspace = fixture.Workspace;
-            File.WriteAllText(workspace.Resolve("STYLE.md"), "Primary OpenCaw art pipeline:\n- PROOF_TO_MODEL\n");
+            File.WriteAllText(workspace.Resolve("STYLE.md"), "Primary Hephaera art pipeline:\n- PROOF_TO_MODEL\n");
             workspace.Save("rights.json", new { authorized = true, source = "Synthetic engineering fixtures; no external asset rights asserted" });
             workspace.Save("recipe.json", new
             {
@@ -93,7 +93,7 @@ static class MultiViewPipelineTests
             finally { Console.SetOut(previous); }
             var status = JsonNode.Parse(output.ToString())!.AsObject();
             var key = kind == "proof-set" ? "proofSet" : kind;
-            var receipt = ".opencaw/.cache/tasks/" + TaskName + "/reviews/" + kind + "-" + Guid.NewGuid().ToString("N") + ".json";
+            var receipt = ".hephaera/.cache/tasks/" + TaskName + "/reviews/" + kind + "-" + Guid.NewGuid().ToString("N") + ".json";
             fixture.Workspace.Save(receipt, new
             {
                 kind, reviewer = "synthetic-human", decision = "approved", human = true,
@@ -245,7 +245,7 @@ static class MultiViewPipelineTests
         {
             Workspace = workspace;
             Process = new SimulatedProcess(workspace);
-            ManifestPath = ".opencaw/.cache/tasks/" + TaskName + "/proof-to-model/" + name + "/v1/manifest.json";
+            ManifestPath = ".hephaera/.cache/tasks/" + TaskName + "/proof-to-model/" + name + "/v1/manifest.json";
             Options = new()
             {
                 ["task"] = TaskName, ["asset"] = name, ["version"] = "v1", ["actor"] = "synthetic-builder",
@@ -260,7 +260,7 @@ static class MultiViewPipelineTests
     sealed class SimulatedProcess(Workspace workspace) : INativeProcess
     {
         // Fixture-only GPU port: this runner creates synthetic files and never claims native ownership evidence.
-        public async Task RunGpu(OpenCaw.AssetProduction.GpuProcessSpec spec,CancellationToken cancellation=default,Func<CancellationToken,Task>? beforeStart=null)
+        public async Task RunGpu(Hephaera.AssetProduction.GpuProcessSpec spec,CancellationToken cancellation=default,Func<CancellationToken,Task>? beforeStart=null)
         {
             cancellation.ThrowIfCancellationRequested();
             using var legacy=spec.CompatibilityLock is {} path?workspace.Lock(path):null;
@@ -322,7 +322,7 @@ static class MultiViewPipelineTests
 
     static void WriteGlb(string path, bool meshless)
     {
-        var body = new JsonObject { ["asset"] = new JsonObject { ["version"] = "2.0", ["generator"] = "OpenCaw deterministic process simulation; not inferred geometry" } };
+        var body = new JsonObject { ["asset"] = new JsonObject { ["version"] = "2.0", ["generator"] = "Hephaera deterministic process simulation; not inferred geometry" } };
         using var binary = new MemoryStream();
         using (var writer = new BinaryWriter(binary, Encoding.UTF8, true))
         {

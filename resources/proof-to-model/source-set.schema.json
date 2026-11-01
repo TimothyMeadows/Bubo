@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://opencaw.local/schemas/proof-to-model/source-set-v1",
+  "$id": "https://hephaera.local/schemas/proof-to-model/source-set-v1",
   "title": "Registered immutable originals or original-source registration input",
   "type": "object",
   "additionalProperties": false,

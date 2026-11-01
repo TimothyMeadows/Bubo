@@ -1,6 +1,6 @@
 using System.Text.Json.Nodes;
 
-namespace OpenCaw.AssetProduction;
+namespace Hephaera.AssetProduction;
 
 /// <summary>Fresh access to the compiled caller's exact hash-bound resource bundle.</summary>
 public sealed class AuditedResources(string root,string expectedCatalogSha256)

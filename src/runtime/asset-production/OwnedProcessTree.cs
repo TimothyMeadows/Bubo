@@ -1,7 +1,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-namespace OpenCaw.AssetProduction;
+namespace Hephaera.AssetProduction;
 // Lifetime containment for owned native subprocesses; not a security sandbox.
 internal sealed class OwnedProcessTree : IDisposable
 {

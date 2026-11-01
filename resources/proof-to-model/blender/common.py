@@ -104,7 +104,7 @@ def review_multiview_inputs(job, root):
     import re
     if job.get("schemaVersion") != 2 or job.get("mode") != "multi-view":
         raise ValueError("Six-view review requires an explicit v2 multi-view job")
-    if job.get("inputFrame") not in ("pixal3d-mv-export", "opencaw-proof-z-up"):
+    if job.get("inputFrame") not in ("pixal3d-mv-export", "hephaera-proof-z-up"):
         raise ValueError("Six-view review requires an explicit input geometry frame")
     proof_set, source_set, classification = (job.get(name) for name in ("proofSet", "sourceSet", "classification"))
     if not all(isinstance(item, dict) for item in (proof_set, source_set, classification)):

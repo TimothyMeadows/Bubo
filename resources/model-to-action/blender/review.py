@@ -87,7 +87,7 @@ def review(job, root, source, output, plan):
             for index in range(count):
                 bpy.ops.mesh.primitive_uv_sphere_add(segments=8,ring_count=4,radius=1)
                 obj=bpy.context.object;obj.name='cue-proxy.'+action['id']+'.'+cue['id']+'.'+str(index)
-                obj['opencaw_cue_proxy']=True;obj.hide_render=True
+                obj['hephaera_cue_proxy']=True;obj.hide_render=True
                 mat=bpy.data.materials.new(obj.name);color=cue['color'].lstrip('#');rgb=tuple(int(color[i:i+2],16)/255 for i in (0,2,4));mat.diffuse_color=(*rgb,1)
                 obj.data.materials.append(mat);values.append(obj);proxy_objects.append(obj)
             proxy_data[(action['id'],cue['id'])]=values
@@ -126,7 +126,7 @@ def review(job, root, source, output, plan):
     flattened=[frame for packet in packets for frame in packet['frames']]
     if len(flattened)!=requested or len({frame['path'] for frame in flattened})!=requested:
         raise ValueError('Technical review frame coverage or uniqueness is incomplete')
-    data={'schemaVersion':'opencaw-action-review/v1','asset':job['asset'],'profile':job['profile'],'inputSha256':digest(source),
+    data={'schemaVersion':'hephaera-action-review/v1','asset':job['asset'],'profile':job['profile'],'inputSha256':digest(source),
           'frameCount':requested,'requestedFrameCount':requested,'packets':packets,'cameras':cameras,'previewFps':settings['fps'],
           'resolution':settings['resolution'],'renderer':'BLENDER_WORKBENCH','metrics':measured,
           'independentReimport':{'actualGlb':True,'animationCount':len(document.get('animations',[])),'skinCount':len(document.get('skins',[]))},
