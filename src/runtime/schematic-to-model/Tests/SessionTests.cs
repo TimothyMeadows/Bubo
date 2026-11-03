@@ -173,7 +173,7 @@ public static class SessionTests
             Check.True(first["drawingDirectory"]!.ToString() != second["drawingDirectory"]!.ToString());
             f.Evidence(f.Review(second)); var approved = f.Record(); Check.True(approved["wholeAssemblyApproved"]!.GetValue<bool>());
             var retry = f.Record(); Check.True(retry["reviews"]!.GetValue<int>() == 1, "Identical human assertion retries are idempotent");
-            Check.True(!approved["partConstructionAvailable"]!.GetValue<bool>());
+            Check.True(approved["partConstructionAvailable"]!.GetValue<bool>());
             Check.True(f.Session.Validate(Manifest).IsValid);
         });
         Check.Case("session: partial, nonhuman and wrong-fingerprint approval rejected", () =>

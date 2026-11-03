@@ -25,6 +25,8 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Floor-plan public CLI contract checks failed.' }
     python -X utf8 tests/test-schematic-cli.py --cli "src/Bubo.Cli/bin/$Configuration/net10.0/bubo.dll"
     if ($LASTEXITCODE -ne 0) { throw 'Schematic public CLI contract checks failed.' }
+    python -B -X utf8 tests/test-schematic-parts-admission.py
+    if ($LASTEXITCODE -ne 0) { throw 'Schematic fixed part bundle admission checks failed.' }
     python -X utf8 tests/test-media-provision.py
     if ($LASTEXITCODE -ne 0) { throw 'Fixed media provisioning contract checks failed.' }
     python -X utf8 tests/test-music-worker.py
