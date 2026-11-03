@@ -21,6 +21,19 @@
   <Folder Name="/src/runtime/asset-production/">
     <Project Path="src/runtime/asset-production/AssetProduction.csproj" />
   </Folder>
+  <Folder Name="/src/runtime/floor-plan-to-model/" />
+  <Folder Name="/src/runtime/floor-plan-to-model/Application/">
+    <Project Path="src/runtime/floor-plan-to-model/Application/FloorPlan.Application.csproj" />
+  </Folder>
+  <Folder Name="/src/runtime/floor-plan-to-model/Domain/">
+    <Project Path="src/runtime/floor-plan-to-model/Domain/FloorPlan.Domain.csproj" />
+  </Folder>
+  <Folder Name="/src/runtime/floor-plan-to-model/Infrastructure/">
+    <Project Path="src/runtime/floor-plan-to-model/Infrastructure/FloorPlan.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/runtime/floor-plan-to-model/Tests/">
+    <Project Path="src/runtime/floor-plan-to-model/Tests/FloorPlan.Tests.csproj" />
+  </Folder>
   <Folder Name="/src/runtime/model-to-action/">
     <Project Path="src/runtime/model-to-action/ModelToAction.csproj" />
   </Folder>

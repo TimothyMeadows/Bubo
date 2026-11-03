@@ -31,7 +31,7 @@ bubo <workflow> <operation> --api-version 2 --root PROJECT_ROOT \
   --host-context PROJECT_CONTEXT_JSON --manifest PROJECT_MANIFEST [operation options]
 ```
 
-Workflows are `proof-to-model`, `model-to-animation`, `model-to-action`, `blender-inspection` and `media`. `capabilities --api-version 2` advertises the supported API/backends and exact build/resource identities without a host project. API v2 results are JSON on stdout; logs are on stderr and bounded task-local files. The result's `data` contains workflow status data; exported motion/action package formats use their new Hephaera identities. API 1 is rejected; existing historical packages and approvals are not silently relabeled.
+Workflows are `proof-to-model`, `model-to-animation`, `model-to-action`, `blender-inspection`, `media` and the design-only `floor-plan-to-model` foundation. `capabilities --api-version 2` advertises the supported API/backends and exact build/resource identities without a host project. API v2 results are JSON on stdout; logs are on stderr and bounded task-local files. The result's `data` contains workflow status data; exported motion/action package formats use their new Hephaera identities. API 1 is rejected; existing historical packages and approvals are not silently relabeled.
 
 The host-context contract is implemented in `src/Bubo.Host/` and exercised by its executable tests. Its `bubo-host-context/v1` object contains the absolute project root and task, declared state/staging/tool/input/output roots, selected pipeline/engine and policy fingerprints, hash-bound rights/consent/review/input references, explicit existing native executable hashes, finite process budgets, and provisioning/promotion permissions. Permissions default false. References and input-only roots remain read-only; paths cannot escape or traverse Git metadata, aliases or reparse points. These cooperative checks and native process ownership are not an OS sandbox.
 
@@ -86,3 +86,22 @@ The BCL executable suites cover actual persistence/hash/path/lock/process mechan
 Actual Three.js/browser checks use the pinned development-only packages in `package-lock.json` and an existing Edge/Chrome installation. Restore those declared test dependencies with `npm ci --ignore-scripts`; `playwright-core` downloads no browser. Configure the native fixture driver with those repository-local dependencies. An unavailable real-browser check remains blocked, even when protocol simulations pass. Windows CUDA/native checks and Windows/Linux fixture coverage must be reported separately; macOS native ownership is unsupported.
 
 The extraction preserves existing reconstruction model selections. `mediaBackends` advertises implemented direct image, SFX and music profiles. Voice is a subsequent delivery task.
+
+## Floor-plan design foundation
+
+`floor-plan-to-model` validates dimension-driven building plans and produces complete architectural SVG packages. This first delivery supports design operations only: `init`, `doctor`, `preview`, `validate`, `record` and `status`. Capabilities explicitly report `modelingAvailable: false` and `modelExportAvailable: false`; Blender construction and model export are later deliveries.
+
+Read [the versioned floor-plan contract](resources/floor-plan-to-model/README.md) for units, floor/wall/room conventions, roofs, stairs, clearances, finite budgets and four native examples. Every drawing in one complete candidate is reviewed together. Changes to the source, style, runtime or drawings require refreshed design evidence. Recorded reviews retain immutable snapshots of their exact original bytes.
+
+Caller integration uses the same explicit API2 host context, registered input hashes and permitted state/staging roots as existing workflows, with pipeline `FLOOR_PLAN_TO_MODEL`. The plan's `styleSha256` must match that selected host identity. Bubo never reads host instruction files or chooses an engine. Current Hephaera integration remains separate until its accepted dependency pin is updated.
+
+```text
+bubo floor-plan-to-model init --api-version 2 --root PROJECT --host-context CONTEXT --task TASK --asset BUILDING --version VERSION --plan INPUT_PLAN
+bubo floor-plan-to-model preview --api-version 2 --root PROJECT --host-context CONTEXT --manifest DESIGN_MANIFEST
+bubo floor-plan-to-model doctor --api-version 2 --root PROJECT --host-context CONTEXT --manifest DESIGN_MANIFEST
+bubo floor-plan-to-model validate --api-version 2 --root PROJECT --host-context CONTEXT --manifest DESIGN_MANIFEST
+bubo floor-plan-to-model record --api-version 2 --root PROJECT --host-context CONTEXT --manifest DESIGN_MANIFEST --kind whole-building-design --reviewer HUMAN_ID --evidence REVIEW_JSON
+bubo floor-plan-to-model status --api-version 2 --root PROJECT --host-context CONTEXT --manifest DESIGN_MANIFEST
+```
+
+`CONTEXT` is the caller's actual registered context, not a generated approval. `init` preserves the plan as an immutable source; a revision of the same asset requires a new version and explicit `--parent-manifest`. `doctor` currently requires an initialized manifest. `record` consumes explicit review evidence bound to the complete package fingerprint and exact drawing hashes; per-floor or technical-only assertions cannot approve the building. Model production, runtime promotion and installation are not design operations.

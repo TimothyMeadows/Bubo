@@ -25,7 +25,7 @@ try
 {
     if (args.Length == 0 || args is ["--help"] or ["help"])
     {
-        resultOutput.WriteLine("bubo <proof-to-model|model-to-animation|model-to-action|blender-inspection|media> <operation> --api-version 2 --root ROOT --host-context PROJECT_JSON [--manifest PROJECT_JSON] [operation options]\nbubo capabilities --api-version 2\nmedia: inspect [--load true], generate, setup [--execute]. Explicit build/setup precedes production. Host context supplies policy, permitted roots, rights/consent, tool hashes, budgets and reviews. Results are JSON on stdout; logs use stderr. No host instruction loading, implicit installation, provider fallback or automatic asset acceptance.");
+        resultOutput.WriteLine("bubo <proof-to-model|model-to-animation|model-to-action|blender-inspection|media|floor-plan-to-model> <operation> --api-version 2 --root ROOT --host-context PROJECT_JSON [--manifest PROJECT_JSON] [operation options]\nbubo capabilities --api-version 2\nmedia: inspect [--load true], generate, setup [--execute]. Explicit build/setup precedes production. Host context supplies policy, permitted roots, rights/consent, tool hashes, budgets and reviews. Results are JSON on stdout; logs use stderr. No host instruction loading, implicit installation, provider fallback or automatic asset acceptance.");
         return 0;
     }
     var capability = workflow == "capabilities";
@@ -60,6 +60,8 @@ try
         resultOutput.WriteLine(JsonSerializer.Serialize(mediaResult,Workspace.Json));
         return 0;
     }
+    if (workflow == "floor-plan-to-model" && context.Pipeline != "FLOOR_PLAN_TO_MODEL")
+        throw new InvalidOperationException("Host context must explicitly select FLOOR_PLAN_TO_MODEL");
     if (workflow == "proof-to-model" && context.Pipeline != "PROOF_TO_MODEL")
         throw new InvalidOperationException("Host context must explicitly select PROOF_TO_MODEL");
     if (workflow is "model-to-animation" or "model-to-action")
@@ -84,7 +86,7 @@ try
     pipelineOptions["staging-root"] = context.StagingRoot;
     var runtimeBuildSha256 = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(capabilities["build"]!.ToJsonString())));
     pipelineOptions["runtime-build-sha256"] = runtimeBuildSha256;
-    foreach (var name in new[] { "rights", "recipe", "toolchain", "selection", "library-search", "evidence", "proof-set", "classification", "finish-settings", "finish-budget", "revision", "source-review", "sources", "proof", "model", "motion-package", "motion-source", "mapping", "brief", "proof-metadata", "source-metadata", "editable-source", "artifact", "source" })
+    foreach (var name in new[] { "rights", "recipe", "toolchain", "selection", "library-search", "evidence", "proof-set", "classification", "finish-settings", "finish-budget", "revision", "source-review", "sources", "proof", "model", "motion-package", "motion-source", "mapping", "brief", "proof-metadata", "source-metadata", "editable-source", "artifact", "source", "plan", "parent-manifest" })
         if (pipelineOptions.TryGetValue(name, out var value)) context.RequireReference(value);
     if (operation == "init")
     {
@@ -93,8 +95,8 @@ try
         if (!System.Text.RegularExpressions.Regex.IsMatch(asset, "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$") || !System.Text.RegularExpressions.Regex.IsMatch(version, "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$") || asset == ".." || version == "..")
             throw new InvalidOperationException("Invalid asset/version identity");
         var canonicalManifest=$"{context.StateRoot}/{workflow}/{asset}/{version}/manifest.json";
-        if (workflow == "model-to-action" && pipelineOptions.TryGetValue("manifest", out var selectedManifest) && workspace.Relative(selectedManifest) != canonicalManifest)
-            throw new InvalidOperationException("Action init requires its canonical manifest path: " + canonicalManifest);
+        if ((workflow is "model-to-action" or "floor-plan-to-model") && pipelineOptions.TryGetValue("manifest", out var selectedManifest) && workspace.Relative(selectedManifest) != canonicalManifest)
+            throw new InvalidOperationException((workflow == "model-to-action" ? "Action" : "Floor-plan") + " init requires its canonical manifest path: " + canonicalManifest);
         pipelineOptions.TryAdd("manifest", canonicalManifest);
         context.EnsureWriteAllowed(pipelineOptions["manifest"]);
     }
@@ -120,6 +122,7 @@ try
     using var cancellation = new CancellationTokenSource();
     ConsoleCancelEventHandler cancel = (_, eventArgs) => { eventArgs.Cancel = true; cancellation.Cancel(); };
     Console.CancelKeyPress += cancel;
+    if (workflow == "floor-plan-to-model") cancellation.CancelAfter(TimeSpan.FromSeconds(context.TimeoutSeconds));
     var logs = new OperationLogWriter(Console.Error);
     Console.SetOut(logs);
     try
@@ -136,6 +139,9 @@ try
             case "model-to-action":
                 await new ActionApplication.Pipeline(workspace, pipelineOptions, process,
                     new ActionInfrastructure.EngineResolver(workspace, AppContext.BaseDirectory, process, context.TaskId)).Execute(operation, cancellation.Token);
+                break;
+            case "floor-plan-to-model":
+                await Bubo.FloorPlan.Infrastructure.FloorPlanCommands.Execute(workspace, pipelineOptions, operation, cancellation.Token);
                 break;
             case "blender-inspection":
                 await InspectBlender(workspace, context, pipelineOptions, process, attempt, cancellation.Token);
@@ -164,7 +170,9 @@ catch (Exception error)
 {
     Console.SetOut(resultOutput);
     Console.Error.WriteLine(error.Message);
-    resultOutput.WriteLine(new JsonObject { ["schemaVersion"] = "bubo-execution-result/v1", ["apiVersion"] = 2, ["status"] = "failed", ["workflow"] = workflow, ["operation"] = operation, ["error"] = error.Message }.ToJsonString(Workspace.Json));
+    var failure = new JsonObject { ["schemaVersion"] = "bubo-execution-result/v1", ["apiVersion"] = 2, ["status"] = "failed", ["workflow"] = workflow, ["operation"] = operation, ["error"] = error.Message };
+    if (error is Bubo.FloorPlan.Domain.PlanValidationException invalidPlan) failure["validation"] = JsonSerializer.SerializeToNode(invalidPlan.Report, Workspace.Json);
+    resultOutput.WriteLine(failure.ToJsonString(Workspace.Json));
     return 1;
 }
 
@@ -210,6 +218,9 @@ static void ValidateOperation(string workflow, string operation, Dictionary<stri
         ("model-to-action", "doctor" or "inspect" or "compose" or "export" or "review" or "validate" or "status") => [],
         ("proof-to-model" or "model-to-animation" or "model-to-action", "promote") => ["destination"],
         ("blender-inspection", "inspect") => ["blender"],
+        ("floor-plan-to-model", "init") => ["task","asset","version","plan","parent-manifest"],
+        ("floor-plan-to-model", "record") => ["kind","reviewer","evidence"],
+        ("floor-plan-to-model", "doctor" or "preview" or "validate" or "status") => [],
         ("media", "inspect") => ["load"],
         ("media", "generate") => [],
         ("media", "setup") => ["execute"],
@@ -237,7 +248,8 @@ static JsonObject Capabilities()
     return new JsonObject
     {
         ["schemaVersion"] = "bubo-capabilities/v1", ["apiVersions"] = new JsonArray(2),
-        ["workflows"] = new JsonArray("proof-to-model","model-to-animation","model-to-action","blender-inspection","media"),
+        ["workflows"] = new JsonArray("proof-to-model","model-to-animation","model-to-action","blender-inspection","media","floor-plan-to-model"),
+        ["floorPlan"] = new JsonObject { ["phase"] = "design-foundation", ["operations"] = new JsonArray("init","doctor","preview","validate","record","status"), ["modelingAvailable"] = false, ["modelExportAvailable"] = false },
         ["modelRuntime"] = "pinned-native-tools", ["mediaBackends"] = JsonSerializer.SerializeToNode(Bubo.Media.Domain.MediaCapabilities.Implemented,Bubo.Media.Domain.MediaJson.Options),
         ["build"] = new JsonObject { ["cliSha256"] = Workspace.Hash(Assembly.GetExecutingAssembly().Location), ["resourceCatalogSha256"] = RuntimeCatalog.ExpectedSha256, ["assemblies"] = assemblies, ["launch"] = launch },
         ["platform"] = new JsonObject { ["os"] = System.Runtime.InteropServices.RuntimeInformation.OSDescription, ["nativeProcessOwnershipSupported"] = OperatingSystem.IsWindows() || OperatingSystem.IsLinux(), ["osSandbox"] = false }

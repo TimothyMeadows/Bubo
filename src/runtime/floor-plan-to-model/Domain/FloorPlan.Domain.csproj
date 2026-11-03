@@ -1,0 +1,3 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><AssemblyName>Bubo.FloorPlan.Domain</AssemblyName></PropertyGroup>
+</Project>
