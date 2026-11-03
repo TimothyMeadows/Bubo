@@ -1,0 +1,422 @@
+{
+  "schemaVersion": "bubo-building-plan/v1",
+  "id": "building-example",
+  "name": "Angled courtyard pavilion",
+  "purpose": "Architectural planning of an empty navigable game building",
+  "architecturalStyle": "Angled courtyard masonry with flat parapet roofs",
+  "styleSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "coordinateSystem": "xy-metres-z-up",
+  "numerics": {
+    "linearTolerance": 1E-06,
+    "angularToleranceDegrees": 0.01,
+    "maxCoordinateMagnitude": 10000,
+    "minimumFeatureSize": 0.001
+  },
+  "player": {
+    "radius": 0.3,
+    "height": 1.8,
+    "maxStepHeight": 0.22,
+    "minLandingDepth": 1.2
+  },
+  "budgets": {
+    "maxStoreys": 8,
+    "maxRooms": 64,
+    "maxWalls": 256,
+    "maxOpenings": 256,
+    "maxStairs": 16,
+    "maxRoofPlanes": 64,
+    "maxVertices": 10000,
+    "maxGeometryChecks": 1000000,
+    "maxPreviewBytes": 4194304,
+    "maxExportBytes": 16777216,
+    "maxGeneratedTriangles": 100000
+  },
+  "entryRoomId": "ground-room",
+  "materials": [
+    {
+      "id": "masonry",
+      "name": "Warm masonry",
+      "color": "#C7B9A1",
+      "roughness": 0.8,
+      "metallic": 0
+    }
+  ],
+  "detailProfiles": [
+    {
+      "id": "restrained-detail",
+      "name": "Low plinth and cornice",
+      "plinthHeight": 0.2,
+      "plinthProjection": 0.03,
+      "corniceHeight": 0.12,
+      "corniceProjection": 0.08,
+      "eaveOverhang": 0.3,
+      "fasciaDepth": 0.12
+    }
+  ],
+  "storeys": [
+    {
+      "id": "ground",
+      "name": "ground storey",
+      "elevation": 0,
+      "height": 3,
+      "slabThickness": 0.2,
+      "floorMaterialId": "masonry",
+      "footprint": {
+        "outer": [
+          {
+            "x": 0,
+            "y": 0
+          },
+          {
+            "x": 12,
+            "y": 0
+          },
+          {
+            "x": 14,
+            "y": 10
+          },
+          {
+            "x": 2,
+            "y": 10
+          }
+        ],
+        "holes": [
+          [
+            {
+              "x": 4.8,
+              "y": 8
+            },
+            {
+              "x": 8.8,
+              "y": 8
+            },
+            {
+              "x": 8,
+              "y": 4
+            },
+            {
+              "x": 4,
+              "y": 4
+            }
+          ]
+        ]
+      },
+      "rooms": [
+        {
+          "id": "ground-room",
+          "name": "Empty angled courtyard hall",
+          "boundary": {
+            "outer": [
+              {
+                "x": 0.12198039027185564,
+                "y": 0.1
+              },
+              {
+                "x": 11.918019609728145,
+                "y": 0.1
+              },
+              {
+                "x": 13.878019609728145,
+                "y": 9.9
+              },
+              {
+                "x": 2.081980390271856,
+                "y": 9.9
+              }
+            ],
+            "holes": [
+              [
+                {
+                  "x": 4.7180196097281435,
+                  "y": 8.1
+                },
+                {
+                  "x": 8.921980390271855,
+                  "y": 8.1
+                },
+                {
+                  "x": 8.081980390271855,
+                  "y": 3.9
+                },
+                {
+                  "x": 3.878019609728144,
+                  "y": 3.9
+                }
+              ]
+            ]
+          },
+          "requiresAccess": true
+        }
+      ],
+      "walls": [
+        {
+          "id": "ground-wall-0-0",
+          "start": {
+            "x": 0,
+            "y": 0
+          },
+          "end": {
+            "x": 12,
+            "y": 0
+          },
+          "thickness": 0.2,
+          "height": 3,
+          "materialId": "masonry",
+          "detailProfileId": "restrained-detail",
+          "leftRoomId": "ground-room",
+          "rightRoomId": null,
+          "openings": [
+            {
+              "id": "ground-entry",
+              "kind": "door",
+              "offset": 1,
+              "width": 1.2,
+              "sill": 0,
+              "head": 2.2,
+              "pivot": "start",
+              "swing": "left"
+            }
+          ]
+        },
+        {
+          "id": "ground-wall-0-1",
+          "start": {
+            "x": 12,
+            "y": 0
+          },
+          "end": {
+            "x": 14,
+            "y": 10
+          },
+          "thickness": 0.2,
+          "height": 3,
+          "materialId": "masonry",
+          "detailProfileId": "restrained-detail",
+          "leftRoomId": "ground-room",
+          "rightRoomId": null,
+          "openings": []
+        },
+        {
+          "id": "ground-wall-0-2",
+          "start": {
+            "x": 14,
+            "y": 10
+          },
+          "end": {
+            "x": 2,
+            "y": 10
+          },
+          "thickness": 0.2,
+          "height": 3,
+          "materialId": "masonry",
+          "detailProfileId": "restrained-detail",
+          "leftRoomId": "ground-room",
+          "rightRoomId": null,
+          "openings": []
+        },
+        {
+          "id": "ground-wall-0-3",
+          "start": {
+            "x": 2,
+            "y": 10
+          },
+          "end": {
+            "x": 0,
+            "y": 0
+          },
+          "thickness": 0.2,
+          "height": 3,
+          "materialId": "masonry",
+          "detailProfileId": "restrained-detail",
+          "leftRoomId": "ground-room",
+          "rightRoomId": null,
+          "openings": []
+        },
+        {
+          "id": "ground-wall-1-0",
+          "start": {
+            "x": 4.8,
+            "y": 8
+          },
+          "end": {
+            "x": 8.8,
+            "y": 8
+          },
+          "thickness": 0.2,
+          "height": 3,
+          "materialId": "masonry",
+          "detailProfileId": "restrained-detail",
+          "leftRoomId": "ground-room",
+          "rightRoomId": null,
+          "openings": []
+        },
+        {
+          "id": "ground-wall-1-1",
+          "start": {
+            "x": 8.8,
+            "y": 8
+          },
+          "end": {
+            "x": 8,
+            "y": 4
+          },
+          "thickness": 0.2,
+          "height": 3,
+          "materialId": "masonry",
+          "detailProfileId": "restrained-detail",
+          "leftRoomId": "ground-room",
+          "rightRoomId": null,
+          "openings": []
+        },
+        {
+          "id": "ground-wall-1-2",
+          "start": {
+            "x": 8,
+            "y": 4
+          },
+          "end": {
+            "x": 4,
+            "y": 4
+          },
+          "thickness": 0.2,
+          "height": 3,
+          "materialId": "masonry",
+          "detailProfileId": "restrained-detail",
+          "leftRoomId": "ground-room",
+          "rightRoomId": null,
+          "openings": []
+        },
+        {
+          "id": "ground-wall-1-3",
+          "start": {
+            "x": 4,
+            "y": 4
+          },
+          "end": {
+            "x": 4.8,
+            "y": 8
+          },
+          "thickness": 0.2,
+          "height": 3,
+          "materialId": "masonry",
+          "detailProfileId": "restrained-detail",
+          "leftRoomId": "ground-room",
+          "rightRoomId": null,
+          "openings": []
+        }
+      ],
+      "slabOpenings": []
+    }
+  ],
+  "stairs": [],
+  "roofs": [
+    {
+      "id": "courtyard-roof-0",
+      "vertices": [
+        {
+          "x": 0,
+          "y": 0,
+          "z": 3
+        },
+        {
+          "x": 12,
+          "y": 0,
+          "z": 3
+        },
+        {
+          "x": 8,
+          "y": 4,
+          "z": 3
+        },
+        {
+          "x": 4,
+          "y": 4,
+          "z": 3
+        }
+      ],
+      "materialId": "masonry",
+      "detailProfileId": "restrained-detail"
+    },
+    {
+      "id": "courtyard-roof-1",
+      "vertices": [
+        {
+          "x": 12,
+          "y": 0,
+          "z": 3
+        },
+        {
+          "x": 14,
+          "y": 10,
+          "z": 3
+        },
+        {
+          "x": 8.8,
+          "y": 8,
+          "z": 3
+        },
+        {
+          "x": 8,
+          "y": 4,
+          "z": 3
+        }
+      ],
+      "materialId": "masonry",
+      "detailProfileId": "restrained-detail"
+    },
+    {
+      "id": "courtyard-roof-2",
+      "vertices": [
+        {
+          "x": 14,
+          "y": 10,
+          "z": 3
+        },
+        {
+          "x": 2,
+          "y": 10,
+          "z": 3
+        },
+        {
+          "x": 4.8,
+          "y": 8,
+          "z": 3
+        },
+        {
+          "x": 8.8,
+          "y": 8,
+          "z": 3
+        }
+      ],
+      "materialId": "masonry",
+      "detailProfileId": "restrained-detail"
+    },
+    {
+      "id": "courtyard-roof-3",
+      "vertices": [
+        {
+          "x": 2,
+          "y": 10,
+          "z": 3
+        },
+        {
+          "x": 0,
+          "y": 0,
+          "z": 3
+        },
+        {
+          "x": 4,
+          "y": 4,
+          "z": 3
+        },
+        {
+          "x": 4.8,
+          "y": 8,
+          "z": 3
+        }
+      ],
+      "materialId": "masonry",
+      "detailProfileId": "restrained-detail"
+    }
+  ]
+}

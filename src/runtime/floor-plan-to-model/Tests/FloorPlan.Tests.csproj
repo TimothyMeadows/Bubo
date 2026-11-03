@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><AssemblyName>Bubo.FloorPlan.Tests</AssemblyName></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Infrastructure/FloorPlan.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>
