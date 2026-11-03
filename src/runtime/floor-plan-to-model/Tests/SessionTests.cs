@@ -45,6 +45,18 @@ public static class SessionTests
     }
     public static void Run()
     {
+        Check.Case("JSON: native example bytes match audited LF resources on every host", () =>
+        {
+            var root = AppContext.BaseDirectory;
+            while (!File.Exists(Path.Combine(root, "Bubo.slnx"))) root = Directory.GetParent(root)?.FullName ?? throw new InvalidOperationException("Fixture repository root missing");
+            var examples = new Dictionary<string, BuildingPlan> { ["single-storey"] = PlanExamples.SingleStorey(), ["multi-storey"] = PlanExamples.MultiStorey(), ["angled-courtyard"] = PlanExamples.AngledCourtyard(), ["stacked-three-storey"] = PlanExamples.StackedThreeStorey() };
+            foreach (var (name, plan) in examples)
+            {
+                var bytes = JsonSerializer.SerializeToUtf8Bytes(plan, StrictPlanJson.Options);
+                Check.True(!bytes.Contains((byte)'\r') && bytes.Contains((byte)'\n'), "Native JSON must use portable LF bytes");
+                Check.True(bytes.SequenceEqual(File.ReadAllBytes(Path.Combine(root, "resources/floor-plan-to-model/examples", name + ".json"))), "Serialized example differs from its audited resource: " + name);
+            }
+        });
         Check.Case("JSON: three typed examples roundtrip strictly", () =>
         { foreach (var plan in new[] { PlanExamples.SingleStorey(), PlanExamples.MultiStorey(), PlanExamples.AngledCourtyard() }) new BuildingPlanValidator().RequireValid(StrictPlanJson.Parse<BuildingPlan>(JsonSerializer.SerializeToUtf8Bytes(plan, StrictPlanJson.Options))); });
         Check.Case("JSON: unknown fields, duplicate fields, wrong case and missing point coordinates fail", () =>

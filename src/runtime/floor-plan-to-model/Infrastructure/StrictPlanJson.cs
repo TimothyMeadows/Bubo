@@ -14,7 +14,7 @@ public static class StrictPlanJson
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase, PropertyNameCaseInsensitive = false,
             UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
             RespectRequiredConstructorParameters = true, RespectNullableAnnotations = true,
-            MaxDepth = 64, WriteIndented = true
+            MaxDepth = 64, WriteIndented = true, NewLine = "\n"
         };
         options.Converters.Add(new Point2Converter());
         options.Converters.Add(new Point3Converter());
