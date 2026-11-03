@@ -25,7 +25,7 @@ try
 {
     if (args.Length == 0 || args is ["--help"] or ["help"])
     {
-        resultOutput.WriteLine("bubo <proof-to-model|model-to-animation|model-to-action|blender-inspection|media|floor-plan-to-model|schematic-to-model> <operation> --api-version 2 --root ROOT --host-context PROJECT_JSON [--manifest PROJECT_JSON] [operation options]\nbubo capabilities --api-version 2\nmedia: inspect [--load true], generate, setup [--execute]. Schematic design: init --design JSON, doctor, preview, validate, record, status; construction/export unavailable. Explicit build/setup precedes production. Host context supplies policy, permitted roots, rights/consent, tool hashes, budgets and reviews. Results are JSON on stdout; logs use stderr. No host instruction loading, implicit installation, provider fallback or automatic asset acceptance.");
+        resultOutput.WriteLine("bubo <proof-to-model|model-to-animation|model-to-action|blender-inspection|media|floor-plan-to-model|schematic-to-model> <operation> --api-version 2 --root ROOT --host-context PROJECT_JSON [--manifest PROJECT_JSON] [operation options]\nbubo capabilities --api-version 2\nmedia: inspect [--load true], generate, setup [--execute]. Schematic: init --design JSON, doctor, preview, validate, record, build-parts --blender ABSOLUTE_EXE, status; assembly/motion/model export unavailable. Explicit build/setup precedes production. Host context supplies policy, permitted roots, rights/consent, tool hashes, budgets and reviews. Results are JSON on stdout; logs use stderr. No host instruction loading, implicit installation, provider fallback or automatic asset acceptance.");
         return 0;
     }
     var capability = workflow == "capabilities";
@@ -88,7 +88,7 @@ try
     pipelineOptions["staging-root"] = context.StagingRoot;
     var runtimeBuildSha256 = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(capabilities["build"]!.ToJsonString())));
     pipelineOptions["runtime-build-sha256"] = runtimeBuildSha256;
-    if (workflow == "floor-plan-to-model") pipelineOptions["runtime-resource-catalog-sha256"] = RuntimeCatalog.ExpectedSha256;
+    if (workflow is "floor-plan-to-model" or "schematic-to-model") pipelineOptions["runtime-resource-catalog-sha256"] = RuntimeCatalog.ExpectedSha256;
     foreach (var name in new[] { "rights", "recipe", "toolchain", "selection", "library-search", "evidence", "proof-set", "classification", "finish-settings", "finish-budget", "revision", "source-review", "sources", "proof", "model", "motion-package", "motion-source", "mapping", "brief", "proof-metadata", "source-metadata", "editable-source", "artifact", "source", "plan", "design", "parent-manifest" })
         if (pipelineOptions.TryGetValue(name, out var value)) context.RequireReference(value);
     if (operation == "init")
@@ -147,7 +147,7 @@ try
                 await Bubo.FloorPlan.Infrastructure.FloorPlanCommands.Execute(workspace, process, pipelineOptions, operation, cancellation.Token);
                 break;
             case "schematic-to-model":
-                await Bubo.Schematic.Infrastructure.SchematicCommands.Execute(workspace, pipelineOptions, operation, cancellation.Token);
+                await Bubo.Schematic.Infrastructure.SchematicCommands.Execute(workspace, process, pipelineOptions, operation, cancellation.Token);
                 break;
             case "blender-inspection":
                 await InspectBlender(workspace, context, pipelineOptions, process, attempt, cancellation.Token);
@@ -232,7 +232,8 @@ static void ValidateOperation(string workflow, string operation, Dictionary<stri
         ("floor-plan-to-model", "preview" or "validate" or "status") => [],
         ("schematic-to-model", "init") => ["task","asset","version","design","parent-manifest"],
         ("schematic-to-model", "record") => ["kind","reviewer","evidence"],
-        ("schematic-to-model", "doctor" or "preview" or "validate" or "status") => [],
+        ("schematic-to-model", "doctor" or "build-parts") => ["blender"],
+        ("schematic-to-model", "preview" or "validate" or "status") => [],
         ("media", "inspect") => ["load"],
         ("media", "generate") => [],
         ("media", "setup") => ["execute"],
@@ -261,7 +262,7 @@ static JsonObject Capabilities()
     {
         ["schemaVersion"] = "bubo-capabilities/v1", ["apiVersions"] = new JsonArray(2),
         ["workflows"] = new JsonArray("proof-to-model","model-to-animation","model-to-action","blender-inspection","media","floor-plan-to-model","schematic-to-model"),
-        ["schematic"] = new JsonObject { ["phase"] = "design-foundation", ["operations"] = new JsonArray("init","doctor","preview","validate","record","status"), ["partConstructionAvailable"] = false, ["assemblyAvailable"] = false, ["motionProofAvailable"] = false, ["modelExportAvailable"] = false },
+        ["schematic"] = new JsonObject { ["phase"] = "part-construction", ["operations"] = new JsonArray("init","doctor","preview","validate","record","build-parts","status"), ["partConstructionAvailable"] = true, ["assemblyAvailable"] = false, ["motionProofAvailable"] = false, ["modelExportAvailable"] = false },
         ["floorPlan"] = new JsonObject { ["phase"] = "architectural-export", ["operations"] = new JsonArray("init","doctor","preview","validate","record","build","export","review","status"), ["modelingAvailable"] = true, ["requiresApprovedConstructionPlanV2"] = true, ["modelExportAvailable"] = true },
         ["modelRuntime"] = "pinned-native-tools", ["mediaBackends"] = JsonSerializer.SerializeToNode(Bubo.Media.Domain.MediaCapabilities.Implemented,Bubo.Media.Domain.MediaJson.Options),
         ["build"] = new JsonObject { ["cliSha256"] = Workspace.Hash(Assembly.GetExecutingAssembly().Location), ["resourceCatalogSha256"] = RuntimeCatalog.ExpectedSha256, ["assemblies"] = assemblies, ["launch"] = launch },

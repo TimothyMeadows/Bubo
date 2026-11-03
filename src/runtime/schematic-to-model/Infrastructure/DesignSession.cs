@@ -184,7 +184,7 @@ public sealed class DesignSession
             Staging = stage, ParentSnapshot = snapshot, ParentSha256 = parent is null ? null : Digest(parent), Previews = [], Reviews = [],
             PolicyInputs = workspace.HostContext?.References.Where(x => x.Kind == "policy").ToDictionary(x => x.Path, x => x.Sha256, StringComparer.Ordinal) ?? new(StringComparer.Ordinal)
         };
-        Save(manifest); return Describe(manifest, null);
+        Save(manifest); return Describe(manifest, null, design, cancellation);
     }
     void WriteNew(string path, byte[] bytes)
     {
@@ -224,7 +224,7 @@ public sealed class DesignSession
             WriteNew(attempt.Directory + "/preview-index.json", JsonSerializer.SerializeToUtf8Bytes(package, StrictDesignJson.Options));
             attempt.IndexSha256 = workspace.HashProjectFile(attempt.Directory + "/preview-index.json"); attempt.Status = "complete";
             Fresh(manifest, cancellation); VerifyPreview(manifest, design); Save(manifest);
-            return Describe(manifest, package);
+            return Describe(manifest, package, design, cancellation);
         }
         catch (Exception error)
         { attempt.Status = "failed"; attempt.Error = error.Message; Save(manifest); throw; }
@@ -284,21 +284,21 @@ public sealed class DesignSession
         var registered = workspace.HostContext?.References.FirstOrDefault(x => x.Path.Equals(evidence, OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal));
         if (registered is not null && registered.Sha256 != hash) throw new InvalidOperationException("Schematic review changed after admission");
         if (manifest.Reviews.LastOrDefault() is { } prior && prior.Sha256 == hash && prior.Source == evidence && prior.Fingerprint == package.Fingerprint
-            && prior.Decision == review.Decision && prior.Reviewer == reviewer) return Describe(manifest, package);
+            && prior.Decision == review.Decision && prior.Reviewer == reviewer) return Describe(manifest, package, design, cancellation);
         if (manifest.Reviews.Count >= 1024) throw new InvalidOperationException("Schematic review history is full");
         var snapshot = State(manifest.Asset, manifest.Version) + "/review-evidence/" + hash + ".json";
         if (File.Exists(workspace.Resolve(snapshot)))
         { if (JsonHash(snapshot) != hash) throw new InvalidOperationException("Existing schematic review snapshot differs"); }
         else WriteNew(snapshot, bytes);
         manifest.Reviews.Add(new(review.Decision, reviewer, evidence, snapshot, hash, package.Fingerprint));
-        Fresh(manifest, cancellation); Save(manifest); return Describe(manifest, package);
+        Fresh(manifest, cancellation); Save(manifest); return Describe(manifest, package, design, cancellation);
     }
     public object Status(string path, CancellationToken cancellation = default)
     {
         var first = Load(path);
         using var ownership = Ownership(first.Asset);
         var manifest = Load(path); var design = Fresh(manifest, cancellation);
-        return Describe(manifest, manifest.Previews.LastOrDefault()?.Status == "complete" ? VerifyPreview(manifest, design) : null);
+        return Describe(manifest, manifest.Previews.LastOrDefault()?.Status == "complete" ? VerifyPreview(manifest, design) : null, design, cancellation);
     }
     public ValidationReport Validate(string path, CancellationToken cancellation = default)
     {
@@ -308,13 +308,22 @@ public sealed class DesignSession
         if (manifest.Previews.Count > 0) Approved(manifest, VerifyPreview(manifest, design));
         return validator.Validate(design, cancellation);
     }
-    object Describe(DesignManifest manifest, DesignPackage? package) => new
+    internal sealed record PartInput(DesignManifest Manifest, AssemblyDesign Design, DesignPackage? Package, bool Approved);
+    internal PartInput InspectParts(string path, CancellationToken cancellation = default, bool requireApproved = false)
+    {
+        var manifest = Load(path); var spec = Fresh(manifest, cancellation);
+        var package = manifest.Previews.LastOrDefault()?.Status == "complete" ? VerifyPreview(manifest, spec) : null;
+        var approved = Approved(manifest, package);
+        if (requireApproved && (!approved || package is null)) throw new InvalidOperationException("Part construction requires human approval of the exact complete schematic design package");
+        return new(manifest, spec, package, approved);
+    }
+    object Describe(DesignManifest manifest, DesignPackage? package, AssemblyDesign design, CancellationToken cancellation) => new
     {
         schemaVersion = "bubo-schematic-status/v1", task, manifest.Asset, manifest.Version,
-        manifest = ManifestPath(manifest.Asset, manifest.Version), phase = "design-foundation", manifest.DesignSha256,
+        manifest = ManifestPath(manifest.Asset, manifest.Version), phase = "part-construction", manifest.DesignSha256,
         completeSchematicPreview = package is not null, designFingerprint = package?.Fingerprint,
         drawingDirectory = package is null ? null : manifest.Previews[^1].Directory, artifacts = package?.Artifacts,
-        wholeAssemblyApproved = Approved(manifest, package), partConstructionAvailable = false, assemblyAvailable = false,
+        wholeAssemblyApproved = Approved(manifest, package), partConstructionAvailable = Approved(manifest, package) && new PartConstructionReadiness().Validate(design, cancellation).IsReady, assemblyAvailable = false,
         motionProofAvailable = false, modelExportAvailable = false, runtimeAcceptance = false,
         lastPreviewStatus = manifest.Previews.LastOrDefault()?.Status, lastPreviewError = manifest.Previews.LastOrDefault()?.Error,
         attempts = manifest.Previews.Count, reviews = manifest.Reviews.Count

@@ -46,10 +46,11 @@ def main():
     capability = invoke(['capabilities', '--api-version', '2'])
     check('schematic-to-model' in capability['workflows'], 'additive schematic workflow in execution API2')
     check(capability['schematic'] == {
-        'phase': 'design-foundation', 'operations': ['init', 'doctor', 'preview', 'validate', 'record', 'status'],
-        'partConstructionAvailable': False, 'assemblyAvailable': False, 'motionProofAvailable': False, 'modelExportAvailable': False},
-        'foundation capabilities never advertise unavailable geometry or animation')
-    for operation in ['build-parts', 'assemble', 'prove-motion', 'export', 'review', 'promote']:
+        'phase': 'part-construction', 'operations': ['init', 'doctor', 'preview', 'validate', 'record', 'build-parts', 'status'],
+        'partConstructionAvailable': True, 'assemblyAvailable': False, 'motionProofAvailable': False, 'modelExportAvailable': False},
+        'part capabilities never advertise unavailable assembly motion or model export')
+    invoke(['schematic-to-model', 'build-parts', '--api-version', '2'], 'Explicit --root required')
+    for operation in ['assemble', 'prove-motion', 'export', 'review', 'promote']:
         invoke(['schematic-to-model', operation, '--api-version', '2'], 'Unsupported workflow/operation')
     invoke(['schematic-to-model', 'preview', '--api-version', '2', '--callback', 'untrusted.py'], 'Unknown or inapplicable option')
     policy = project/'policy.json'
@@ -116,7 +117,7 @@ def main():
     review_path.write_text(json.dumps(review, indent=2)+'\n', encoding='utf-8')
     reference(review_path, 'review')
     approved = invoke(['schematic-to-model', 'record', *common, '--manifest', manifest, '--kind', 'whole-assembly-design', '--reviewer', review['reviewer'], '--evidence', 'state/review.json'])['data']
-    check(approved['wholeAssemblyApproved'] and not approved['partConstructionAvailable'] and not approved['runtimeAcceptance'], 'synthetic complete-design assertion grants no later-stage acceptance')
+    check(approved['wholeAssemblyApproved'] and approved['partConstructionAvailable'] and not approved['runtimeAcceptance'], 'synthetic complete-design assertion admits explicit part construction without runtime acceptance')
     changed = project/'inputs/device.json'
     design = json.loads(changed.read_bytes())
     design['name'] = 'Revised device'

@@ -16,5 +16,6 @@ if (args is ["--write-examples", var directory])
 DomainTests.Run();
 PreviewTests.Run();
 SessionTests.Run();
+PartTests.Run();
 Console.WriteLine($"Schematic design checks: {Check.Passed} passed, {Check.Failed} failed. Synthetic review fixtures grant no human asset acceptance.");
 return Check.Failed == 0 ? 0 : 1;
