@@ -47,9 +47,9 @@ def main():
 
     capability = invoke(['capabilities', '--api-version', '2'])
     check(capability['apiVersions'] == [2] and 'floor-plan-to-model' in capability['workflows'], 'additive API2 floor-plan capability')
-    check(capability['floorPlan'] == {'phase': 'design-foundation', 'operations': ['init', 'doctor', 'preview', 'validate', 'record', 'status'],
-                                     'modelingAvailable': False, 'modelExportAvailable': False}, 'capability explicitly advertises design-only, no model or export')
-    invoke(['floor-plan-to-model', 'build', '--api-version', '2'], 'Unsupported workflow/operation')
+    check(capability['floorPlan'] == {'phase': 'architectural-construction', 'operations': ['init', 'doctor', 'preview', 'validate', 'record', 'build', 'status'],
+                                     'modelingAvailable': True, 'requiresApprovedConstructionPlanV2': True, 'modelExportAvailable': False}, 'construction is declared, legacy designs and exports stay separately gated')
+    invoke(['floor-plan-to-model', 'build', '--api-version', '2'], 'Explicit --root required')
     invoke(['floor-plan-to-model', 'export', '--api-version', '2'], 'Unsupported workflow/operation')
     invoke(['floor-plan-to-model', 'promote', '--api-version', '2'], 'Unsupported workflow/operation')
     invoke(['floor-plan-to-model', 'preview', '--api-version', '2', '--callback', 'untrusted.py'], 'Unknown or inapplicable option')

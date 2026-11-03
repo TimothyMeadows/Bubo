@@ -182,7 +182,7 @@ public sealed class DesignSession
             PolicyInputs = workspace.HostContext?.References.Where(x => x.Kind == "policy").ToDictionary(x => x.Path, x => x.Sha256, StringComparer.Ordinal) ?? new(StringComparer.Ordinal)
         };
         manifest.History.Add(new("initialized", DateTimeOffset.UtcNow)); Save(manifest);
-        return Describe(manifest, null);
+        return Describe(manifest, null, plan);
     }
     public object Preview(string manifestPath, CancellationToken cancellation = default)
     {
@@ -210,7 +210,7 @@ public sealed class DesignSession
             attempt.IndexSha256 = workspace.HashProjectFile(attempt.Directory + "/preview-index.json"); attempt.Status = "complete";
             Fresh(manifest, cancellation); VerifyPreview(manifest, plan);
             manifest.History.Add(new("preview-complete", DateTimeOffset.UtcNow, package.Fingerprint)); Save(manifest);
-            return Describe(manifest, package);
+            return Describe(manifest, package, plan);
         }
         catch (Exception error)
         {
@@ -224,9 +224,7 @@ public sealed class DesignSession
         var indexPath = attempt.Directory + "/preview-index.json";
         if (workspace.HashProjectFile(indexPath) != attempt.IndexSha256) throw new InvalidOperationException("Architectural preview index changed");
         var package = StrictPlanJson.Read<DesignPackage>(workspace.Resolve(indexPath));
-        var names = Enumerable.Range(1, plan.Storeys.Count).Select(i => $"floor-{i:D2}.svg")
-            .Concat(new[] { "roof-plan.svg", "elevation-north.svg", "elevation-south.svg", "elevation-east.svg", "elevation-west.svg", "section-principal.svg" })
-            .Concat(Enumerable.Range(1, plan.Stairs.Count).Select(i => $"section-stair-{i:D2}.svg")).ToHashSet(StringComparer.Ordinal);
+        var names = PreviewCompiler.RequiredSheets(plan);
         if (package.SchemaVersion != "bubo-architectural-preview/v1" || !names.SetEquals(package.Drawings.Keys) || package.PlanSha256 != manifest.PlanSha256 || package.StyleSha256 != styleSha || package.HostPolicySha256 != policySha || package.RuntimeBuildSha256 != runtimeSha || package.Fingerprint != Fingerprint(manifest.PlanSha256, styleSha, policySha, runtimeSha, package.Drawings))
             throw new InvalidOperationException("Architectural preview identity or full sheet inventory differs");
         long bytes = 0;
@@ -264,7 +262,7 @@ public sealed class DesignSession
         var review = ReviewEvidence(manifest, package, evidence);
         if (JsonHash(evidence) != hash) throw new InvalidOperationException("Human evidence changed during review admission");
         if (kind != review.Kind || reviewer != review.Reviewer) throw new InvalidOperationException("Requested review identity conflicts with supplied human evidence");
-        if (manifest.Reviews.LastOrDefault() is { } prior && prior.EvidenceSha256 == hash && prior.Fingerprint == package.Fingerprint) return Describe(manifest, package);
+        if (manifest.Reviews.LastOrDefault() is { } prior && prior.EvidenceSha256 == hash && prior.Fingerprint == package.Fingerprint) return Describe(manifest, package, plan);
         if (manifest.Reviews.Count >= 1024) throw new InvalidOperationException("Design review history is full");
         var snapshot = State(manifest.Asset, manifest.Version) + "/review-evidence/" + hash + ".json";
         var snapshotFile = workspace.ResolveWrite(snapshot);
@@ -280,14 +278,14 @@ public sealed class DesignSession
         }
         manifest.Reviews.Add(new(review.Kind, review.Decision, review.Reviewer, snapshot, hash, sourceEvidence, package.Fingerprint, DateTimeOffset.UtcNow));
         manifest.History.Add(new("human-design-" + review.Decision, DateTimeOffset.UtcNow, package.Fingerprint)); Save(manifest);
-        return Describe(manifest, package);
+        return Describe(manifest, package, plan);
     }
     public object Status(string manifestPath, CancellationToken cancellation = default)
     {
         var initial = Load(manifestPath);
         using var ownership = workspace.Lock(State(initial.Asset, initial.Version) + "/asset.lock");
         var manifest = Load(manifestPath); var plan = Fresh(manifest, cancellation);
-        return Describe(manifest, manifest.Previews.LastOrDefault()?.Status == "complete" ? VerifyPreview(manifest, plan) : null);
+        return Describe(manifest, manifest.Previews.LastOrDefault()?.Status == "complete" ? VerifyPreview(manifest, plan) : null, plan);
     }
     public ValidationReport Validate(string manifestPath, CancellationToken cancellation = default)
     {
@@ -297,7 +295,20 @@ public sealed class DesignSession
         if (manifest.Previews.Count > 0) VerifyPreview(manifest, plan);
         return validator.Validate(plan, cancellation);
     }
-    object Describe(DesignManifest manifest, DesignPackage? package)
+    internal sealed record ConstructionInput(DesignManifest Manifest, BuildingPlan Plan, DesignPackage? Package, bool Approved);
+    internal ConstructionInput InspectConstruction(string manifestPath, CancellationToken cancellation, bool requireApproved = false)
+    {
+        var manifest = Load(manifestPath); var plan = Fresh(manifest, cancellation);
+        var package = manifest.Previews.LastOrDefault()?.Status == "complete" ? VerifyPreview(manifest, plan) : null;
+        var approved = HasApproval(manifest, package);
+        if (requireApproved)
+        {
+            new ConstructionReadiness().RequireReady(plan, cancellation);
+            if (!approved || package is null) throw new InvalidOperationException("Construction requires explicit human approval of the exact complete v2 architectural package");
+        }
+        return new(manifest, plan, package, approved);
+    }
+    bool HasApproval(DesignManifest manifest, DesignPackage? package)
     {
         var latest = manifest.Reviews.LastOrDefault(); var approved = false;
         if (package is not null && latest is not null && latest.Fingerprint == package.Fingerprint)
@@ -307,11 +318,16 @@ public sealed class DesignSession
             if (review.Reviewer != latest.Reviewer || review.Decision != latest.Decision || review.Kind != latest.Kind) throw new InvalidOperationException("Recorded human review identity differs");
             approved = review.Decision == "approved";
         }
+        return approved;
+    }
+    object Describe(DesignManifest manifest, DesignPackage? package, BuildingPlan plan)
+    {
+        var approved = HasApproval(manifest, package);
         return new { schemaVersion = "bubo-floor-plan-status/v1", task, manifest.Asset, manifest.Version,
             manifest = ManifestPath(manifest.Asset, manifest.Version), phase = "design-foundation", manifest.PlanSha256,
             completeArchitecturalPreview = package is not null, designFingerprint = package?.Fingerprint,
             drawingDirectory = package is null ? null : manifest.Previews[^1].Directory, drawings = package?.Drawings,
-            wholeBuildingApproved = approved, modelingAvailable = false, modelExportAvailable = false,
+            wholeBuildingApproved = approved, modelingAvailable = approved && plan.SchemaVersion == "bubo-building-plan/v2" && plan.Construction is not null, modelExportAvailable = false,
             runtimeAcceptance = false, lastPreviewStatus = manifest.Previews.LastOrDefault()?.Status, lastPreviewError = manifest.Previews.LastOrDefault()?.Error, attempts = manifest.Previews.Count, reviews = manifest.Reviews.Count };
     }
 }

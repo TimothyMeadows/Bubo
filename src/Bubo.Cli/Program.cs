@@ -86,6 +86,7 @@ try
     pipelineOptions["staging-root"] = context.StagingRoot;
     var runtimeBuildSha256 = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(capabilities["build"]!.ToJsonString())));
     pipelineOptions["runtime-build-sha256"] = runtimeBuildSha256;
+    if (workflow == "floor-plan-to-model") pipelineOptions["runtime-resource-catalog-sha256"] = RuntimeCatalog.ExpectedSha256;
     foreach (var name in new[] { "rights", "recipe", "toolchain", "selection", "library-search", "evidence", "proof-set", "classification", "finish-settings", "finish-budget", "revision", "source-review", "sources", "proof", "model", "motion-package", "motion-source", "mapping", "brief", "proof-metadata", "source-metadata", "editable-source", "artifact", "source", "plan", "parent-manifest" })
         if (pipelineOptions.TryGetValue(name, out var value)) context.RequireReference(value);
     if (operation == "init")
@@ -141,7 +142,7 @@ try
                     new ActionInfrastructure.EngineResolver(workspace, AppContext.BaseDirectory, process, context.TaskId)).Execute(operation, cancellation.Token);
                 break;
             case "floor-plan-to-model":
-                await Bubo.FloorPlan.Infrastructure.FloorPlanCommands.Execute(workspace, pipelineOptions, operation, cancellation.Token);
+                await Bubo.FloorPlan.Infrastructure.FloorPlanCommands.Execute(workspace, process, pipelineOptions, operation, cancellation.Token);
                 break;
             case "blender-inspection":
                 await InspectBlender(workspace, context, pipelineOptions, process, attempt, cancellation.Token);
@@ -220,7 +221,8 @@ static void ValidateOperation(string workflow, string operation, Dictionary<stri
         ("blender-inspection", "inspect") => ["blender"],
         ("floor-plan-to-model", "init") => ["task","asset","version","plan","parent-manifest"],
         ("floor-plan-to-model", "record") => ["kind","reviewer","evidence"],
-        ("floor-plan-to-model", "doctor" or "preview" or "validate" or "status") => [],
+        ("floor-plan-to-model", "doctor" or "build") => ["blender"],
+        ("floor-plan-to-model", "preview" or "validate" or "status") => [],
         ("media", "inspect") => ["load"],
         ("media", "generate") => [],
         ("media", "setup") => ["execute"],
@@ -249,7 +251,7 @@ static JsonObject Capabilities()
     {
         ["schemaVersion"] = "bubo-capabilities/v1", ["apiVersions"] = new JsonArray(2),
         ["workflows"] = new JsonArray("proof-to-model","model-to-animation","model-to-action","blender-inspection","media","floor-plan-to-model"),
-        ["floorPlan"] = new JsonObject { ["phase"] = "design-foundation", ["operations"] = new JsonArray("init","doctor","preview","validate","record","status"), ["modelingAvailable"] = false, ["modelExportAvailable"] = false },
+        ["floorPlan"] = new JsonObject { ["phase"] = "architectural-construction", ["operations"] = new JsonArray("init","doctor","preview","validate","record","build","status"), ["modelingAvailable"] = true, ["requiresApprovedConstructionPlanV2"] = true, ["modelExportAvailable"] = false },
         ["modelRuntime"] = "pinned-native-tools", ["mediaBackends"] = JsonSerializer.SerializeToNode(Bubo.Media.Domain.MediaCapabilities.Implemented,Bubo.Media.Domain.MediaJson.Options),
         ["build"] = new JsonObject { ["cliSha256"] = Workspace.Hash(Assembly.GetExecutingAssembly().Location), ["resourceCatalogSha256"] = RuntimeCatalog.ExpectedSha256, ["assemblies"] = assemblies, ["launch"] = launch },
         ["platform"] = new JsonObject { ["os"] = System.Runtime.InteropServices.RuntimeInformation.OSDescription, ["nativeProcessOwnershipSupported"] = OperatingSystem.IsWindows() || OperatingSystem.IsLinux(), ["osSandbox"] = false }
