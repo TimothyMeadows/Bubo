@@ -221,7 +221,8 @@ static void ValidateOperation(string workflow, string operation, Dictionary<stri
         ("blender-inspection", "inspect") => ["blender"],
         ("floor-plan-to-model", "init") => ["task","asset","version","plan","parent-manifest"],
         ("floor-plan-to-model", "record") => ["kind","reviewer","evidence"],
-        ("floor-plan-to-model", "doctor" or "build") => ["blender"],
+        ("floor-plan-to-model", "doctor" or "build" or "review") => ["blender"],
+        ("floor-plan-to-model", "export") => ["blender","author"],
         ("floor-plan-to-model", "preview" or "validate" or "status") => [],
         ("media", "inspect") => ["load"],
         ("media", "generate") => [],
@@ -251,7 +252,7 @@ static JsonObject Capabilities()
     {
         ["schemaVersion"] = "bubo-capabilities/v1", ["apiVersions"] = new JsonArray(2),
         ["workflows"] = new JsonArray("proof-to-model","model-to-animation","model-to-action","blender-inspection","media","floor-plan-to-model"),
-        ["floorPlan"] = new JsonObject { ["phase"] = "architectural-construction", ["operations"] = new JsonArray("init","doctor","preview","validate","record","build","status"), ["modelingAvailable"] = true, ["requiresApprovedConstructionPlanV2"] = true, ["modelExportAvailable"] = false },
+        ["floorPlan"] = new JsonObject { ["phase"] = "architectural-export", ["operations"] = new JsonArray("init","doctor","preview","validate","record","build","export","review","status"), ["modelingAvailable"] = true, ["requiresApprovedConstructionPlanV2"] = true, ["modelExportAvailable"] = true },
         ["modelRuntime"] = "pinned-native-tools", ["mediaBackends"] = JsonSerializer.SerializeToNode(Bubo.Media.Domain.MediaCapabilities.Implemented,Bubo.Media.Domain.MediaJson.Options),
         ["build"] = new JsonObject { ["cliSha256"] = Workspace.Hash(Assembly.GetExecutingAssembly().Location), ["resourceCatalogSha256"] = RuntimeCatalog.ExpectedSha256, ["assemblies"] = assemblies, ["launch"] = launch },
         ["platform"] = new JsonObject { ["os"] = System.Runtime.InteropServices.RuntimeInformation.OSDescription, ["nativeProcessOwnershipSupported"] = OperatingSystem.IsWindows() || OperatingSystem.IsLinux(), ["osSandbox"] = false }

@@ -167,6 +167,46 @@ public sealed class ConstructionSession(IWorkspace workspace, DesignSession desi
         if (current.Manifest.PlanSha256 != attempt.PlanSha256 || current.Package!.Fingerprint != attempt.DesignFingerprint || current.Manifest.Reviews[^1].EvidenceSha256 != attempt.ApprovalSha256 || ToolHash(attempt.ToolPath) != attempt.ToolSha256)
             throw new InvalidOperationException("Design approval, input or selected tool changed during construction");
     }
+    internal sealed record CurrentConstruction(DesignSession.ConstructionInput Design, ConstructionAttempt Attempt,
+        ConstructionBlenderJob Job, ConstructionReport Report, string JobPath, string ReportPath, string BlendPath);
+
+    // Caller owns the canonical asset.lock for the whole export/review operation.
+    // Keep this typed inspection separate from public Status to avoid recursive locking.
+    internal CurrentConstruction InspectCurrentBuildUnderOwnership(string manifestPath, CancellationToken cancellation)
+    {
+        var input = design.InspectConstruction(manifestPath, cancellation, requireApproved: true);
+        var state = Load(manifestPath, input);
+        var latest = state.Attempts.LastOrDefault();
+        if (input.Plan.Construction is null || latest?.Status != "complete")
+            throw new InvalidOperationException("Export requires the latest current successful v2 construction; no older-success fallback");
+        Refresh(manifestPath, latest, cancellation); FreshBundle(latest.Bundle);
+        var jobPath = latest.Directory + "/job.json";
+        var reportPath = latest.Directory + "/output/construction-report.json";
+        var blendPath = latest.Directory + "/output/building.blend";
+        using var jobRead = new FileStream(workspace.Resolve(jobPath), FileMode.Open, FileAccess.Read, FileShare.Read);
+        using var reportRead = new FileStream(workspace.Resolve(reportPath), FileMode.Open, FileAccess.Read, FileShare.Read);
+        using var blendRead = new FileStream(workspace.Resolve(blendPath), FileMode.Open, FileAccess.Read, FileShare.Read);
+        ConstructionOutputVerifier.VerifyInventory(workspace, latest.Directory + "/output", input.Plan.Budgets.MaxExportBytes);
+        if (ConstructionOutputVerifier.FileHash(workspace, jobPath, cancellation, input.Plan.Construction.MaxJobBytes) != latest.JobSha256
+            || ConstructionOutputVerifier.FileHash(workspace, reportPath, cancellation, StrictPlanJson.MaximumInputBytes) != latest.ReportSha256
+            || ConstructionOutputVerifier.FileHash(workspace, blendPath, cancellation, input.Plan.Budgets.MaxExportBytes) != latest.BlendSha256)
+            throw new InvalidOperationException("Current construction input/output identities changed before export");
+        var job = ExportJson.Read<ConstructionBlenderJob>(workspace.Resolve(jobPath), input.Plan.Construction.MaxJobBytes, cancellation);
+        if (job.SchemaVersion != "bubo-floor-plan-blender-job/v1" || job.Operation != "construct"
+            || job.WorkspaceRoot != workspace.Root || job.OutputDirectory != workspace.Resolve(latest.Directory + "/output")
+            || job.Identities.PlanSha256 != latest.PlanSha256 || job.Identities.DesignFingerprint != latest.DesignFingerprint
+            || job.Identities.RuntimeSha256 != state.RuntimeSha256 || job.Bundle.Count != latest.Bundle.Count
+            || latest.Bundle.Any(p => job.Bundle.GetValueOrDefault(p.Key) != p.Value))
+            throw new InvalidOperationException("Current construction job disagrees with its immutable attempt");
+        var report = ConstructionOutputVerifier.Verify(workspace, latest.Directory + "/output", job, latest.JobSha256!, cancellation);
+        Refresh(manifestPath, latest, cancellation); FreshBundle(latest.Bundle);
+        if (ConstructionOutputVerifier.FileHash(workspace, jobPath, cancellation, input.Plan.Construction.MaxJobBytes) != latest.JobSha256
+            || ConstructionOutputVerifier.FileHash(workspace, reportPath, cancellation, StrictPlanJson.MaximumInputBytes) != latest.ReportSha256)
+            throw new InvalidOperationException("Construction references changed during export admission");
+        ConstructionOutputVerifier.VerifyInventory(workspace, latest.Directory + "/output", input.Plan.Budgets.MaxExportBytes);
+        cancellation.ThrowIfCancellationRequested();
+        return new(input, latest, job, report, jobPath, reportPath, blendPath);
+    }
     public object Status(string manifestPath, CancellationToken cancellation = default)
     {
         var initial = design.InspectConstruction(manifestPath, cancellation);

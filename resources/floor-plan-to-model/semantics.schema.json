@@ -1,0 +1,1588 @@
+{
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "const": "bubo-floor-plan-semantics/v1"
+    },
+    "planSha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$",
+      "minLength": 64,
+      "maxLength": 64
+    },
+    "constructionJobSha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$",
+      "minLength": 64,
+      "maxLength": 64
+    },
+    "sourceSha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$",
+      "minLength": 64,
+      "maxLength": 64
+    },
+    "coordinates": {
+      "$ref": "#/$defs/exportCoordinates"
+    },
+    "plan": {
+      "$ref": "#/$defs/approvedPlan"
+    },
+    "materials": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/constructionMaterial"
+      },
+      "minItems": 1,
+      "maxItems": 4096
+    },
+    "meshes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/exportMesh"
+      },
+      "minItems": 1,
+      "maxItems": 10000
+    },
+    "anchors": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/exportAnchor"
+      },
+      "minItems": 1,
+      "maxItems": 32768
+    },
+    "doorPoseConvention": {
+      "const": "closed-at-zero-final-open-clearance"
+    },
+    "clearanceBasis": {
+      "const": "construction-source"
+    },
+    "clearance": {
+      "type": "object",
+      "properties": {
+        "routes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/constructionRoute"
+          },
+          "minItems": 0,
+          "maxItems": 100000
+        },
+        "doorSweeps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/constructionDoorSweep"
+          },
+          "minItems": 0,
+          "maxItems": 16384
+        },
+        "minimumRouteClearance": {
+          "type": "number",
+          "minimum": -0.01,
+          "maximum": 2000000
+        }
+      },
+      "required": [
+        "routes",
+        "doorSweeps",
+        "minimumRouteClearance"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "planSha256",
+    "constructionJobSha256",
+    "sourceSha256",
+    "coordinates",
+    "plan",
+    "materials",
+    "meshes",
+    "anchors",
+    "doorPoseConvention",
+    "clearanceBasis",
+    "clearance"
+  ],
+  "additionalProperties": false,
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:bubo:schema:floor-plan-semantics:v1",
+  "title": "Bubo floor-plan source semantics v1",
+  "description": "Exact approved typed v2 plan snapshot and admitted construction identities. Source counts/indexing, measured construction clearances and closed door convention are preserved; these are not independent GLB or engine measurements. Native validation compares every field to exact admitted source. Metadata hard cap 64 MiB.",
+  "$defs": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Stable case-sensitive semantic identity. Native validation checks uniqueness and reference resolution.",
+      "maxLength": 96,
+      "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,95}$",
+      "not": {
+        "pattern": "[\\u0000-\\u001f\\u007f-\\u009f]"
+      }
+    },
+    "point2": {
+      "type": "object",
+      "description": "Common building XY datum, never a per-storey local origin.",
+      "properties": {
+        "x": {
+          "type": "number",
+          "description": "East/right coordinate in metres.",
+          "minimum": -1000000,
+          "maximum": 1000000
+        },
+        "y": {
+          "type": "number",
+          "description": "North/up plan coordinate in metres.",
+          "minimum": -1000000,
+          "maximum": 1000000
+        }
+      },
+      "required": [
+        "x",
+        "y"
+      ],
+      "additionalProperties": false
+    },
+    "point3": {
+      "type": "object",
+      "properties": {
+        "x": {
+          "type": "number",
+          "description": "East/right coordinate in metres.",
+          "minimum": -1000000,
+          "maximum": 1000000
+        },
+        "y": {
+          "type": "number",
+          "description": "North/up plan coordinate in metres.",
+          "minimum": -1000000,
+          "maximum": 1000000
+        },
+        "z": {
+          "type": "number",
+          "description": "Absolute elevation in metres above the common datum.",
+          "minimum": -1000000,
+          "maximum": 1000000
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "z"
+      ],
+      "additionalProperties": false
+    },
+    "polygon2": {
+      "type": "object",
+      "properties": {
+        "outer": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/point2"
+          },
+          "minItems": 3,
+          "description": "Counter-clockwise outer ring. The closing edge is implicit; do not repeat the first vertex.",
+          "maxItems": 100000
+        },
+        "holes": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/point2"
+            },
+            "minItems": 3,
+            "maxItems": 100000
+          },
+          "minItems": 0,
+          "description": "Clockwise interior rings. Geometry, containment and winding require native validation.",
+          "maxItems": 4096
+        }
+      },
+      "required": [
+        "outer",
+        "holes"
+      ],
+      "additionalProperties": false
+    },
+    "numerics": {
+      "type": "object",
+      "properties": {
+        "linearTolerance": {
+          "type": "number",
+          "description": "Linear comparison tolerance in metres.",
+          "minimum": 1e-09,
+          "maximum": 0.01
+        },
+        "angularToleranceDegrees": {
+          "type": "number",
+          "description": "Angular comparison tolerance in degrees.",
+          "minimum": 0.001,
+          "maximum": 1
+        },
+        "maxCoordinateMagnitude": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Finite maximum absolute coordinate magnitude in metres.",
+          "maximum": 1000000
+        },
+        "minimumFeatureSize": {
+          "type": "number",
+          "description": "Smallest permitted authored feature in metres; must be at least ten times linearTolerance (native cross-field check).",
+          "minimum": 1e-08,
+          "maximum": 10
+        }
+      },
+      "required": [
+        "linearTolerance",
+        "angularToleranceDegrees",
+        "maxCoordinateMagnitude",
+        "minimumFeatureSize"
+      ],
+      "additionalProperties": false
+    },
+    "player": {
+      "type": "object",
+      "description": "Design clearance inputs; not building-code, live collision or traversal certification.",
+      "properties": {
+        "radius": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Declared clearance-envelope radius in metres.",
+          "maximum": 1000000
+        },
+        "height": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Declared clearance-envelope height in metres.",
+          "maximum": 1000000
+        },
+        "maxStepHeight": {
+          "type": "number",
+          "description": "Maximum allowed step in metres.",
+          "exclusiveMinimum": 0,
+          "maximum": 1000000
+        },
+        "minLandingDepth": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Required unobstructed landing depth in metres.",
+          "maximum": 1000000
+        }
+      },
+      "required": [
+        "radius",
+        "height",
+        "maxStepHeight",
+        "minLandingDepth"
+      ],
+      "additionalProperties": false
+    },
+    "budgets": {
+      "type": "object",
+      "description": "Explicit finite input, validation, construction triangle and complete output ceilings. Native compilation and bounded authoring enforce actual consumption.",
+      "properties": {
+        "maxStoreys": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 64
+        },
+        "maxRooms": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4096
+        },
+        "maxWalls": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 16384
+        },
+        "maxOpenings": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 16384
+        },
+        "maxStairs": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1024
+        },
+        "maxRoofPlanes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4096
+        },
+        "maxVertices": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100000
+        },
+        "maxGeometryChecks": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5000000
+        },
+        "maxPreviewBytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 67108864
+        },
+        "maxExportBytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1073741824
+        },
+        "maxGeneratedTriangles": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4000000
+        }
+      },
+      "required": [
+        "maxStoreys",
+        "maxRooms",
+        "maxWalls",
+        "maxOpenings",
+        "maxStairs",
+        "maxRoofPlanes",
+        "maxVertices",
+        "maxGeometryChecks",
+        "maxPreviewBytes",
+        "maxExportBytes",
+        "maxGeneratedTriangles"
+      ],
+      "additionalProperties": false
+    },
+    "material": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "allOf": [
+            {
+              "not": {
+                "pattern": "[\\u0000-\\u001f\\u007f-\\u009f]"
+              }
+            },
+            {
+              "not": {
+                "pattern": "^[\\u0009-\\u000d\\u0020\\u0085\\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000]*$"
+              }
+            }
+          ]
+        },
+        "color": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "minLength": 7,
+          "maxLength": 7
+        },
+        "roughness": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "metallic": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "color",
+        "roughness",
+        "metallic"
+      ],
+      "additionalProperties": false
+    },
+    "detailProfile": {
+      "type": "object",
+      "description": "Authored section dimensions in metres. Future construction must preserve approved dimensions.",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "allOf": [
+            {
+              "not": {
+                "pattern": "[\\u0000-\\u001f\\u007f-\\u009f]"
+              }
+            },
+            {
+              "not": {
+                "pattern": "^[\\u0009-\\u000d\\u0020\\u0085\\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000]*$"
+              }
+            }
+          ]
+        },
+        "plinthHeight": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000
+        },
+        "plinthProjection": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000
+        },
+        "corniceHeight": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000
+        },
+        "corniceProjection": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000
+        },
+        "eaveOverhang": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000,
+          "description": "Nonnegative source roof overhang from physical exterior wall face, measured by native straight-edge geometry; zero means no outward eave. It never expands authored roof vertices."
+        },
+        "fasciaDepth": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "plinthHeight",
+        "plinthProjection",
+        "corniceHeight",
+        "corniceProjection",
+        "eaveOverhang",
+        "fasciaDepth"
+      ],
+      "additionalProperties": false
+    },
+    "room": {
+      "type": "object",
+      "description": "Boundary is clear finished-face space. Required rooms must be connected to the declared entry.",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "allOf": [
+            {
+              "not": {
+                "pattern": "[\\u0000-\\u001f\\u007f-\\u009f]"
+              }
+            },
+            {
+              "not": {
+                "pattern": "^[\\u0009-\\u000d\\u0020\\u0085\\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000]*$"
+              }
+            }
+          ]
+        },
+        "boundary": {
+          "$ref": "#/$defs/polygon2"
+        },
+        "requiresAccess": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "boundary",
+        "requiresAccess"
+      ],
+      "additionalProperties": false
+    },
+    "opening": {
+      "type": "object",
+      "description": "Opening interval is [offset, offset + width]. Door pivot/swing applicability and clearance require native validation.",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "kind": {
+          "enum": [
+            "door",
+            "window",
+            "passage"
+          ]
+        },
+        "offset": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Distance from owning wall start along its direction, in metres.",
+          "maximum": 1000000
+        },
+        "width": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1000000
+        },
+        "sill": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Height relative to owning storey's finished-floor elevation, in metres.",
+          "maximum": 1000000
+        },
+        "head": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Height relative to owning storey's finished-floor elevation, in metres.",
+          "maximum": 1000000
+        },
+        "pivot": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "start",
+            "end",
+            null
+          ]
+        },
+        "swing": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "left",
+            "right",
+            null
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "offset",
+        "width",
+        "sill",
+        "head",
+        "pivot",
+        "swing"
+      ],
+      "additionalProperties": false
+    },
+    "wall": {
+      "type": "object",
+      "description": "One segment and semantic identity per physical shared wall. Left/right are viewed from start toward end; null denotes the exterior side.",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "start": {
+          "$ref": "#/$defs/point2"
+        },
+        "end": {
+          "$ref": "#/$defs/point2"
+        },
+        "thickness": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Full wall thickness centred equally on its segment, in metres.",
+          "maximum": 1000000
+        },
+        "height": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Wall height above owning finished floor, in metres.",
+          "maximum": 1000000
+        },
+        "materialId": {
+          "$ref": "#/$defs/id"
+        },
+        "detailProfileId": {
+          "$ref": "#/$defs/id"
+        },
+        "leftRoomId": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "rightRoomId": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "openings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/opening"
+          },
+          "minItems": 0,
+          "maxItems": 16384
+        }
+      },
+      "required": [
+        "id",
+        "start",
+        "end",
+        "thickness",
+        "height",
+        "materialId",
+        "detailProfileId",
+        "leftRoomId",
+        "rightRoomId",
+        "openings"
+      ],
+      "additionalProperties": false
+    },
+    "slabOpening": {
+      "type": "object",
+      "description": "Explicit cut through this storey's slab. Room labels never cut a slab implicitly.",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "boundary": {
+          "$ref": "#/$defs/polygon2"
+        }
+      },
+      "required": [
+        "id",
+        "boundary"
+      ],
+      "additionalProperties": false
+    },
+    "storey": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "allOf": [
+            {
+              "not": {
+                "pattern": "[\\u0000-\\u001f\\u007f-\\u009f]"
+              }
+            },
+            {
+              "not": {
+                "pattern": "^[\\u0009-\\u000d\\u0020\\u0085\\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000]*$"
+              }
+            }
+          ]
+        },
+        "elevation": {
+          "type": "number",
+          "description": "Finished-floor elevation above common datum, in metres.",
+          "minimum": -1000000,
+          "maximum": 1000000
+        },
+        "height": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Vertical storey clear extent, in metres.",
+          "maximum": 1000000
+        },
+        "slabThickness": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Slab extends down from finished-floor elevation, in metres.",
+          "maximum": 1000000
+        },
+        "floorMaterialId": {
+          "$ref": "#/$defs/id"
+        },
+        "footprint": {
+          "$ref": "#/$defs/polygon2"
+        },
+        "rooms": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/room"
+          },
+          "minItems": 1,
+          "maxItems": 4096
+        },
+        "walls": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/wall"
+          },
+          "minItems": 1,
+          "maxItems": 16384
+        },
+        "slabOpenings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/slabOpening"
+          },
+          "minItems": 0,
+          "maxItems": 4096
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "elevation",
+        "height",
+        "slabThickness",
+        "floorMaterialId",
+        "footprint",
+        "rooms",
+        "walls",
+        "slabOpenings"
+      ],
+      "additionalProperties": false
+    },
+    "stair": {
+      "type": "object",
+      "description": "Straight single flight between consecutive storeys. Start/end are lower/upper tread edges. Run = (riserCount - 1) * treadDepth; rise = riserCount * riserHeight. Landings touch the flight at its ends. The upper-storey slab opening must contain the complete flight footprint. Inter-flight solid and headroom checks use the declared structureThickness and actual tread regions.",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "lowerStoreyId": {
+          "$ref": "#/$defs/id"
+        },
+        "upperStoreyId": {
+          "$ref": "#/$defs/id"
+        },
+        "lowerRoomId": {
+          "$ref": "#/$defs/id"
+        },
+        "upperRoomId": {
+          "$ref": "#/$defs/id"
+        },
+        "start": {
+          "$ref": "#/$defs/point2"
+        },
+        "end": {
+          "$ref": "#/$defs/point2"
+        },
+        "width": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1000000,
+          "description": "Clear traversal width. Physical tread/support/rail envelope additionally includes the explicit construction railing offset and section dimensions and must fit the approved slab void."
+        },
+        "riserCount": {
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 4096
+        },
+        "riserHeight": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1000000
+        },
+        "treadDepth": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1000000
+        },
+        "headroom": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1000000
+        },
+        "structureThickness": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1,
+          "description": "Vertical waist-slab thickness in metres below the pitch line through riser bottoms. Must also be at least numerics.minimumFeatureSize and at most numerics.maxCoordinateMagnitude (native cross-field checks)."
+        },
+        "lowerLanding": {
+          "$ref": "#/$defs/polygon2"
+        },
+        "upperLanding": {
+          "$ref": "#/$defs/polygon2"
+        },
+        "requiredSlabOpeningId": {
+          "$ref": "#/$defs/id"
+        },
+        "materialId": {
+          "$ref": "#/$defs/id"
+        }
+      },
+      "required": [
+        "id",
+        "lowerStoreyId",
+        "upperStoreyId",
+        "lowerRoomId",
+        "upperRoomId",
+        "start",
+        "end",
+        "width",
+        "riserCount",
+        "riserHeight",
+        "treadDepth",
+        "headroom",
+        "structureThickness",
+        "lowerLanding",
+        "upperLanding",
+        "requiredSlabOpeningId",
+        "materialId"
+      ],
+      "additionalProperties": false
+    },
+    "roof": {
+      "type": "object",
+      "description": "Authored planar roof underside. Vertices fix the exact projected extent; construction roof thickness extends vertically upward.",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "vertices": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/point3"
+          },
+          "minItems": 3,
+          "description": "Planar upward-wound polygon with implicit closing edge, in common absolute coordinates.",
+          "maxItems": 100000
+        },
+        "materialId": {
+          "$ref": "#/$defs/id"
+        },
+        "detailProfileId": {
+          "$ref": "#/$defs/id"
+        }
+      },
+      "required": [
+        "id",
+        "vertices",
+        "materialId",
+        "detailProfileId"
+      ],
+      "additionalProperties": false
+    },
+    "constructionProfile": {
+      "type": "object",
+      "description": "Every production detail dimension/material role is explicit source and participates in whole-package approval. Geometry compilation independently proves routes, door sweeps and actual bounded meshes.",
+      "properties": {
+        "roofThickness": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1000000,
+          "description": "Vertical thickness above the authored roof underside vertices. No normal extrusion or source-edge expansion."
+        },
+        "doorLeafThickness": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1000000
+        },
+        "doorLeafGap": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1000000,
+          "description": "Uniform leaf-edge gap; at least half leaf thickness plus source linear tolerance to clear the hinge jamb."
+        },
+        "doorFrameWidth": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1000000,
+          "description": "Frame width outside the nominal wall opening; never reduces the approved aperture."
+        },
+        "doorFrameDepth": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1000000,
+          "description": "Additional frame projection beyond both structural wall faces."
+        },
+        "windowFrameWidth": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1000000,
+          "description": "Frame width outside the nominal window aperture."
+        },
+        "windowFrameDepth": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1000000,
+          "description": "Additional frame projection beyond both structural wall faces."
+        },
+        "glassThickness": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1000000
+        },
+        "railingHeight": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1000000
+        },
+        "railThickness": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1000000
+        },
+        "balusterThickness": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1000000
+        },
+        "balusterGap": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1000000,
+          "description": "Maximum clear gap; evenly distributed endpoints/remainder may make actual gaps smaller, never larger."
+        },
+        "ceilingThickness": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000,
+          "description": "Zero shares structural slab/roof undersides; positive panels start at the declared clear ceiling and extend upward without shrinking it."
+        },
+        "doorRevealDepth": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000,
+          "description": "Door leaf inset from the negative wall face; its midplane is negative-face + reveal + half leaf thickness."
+        },
+        "railingOffset": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000,
+          "description": "Gap from the clear stair side to the railing inner face. Physical stair width = clear width + 2*(offset + max(rail thickness, baluster thickness))."
+        },
+        "doorOpenAngleDegrees": {
+          "type": "number",
+          "minimum": 90,
+          "maximum": 180
+        },
+        "glassTransmission": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "glassIor": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 3
+        },
+        "ceilingMaterialId": {
+          "$ref": "#/$defs/id"
+        },
+        "doorMaterialId": {
+          "$ref": "#/$defs/id"
+        },
+        "frameMaterialId": {
+          "$ref": "#/$defs/id"
+        },
+        "glassMaterialId": {
+          "$ref": "#/$defs/id"
+        },
+        "railingMaterialId": {
+          "$ref": "#/$defs/id"
+        },
+        "maxMeshes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10000
+        },
+        "maxConstructionVertices": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2000000
+        },
+        "maxArrangementCells": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100000
+        },
+        "maxJobBytes": {
+          "type": "integer",
+          "minimum": 1024,
+          "maximum": 268435456,
+          "description": "Serialized native job cap, also not greater than the source maxExportBytes. No automatic budget increase."
+        }
+      },
+      "required": [
+        "roofThickness",
+        "doorLeafThickness",
+        "doorLeafGap",
+        "doorFrameWidth",
+        "doorFrameDepth",
+        "windowFrameWidth",
+        "windowFrameDepth",
+        "glassThickness",
+        "railingHeight",
+        "railThickness",
+        "balusterThickness",
+        "balusterGap",
+        "ceilingThickness",
+        "doorRevealDepth",
+        "railingOffset",
+        "doorOpenAngleDegrees",
+        "glassTransmission",
+        "glassIor",
+        "ceilingMaterialId",
+        "doorMaterialId",
+        "frameMaterialId",
+        "glassMaterialId",
+        "railingMaterialId",
+        "maxMeshes",
+        "maxConstructionVertices",
+        "maxArrangementCells",
+        "maxJobBytes"
+      ],
+      "additionalProperties": false
+    },
+    "approvedPlan": {
+      "type": "object",
+      "description": "Explicit dimension-driven complete empty building design with approved construction details. Native relational geometry/profile validation and exact whole-package approval are mandatory; schema conformance alone grants no construction or runtime acceptance.",
+      "properties": {
+        "schemaVersion": {
+          "const": "bubo-building-plan/v2"
+        },
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "allOf": [
+            {
+              "not": {
+                "pattern": "[\\u0000-\\u001f\\u007f-\\u009f]"
+              }
+            },
+            {
+              "not": {
+                "pattern": "^[\\u0009-\\u000d\\u0020\\u0085\\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000]*$"
+              }
+            }
+          ]
+        },
+        "purpose": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048,
+          "allOf": [
+            {
+              "not": {
+                "pattern": "[\\u0000-\\u001f\\u007f-\\u009f]"
+              }
+            },
+            {
+              "not": {
+                "pattern": "^[\\u0009-\\u000d\\u0020\\u0085\\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000]*$"
+              }
+            }
+          ]
+        },
+        "architecturalStyle": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Host-selected architectural style description.",
+          "maxLength": 2048,
+          "allOf": [
+            {
+              "not": {
+                "pattern": "[\\u0000-\\u001f\\u007f-\\u009f]"
+              }
+            },
+            {
+              "not": {
+                "pattern": "^[\\u0009-\\u000d\\u0020\\u0085\\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000]*$"
+              }
+            }
+          ]
+        },
+        "styleSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "description": "Explicit host-selected style identity; Bubo does not resolve host policy.",
+          "minLength": 64,
+          "maxLength": 64
+        },
+        "coordinateSystem": {
+          "const": "xy-metres-z-up"
+        },
+        "numerics": {
+          "$ref": "#/$defs/numerics"
+        },
+        "player": {
+          "$ref": "#/$defs/player"
+        },
+        "budgets": {
+          "$ref": "#/$defs/budgets"
+        },
+        "entryRoomId": {
+          "$ref": "#/$defs/id"
+        },
+        "materials": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/material"
+          },
+          "minItems": 1,
+          "maxItems": 4096
+        },
+        "detailProfiles": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/detailProfile"
+          },
+          "minItems": 1,
+          "maxItems": 4096
+        },
+        "storeys": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/storey"
+          },
+          "minItems": 1,
+          "maxItems": 64
+        },
+        "stairs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/stair"
+          },
+          "minItems": 0,
+          "maxItems": 1024
+        },
+        "roofs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/roof"
+          },
+          "minItems": 1,
+          "maxItems": 4096
+        },
+        "construction": {
+          "$ref": "#/$defs/constructionProfile"
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "id",
+        "name",
+        "purpose",
+        "architecturalStyle",
+        "styleSha256",
+        "coordinateSystem",
+        "numerics",
+        "player",
+        "budgets",
+        "entryRoomId",
+        "materials",
+        "detailProfiles",
+        "storeys",
+        "stairs",
+        "roofs",
+        "construction"
+      ],
+      "additionalProperties": false
+    },
+    "exportCoordinates": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "const": "xy-metres-z-up"
+        },
+        "target": {
+          "const": "gltf-metres-y-up"
+        },
+        "sourceToGltf": {
+          "const": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            -1,
+            0
+          ]
+        }
+      },
+      "required": [
+        "source",
+        "target",
+        "sourceToGltf"
+      ],
+      "additionalProperties": false
+    },
+    "exportPoint3": {
+      "type": "object",
+      "properties": {
+        "x": {
+          "type": "number",
+          "minimum": -1000000.01,
+          "maximum": 1000000.01
+        },
+        "y": {
+          "type": "number",
+          "minimum": -1000000.01,
+          "maximum": 1000000.01
+        },
+        "z": {
+          "type": "number",
+          "minimum": -1000000.01,
+          "maximum": 1000000.01
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "z"
+      ],
+      "additionalProperties": false
+    },
+    "constructionMaterial": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]+$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]+$"
+        },
+        "color": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "roughness": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "metallic": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "transmission": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "ior": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 3
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "color",
+        "roughness",
+        "metallic",
+        "transmission",
+        "ior"
+      ],
+      "additionalProperties": false
+    },
+    "exportMesh": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]+$"
+        },
+        "nodeId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]+$"
+        },
+        "parentNodeId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]+$"
+        },
+        "semanticId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]+$"
+        },
+        "storeyId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]+$"
+        },
+        "kind": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]+$"
+        },
+        "representation": {
+          "enum": [
+            "visual",
+            "collision"
+          ]
+        },
+        "collisionRole": {
+          "enum": [
+            "none",
+            "static",
+            "dynamic"
+          ]
+        },
+        "materialId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]+$"
+        },
+        "parentAnchorId": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256,
+              "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]+$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "triangleMaterialIds": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]+$"
+              },
+              "minItems": 0,
+              "maxItems": 10000000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "sourceVertexCount": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2000000
+        },
+        "sourceTriangleCount": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10000000
+        },
+        "minimum": {
+          "$ref": "#/$defs/exportPoint3"
+        },
+        "maximum": {
+          "$ref": "#/$defs/exportPoint3"
+        }
+      },
+      "required": [
+        "id",
+        "nodeId",
+        "parentNodeId",
+        "semanticId",
+        "storeyId",
+        "kind",
+        "representation",
+        "collisionRole",
+        "materialId",
+        "parentAnchorId",
+        "triangleMaterialIds",
+        "sourceVertexCount",
+        "sourceTriangleCount",
+        "minimum",
+        "maximum"
+      ],
+      "additionalProperties": false
+    },
+    "exportAnchor": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]+$"
+        },
+        "semanticId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]+$"
+        },
+        "storeyId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]+$"
+        },
+        "kind": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]+$"
+        },
+        "position": {
+          "$ref": "#/$defs/exportPoint3"
+        },
+        "axis": {
+          "const": {
+            "x": 0,
+            "y": 0,
+            "z": 1
+          }
+        },
+        "rotationRadians": {
+          "const": 0
+        }
+      },
+      "required": [
+        "id",
+        "semanticId",
+        "storeyId",
+        "kind",
+        "position",
+        "axis",
+        "rotationRadians"
+      ],
+      "additionalProperties": false
+    },
+    "constructionRoute": {
+      "type": "object",
+      "properties": {
+        "roomId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]+$"
+        },
+        "fromId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]+$"
+        },
+        "toId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]+$"
+        },
+        "points": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/exportPoint3"
+          },
+          "minItems": 1,
+          "maxItems": 2000000
+        },
+        "radius": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1000000
+        },
+        "height": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1000000
+        },
+        "minimumClearance": {
+          "type": "number",
+          "minimum": -0.01,
+          "maximum": 2000000
+        }
+      },
+      "required": [
+        "roomId",
+        "fromId",
+        "toId",
+        "points",
+        "radius",
+        "height",
+        "minimumClearance"
+      ],
+      "additionalProperties": false
+    },
+    "constructionDoorSweep": {
+      "type": "object",
+      "properties": {
+        "openingId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]+$"
+        },
+        "anchorId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]+$"
+        },
+        "angleDegrees": {
+          "type": "number",
+          "minimum": -180,
+          "maximum": 180
+        },
+        "minimumClearance": {
+          "type": "number",
+          "minimum": -0.01,
+          "maximum": 2000000
+        },
+        "boundsMinimum": {
+          "$ref": "#/$defs/exportPoint3"
+        },
+        "boundsMaximum": {
+          "$ref": "#/$defs/exportPoint3"
+        }
+      },
+      "required": [
+        "openingId",
+        "anchorId",
+        "angleDegrees",
+        "minimumClearance",
+        "boundsMinimum",
+        "boundsMaximum"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

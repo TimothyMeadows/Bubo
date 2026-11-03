@@ -216,5 +216,36 @@ public static class ConstructionSessionTests
             using (var file = new FileStream(Path.Combine(f.Root, attempt.Directory, "output/building.blend"), FileMode.Open, FileAccess.Write)) file.SetLength(1_048_577);
             var error = Check.Throws<InvalidOperationException>(() => f.Session().Status(f.Manifest)); Check.True(error.Message.Contains("approved byte budget"));
         });
+        Check.Case("SIMULATED export admission: typed current-build inspection preserves submitted geometry under ownership", () =>
+        {
+            var f = new Fixture(); f.Approve(); f.Process.SyntheticAuthor = true; f.Build();
+            using var ownership = f.Workspace.Lock(f.Manifest[..^"manifest.json".Length] + "asset.lock");
+            var current = f.Session().InspectCurrentBuildUnderOwnership(f.Manifest, default);
+            Check.True(current.Attempt.Status == "complete" && current.Job.Scene.PlanId == current.Design.Plan.Id);
+            Check.True(current.Job.Scene.Meshes.Count == current.Report.Meshes.Count && current.Attempt.JobSha256 == Hephaera.AssetProduction.Workspace.Hash(f.Workspace.Resolve(current.JobPath)));
+        });
+        Check.Case("SIMULATED export admission: failed latest construction cannot select an older completed scene", () =>
+        {
+            var f = new Fixture(); f.Approve(); f.Process.SyntheticAuthor = true; f.Build();
+            f.Process.SyntheticAuthor = false; Check.Throws<InvalidOperationException>(() => f.Build());
+            using var ownership = f.Workspace.Lock(f.Manifest[..^"manifest.json".Length] + "asset.lock");
+            Check.Throws<InvalidOperationException>(() => f.Session().InspectCurrentBuildUnderOwnership(f.Manifest, default));
+            Check.True(f.State().Attempts.Select(a => a.Status).SequenceEqual(new[] { "complete", "failed" }));
+        });
+        Check.Case("SIMULATED export admission: changed job and late approval cannot return current geometry", () =>
+        {
+            foreach (var lateApproval in new[] { false, true })
+            {
+                var f = new Fixture(); f.Approve(); f.Process.SyntheticAuthor = true; f.Build(); var changed = false;
+                if (!lateApproval) File.AppendAllText(f.Workspace.Resolve(f.State().Attempts.Single().Directory + "/job.json"), "\n");
+                else f.Workspace.AfterResolve = path =>
+                {
+                    if (!changed && path.EndsWith("/building.blend", StringComparison.Ordinal)) { changed = true; File.AppendAllText(Path.Combine(f.Root, "state/review.json"), "\n"); }
+                };
+                using var ownership = f.Workspace.Lock(f.Manifest[..^"manifest.json".Length] + "asset.lock");
+                Check.Throws<InvalidOperationException>(() => f.Session().InspectCurrentBuildUnderOwnership(f.Manifest, default));
+                if (lateApproval) Check.True(changed);
+            }
+        });
     }
 }
