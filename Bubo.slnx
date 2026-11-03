@@ -1,4 +1,10 @@
 <Solution>
+  <Folder Name="/src/runtime/schematic-to-model/">
+    <Project Path="src/runtime/schematic-to-model/Domain/Schematic.Domain.csproj" />
+    <Project Path="src/runtime/schematic-to-model/Application/Schematic.Application.csproj" />
+    <Project Path="src/runtime/schematic-to-model/Infrastructure/Schematic.Infrastructure.csproj" />
+    <Project Path="src/runtime/schematic-to-model/Tests/Schematic.Tests.csproj" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="src/Bubo.Cli/Bubo.Cli.csproj" />
     <Project Path="src/Bubo.Host.Tests/Bubo.Host.Tests.csproj" />

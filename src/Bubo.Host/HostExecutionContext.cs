@@ -117,7 +117,7 @@ public sealed class HostExecutionContext
         else
         {
         Pipeline = Text(policy, "pipeline");
-        if (Pipeline is not ("CLOUD" or "LOCAL" or "PROOF_TO_MODEL" or "CODE" or "BLENDER" or "FLOOR_PLAN_TO_MODEL"))
+        if (Pipeline is not ("CLOUD" or "LOCAL" or "PROOF_TO_MODEL" or "CODE" or "BLENDER" or "FLOOR_PLAN_TO_MODEL" or "SCHEMATIC_TO_MODEL"))
             throw Invalid("Unknown host pipeline selection");
         StyleSha256 = HashText(policy, "styleSha256");
         engine = Object(policy, "engine").DeepClone().AsObject();
