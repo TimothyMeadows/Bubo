@@ -1,0 +1,474 @@
+{
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "const": "bubo-floor-plan-export-package/v1"
+    },
+    "task": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$"
+    },
+    "asset": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$"
+    },
+    "ancestry": {
+      "$ref": "#/$defs/ancestry"
+    },
+    "coordinates": {
+      "$ref": "#/$defs/coordinates"
+    },
+    "numerics": {
+      "$ref": "#/$defs/numerics"
+    },
+    "files": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/payloadFile"
+      },
+      "minItems": 9,
+      "maxItems": 2048
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "task",
+    "asset",
+    "version",
+    "ancestry",
+    "coordinates",
+    "numerics",
+    "files"
+  ],
+  "additionalProperties": false,
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:bubo:schema:floor-plan-export-package:v1",
+  "title": "Bubo sealed portable floor-plan package v1",
+  "description": "Package inventory excludes package.json. Raw package.json SHA-256 is the external identity. Producer/verification/views/model-review evidence stays outside sealed payload. Native exact inventory/ancestry/freshness checks are required; schema validity grants no acceptance. External model review schema is #/$defs/modelReview.",
+  "$defs": {
+    "file": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512,
+          "pattern": "^[\\x20-\\x7e]+$",
+          "description": "Native validator additionally rejects absolute/traversal/device/alternate-stream/backslash/ambiguous paths, components longer than 128, file-directory collisions and case aliases. Forward-slash relative path only."
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "minLength": 64,
+          "maxLength": 64
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4294967296
+        }
+      },
+      "required": [
+        "path",
+        "sha256",
+        "bytes"
+      ],
+      "additionalProperties": false
+    },
+    "payloadFile": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512,
+          "pattern": "^[\\x20-\\x7e]+$",
+          "description": "Native validator additionally rejects absolute/traversal/device/alternate-stream/backslash/ambiguous paths, components longer than 128, file-directory collisions and case aliases. Forward-slash relative path only."
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "minLength": 64,
+          "maxLength": 64
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1073741824
+        }
+      },
+      "required": [
+        "path",
+        "sha256",
+        "bytes"
+      ],
+      "additionalProperties": false
+    },
+    "toolFile": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512,
+          "pattern": "^[\\x20-\\x7e]+$",
+          "description": "Native validator additionally rejects absolute/traversal/device/alternate-stream/backslash/ambiguous paths, components longer than 128, file-directory collisions and case aliases. Forward-slash relative path only."
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "minLength": 64,
+          "maxLength": 64
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 268435456
+        }
+      },
+      "required": [
+        "path",
+        "sha256",
+        "bytes"
+      ],
+      "additionalProperties": false
+    },
+    "coordinates": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "const": "xy-metres-z-up"
+        },
+        "target": {
+          "const": "gltf-metres-y-up"
+        },
+        "sourceToGltf": {
+          "const": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            -1,
+            0
+          ]
+        }
+      },
+      "required": [
+        "source",
+        "target",
+        "sourceToGltf"
+      ],
+      "additionalProperties": false
+    },
+    "numerics": {
+      "type": "object",
+      "properties": {
+        "linearTolerance": {
+          "type": "number",
+          "description": "Linear comparison tolerance in metres.",
+          "minimum": 1e-09,
+          "maximum": 0.01
+        },
+        "angularToleranceDegrees": {
+          "type": "number",
+          "description": "Angular comparison tolerance in degrees.",
+          "minimum": 0.001,
+          "maximum": 1
+        },
+        "maxCoordinateMagnitude": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Finite maximum absolute coordinate magnitude in metres.",
+          "maximum": 1000000
+        },
+        "minimumFeatureSize": {
+          "type": "number",
+          "description": "Smallest permitted authored feature in metres; must be at least ten times linearTolerance (native cross-field check).",
+          "minimum": 1e-08,
+          "maximum": 10
+        }
+      },
+      "required": [
+        "linearTolerance",
+        "angularToleranceDegrees",
+        "maxCoordinateMagnitude",
+        "minimumFeatureSize"
+      ],
+      "additionalProperties": false
+    },
+    "ancestry": {
+      "type": "object",
+      "properties": {
+        "modelAuthor": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]+$"
+        },
+        "planSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "minLength": 64,
+          "maxLength": 64
+        },
+        "designFingerprint": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "minLength": 64,
+          "maxLength": 64
+        },
+        "approvalSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "minLength": 64,
+          "maxLength": 64
+        },
+        "runtimeSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "minLength": 64,
+          "maxLength": 64
+        },
+        "catalogSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "minLength": 64,
+          "maxLength": 64
+        },
+        "constructionAttempt": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512,
+          "pattern": "^[\\x20-\\x7e]+$",
+          "description": "Native validator additionally rejects absolute/traversal/device/alternate-stream/backslash/ambiguous paths, components longer than 128, file-directory collisions and case aliases. Forward-slash relative path only."
+        },
+        "constructionJobSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "minLength": 64,
+          "maxLength": 64
+        },
+        "constructionReportSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "minLength": 64,
+          "maxLength": 64
+        },
+        "sourceSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "minLength": 64,
+          "maxLength": 64
+        },
+        "bundle": {
+          "type": "object",
+          "minProperties": 1,
+          "maxProperties": 32,
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_.-]+\\.py$",
+            "maxLength": 128
+          },
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$",
+            "minLength": 64,
+            "maxLength": 64
+          }
+        },
+        "toolchain": {
+          "$ref": "#/$defs/toolchain"
+        }
+      },
+      "required": [
+        "modelAuthor",
+        "planSha256",
+        "designFingerprint",
+        "approvalSha256",
+        "runtimeSha256",
+        "catalogSha256",
+        "constructionAttempt",
+        "constructionJobSha256",
+        "constructionReportSha256",
+        "sourceSha256",
+        "bundle",
+        "toolchain"
+      ],
+      "additionalProperties": false
+    },
+    "toolchain": {
+      "type": "object",
+      "properties": {
+        "blenderSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "minLength": 64,
+          "maxLength": 64
+        },
+        "blenderVersion": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]+$"
+        },
+        "gltfFiles": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/toolFile"
+          },
+          "minItems": 1,
+          "maxItems": 8192
+        }
+      },
+      "required": [
+        "blenderSha256",
+        "blenderVersion",
+        "gltfFiles"
+      ],
+      "additionalProperties": false
+    },
+    "modelReview": {
+      "type": "object",
+      "properties": {
+        "schemaVersion": {
+          "const": "bubo-floor-plan-model-review/v1"
+        },
+        "kind": {
+          "enum": [
+            "independent-model",
+            "human-model"
+          ]
+        },
+        "decision": {
+          "enum": [
+            "approved",
+            "rejected"
+          ]
+        },
+        "reviewer": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]+$"
+        },
+        "role": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]+$"
+        },
+        "human": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096,
+          "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]+$"
+        },
+        "packageSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "minLength": 64,
+          "maxLength": 64
+        },
+        "visualVerificationSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "minLength": 64,
+          "maxLength": 64
+        },
+        "collisionVerificationSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "minLength": 64,
+          "maxLength": 64
+        },
+        "viewsSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "minLength": 64,
+          "maxLength": 64
+        },
+        "independentReviewSha256": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$",
+              "minLength": 64,
+              "maxLength": 64
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/file"
+          },
+          "minItems": 1,
+          "maxItems": 4096
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "kind",
+        "decision",
+        "reviewer",
+        "role",
+        "human",
+        "reason",
+        "packageSha256",
+        "visualVerificationSha256",
+        "collisionVerificationSha256",
+        "viewsSha256",
+        "independentReviewSha256",
+        "artifacts"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "independent-model"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "human": {
+                "const": false
+              },
+              "independentReviewSha256": {
+                "type": "null"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "human": {
+                "const": true
+              },
+              "independentReviewSha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$",
+                "minLength": 64,
+                "maxLength": 64
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

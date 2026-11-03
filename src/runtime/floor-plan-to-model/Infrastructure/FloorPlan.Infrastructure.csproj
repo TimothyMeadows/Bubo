@@ -2,5 +2,6 @@
   <PropertyGroup><AssemblyName>Bubo.FloorPlan.Infrastructure</AssemblyName></PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../Application/FloorPlan.Application.csproj" />
+    <InternalsVisibleTo Include="Bubo.FloorPlan.Tests" />
   </ItemGroup>
 </Project>

@@ -16,6 +16,7 @@ def main():
     parser.add_argument('--case', choices=['single-storey', 'multi-storey', 'angled-courtyard', 'stacked-three-storey'], action='append')
     parser.add_argument('--no-render', action='store_true')
     parser.add_argument('--repeat', action='store_true')
+    parser.add_argument('--geometry-checks', type=int, help='Choose a finite fixture plan allowance before initialization/approval; never changes an existing version')
     args = parser.parse_args()
     cli = args.cli.resolve(strict=True)
     blender = args.blender.resolve(strict=True)
@@ -78,6 +79,10 @@ def main():
             plan_path = project/'inputs'/f'{asset}.json'
             plan_path.write_bytes((ROOT/'resources/floor-plan-to-model/examples-v2'/f'{name}.json').read_bytes())
             plan = json.loads(plan_path.read_bytes())
+            if args.geometry_checks is not None:
+                assert 1 <= args.geometry_checks <= 5_000_000
+                plan['budgets']['maxGeometryChecks'] = args.geometry_checks
+                plan_path.write_text(json.dumps(plan, indent=2)+'\n', encoding='utf-8')
             reference(plan_path)
             init = invoke(['floor-plan-to-model', 'init', *common, '--asset', asset, '--version', 'v1', '--plan', f'inputs/{asset}.json'])
             manifest = init['manifest']

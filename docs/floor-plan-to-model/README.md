@@ -27,3 +27,15 @@ The fixed review bundle uses eight Cycles samples for bounded diagnostic renders
 ![Actual two-storey cutaway with stairs, landings, railings and preserved upper-floor opening](constructed-multi-storey-section.png)
 
 ![Actual angled courtyard with empty interior and an open central courtyard](constructed-courtyard.png)
+
+## Delivered GLB packages
+
+These views render the delivered visual GLBs after separate fresh-process visual and collision imports. Each sealed package preserves the editable source, approved drawings, exact dimensional semantics and construction ancestry. The fixed import adapter verifies SDK geometry and materials before loading the exact delivered corner-normal vectors. Read the [export contract](../../resources/floor-plan-to-model/EXPORT.md) for verification and separate model-review decisions.
+
+The complete engineering run covers all three layouts and 23 views: every floor, four exterior elevations, roof, principal section and each stair connection. The images below are unchanged excerpts from that set. Eight-sample CPU noise and bright highlights limit appearance judgments; synthetic design/review assertions grant no real human architectural/model acceptance, engine behavior or runtime promotion.
+
+![Delivered single-storey GLB floor and entry aperture](exported-single-storey-floor.png)
+
+![Delivered two-storey GLB section through its stairs and slab opening](exported-multi-storey-stair-section.png)
+
+![Delivered angled-courtyard GLB floor with the courtyard preserved](exported-courtyard-floor.png)

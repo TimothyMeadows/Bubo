@@ -36,5 +36,8 @@ if (!constructionDomainOnly) { DomainTests.Run(); PreviewTests.Run(); SessionTes
 ConstructionContractTests.Run();
 ConstructionGeometryTests.Run();
 if (!constructionDomainOnly) ConstructionSessionTests.Run();
-Console.WriteLine(JsonSerializer.Serialize(new { status = Check.Failed == 0 ? "passed" : "failed", Check.Passed, Check.Failed, scope = "Native design and deterministic construction geometry; process/human fixtures synthetic, actual Blender evidence separate" }));
+if (!constructionDomainOnly) ExportInfrastructureTests.Run();
+if (!constructionDomainOnly) ExportContractTests.Run();
+if (!constructionDomainOnly) ExportOutputVerifierTests.Run();
+Console.WriteLine(JsonSerializer.Serialize(new { status = Check.Failed == 0 ? "passed" : "failed", Check.Passed, Check.Failed, scope = "Native design/construction and export contract fixtures; process/human assertions synthetic, actual Blender/export evidence separate" }));
 return Check.Failed == 0 ? 0 : 1;

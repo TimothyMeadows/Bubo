@@ -17,6 +17,10 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Public CLI contract checks failed.' }
     python -X utf8 tests/test-floor-plan-authoring.py
     if ($LASTEXITCODE -ne 0) { throw 'Floor-plan fixed authoring admission checks failed.' }
+    python -X utf8 tests/test-floor-plan-export-geometry.py
+    if ($LASTEXITCODE -ne 0) { throw 'Floor-plan portable geometry checks failed.' }
+    python -X utf8 tests/test-floor-plan-export-blender.py
+    if ($LASTEXITCODE -ne 0) { throw 'Floor-plan fixed export admission checks failed.' }
     python -X utf8 tests/test-floor-plan-cli.py --cli "src/Bubo.Cli/bin/$Configuration/net10.0/bubo.dll"
     if ($LASTEXITCODE -ne 0) { throw 'Floor-plan public CLI contract checks failed.' }
     python -X utf8 tests/test-media-provision.py
