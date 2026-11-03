@@ -136,7 +136,7 @@
     "resources/proof-to-model/toolchain.json": "782a538d5e07e555b10517248a5ee9bfd94532d7f1448bb89ead7e08db01cc0d",
     "resources/proof-to-model/toolchain.single-view-diagnostic.json": "02c640b31a29adf99528e3c3ee45c9904e274e8299a3f802d092b2a78a0a3c71",
     "resources/proof-to-model/TRIANGLE_ATLAS_CONTRACT.md": "178a30369b01f53289554f2445e3f295b0e422840d52261a093d13fc2924e5c5",
-    "resources/schematic-to-model/assembly-design.schema.json": "96542ccba9d8c242489e1c148bbc2f746c1395297ab713a8767e863ca45047f7",
+    "resources/schematic-to-model/assembly-design.schema.json": "2e683d804d56cc1f20dae7cc7b57c22255184512894312b3fd68ec327a40215b",
     "resources/schematic-to-model/examples/device.json": "3ba9bf7738e64d3f41d04266828cd870543da9b05876e1c54c5cb3d3668e21ee",
     "resources/schematic-to-model/examples/vehicle.json": "27a87417310e8f5d0a643db76cb5c2797fc389459eab3fe782737ef867e56099",
     "resources/schematic-to-model/examples/vessel.json": "bf0957284eaa1f54a5983096284f7c957882d1aa942d562336ffdb08bdcc5ba1",
