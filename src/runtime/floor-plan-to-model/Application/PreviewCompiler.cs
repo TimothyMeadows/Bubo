@@ -13,15 +13,17 @@ public sealed record PreviewCompilation(ValidationReport Validation, IReadOnlyDi
 
 public sealed class PreviewCompiler(IBuildingPlanValidator validator, IArchitecturalPreviewRenderer renderer)
 {
+    public static HashSet<string> RequiredSheets(BuildingPlan plan) => Enumerable.Range(1, plan.Storeys.Count).Select(i => $"floor-{i:D2}.svg")
+        .Concat(new[] { "roof-plan.svg", "elevation-north.svg", "elevation-south.svg", "elevation-east.svg", "elevation-west.svg", "section-principal.svg" })
+        .Concat(Enumerable.Range(1, plan.Stairs.Count).Select(i => $"section-stair-{i:D2}.svg"))
+        .Concat(plan.Construction is null ? [] : new[] { "construction-details.svg" }).ToHashSet(StringComparer.Ordinal);
     public PreviewCompilation Compile(BuildingPlan plan, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
         var validation = validator.Validate(plan, cancellationToken);
         if (!validation.IsValid) throw new PlanValidationException(validation);
         var sheets = renderer.Render(plan, cancellationToken);
-        var expected = Enumerable.Range(1, plan.Storeys.Count).Select(i => $"floor-{i:D2}.svg")
-            .Concat(new[] { "roof-plan.svg", "elevation-north.svg", "elevation-south.svg", "elevation-east.svg", "elevation-west.svg", "section-principal.svg" })
-            .Concat(Enumerable.Range(1, plan.Stairs.Count).Select(i => $"section-stair-{i:D2}.svg")).ToHashSet(StringComparer.Ordinal);
+        var expected = RequiredSheets(plan);
         if (!expected.SetEquals(sheets.Keys)) throw new InvalidOperationException("Preview must include every floor, roof, four elevations, principal section and every stair section");
         long total = 0;
         var hashes = new SortedDictionary<string, string>(StringComparer.Ordinal);

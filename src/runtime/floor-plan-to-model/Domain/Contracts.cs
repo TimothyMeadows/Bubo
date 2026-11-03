@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Bubo.FloorPlan.Domain;
 
 /// <summary>One complete, empty architectural building. XY metres, common datum, positive Z up.</summary>
@@ -19,6 +21,9 @@ public sealed record BuildingPlan
     public required List<StoreyPlan> Storeys { get; init; }
     public required List<StairPlan> Stairs { get; init; }
     public required List<RoofPlane> Roofs { get; init; }
+    /// <summary>Construction-ready v2 only; absent for immutable v1 design records.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public ConstructionProfile? Construction { get; init; }
 }
 
 public readonly record struct Point2(double X, double Y);

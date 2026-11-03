@@ -114,6 +114,8 @@ public sealed class BuildingPlanValidator : IBuildingPlanValidator
                 References();
                 if (issues.Count != 0) return Report();
                 ArchitecturalGeometry();
+                if (issues.Count == 0)
+                    foreach (var issue in ConstructionReadiness.ValidateProfile(plan, token, Debit)) Error(issue.Code, issue.Path, issue.Message);
             }
             catch (Exception error) when (error is WorkLimitException or GeometryCapacityException)
             {
@@ -124,7 +126,9 @@ public sealed class BuildingPlanValidator : IBuildingPlanValidator
 
         private void Basics()
         {
-            if (plan.SchemaVersion != "bubo-building-plan/v1") Error("schema-version", "schemaVersion", "Expected bubo-building-plan/v1.");
+            if (plan.SchemaVersion is not ("bubo-building-plan/v1" or "bubo-building-plan/v2")) Error("schema-version", "schemaVersion", "Expected bubo-building-plan/v1 or bubo-building-plan/v2.");
+            if (plan.SchemaVersion == "bubo-building-plan/v1" && plan.Construction is not null) Error("construction-version", "construction", "v1 is immutable design-only; author v2 explicitly instead of adding construction data to a v1 record.");
+            if (plan.SchemaVersion == "bubo-building-plan/v2" && plan.Construction is null) Error("construction-required", "construction", "v2 requires an explicit construction profile included in complete design approval.");
             if (plan.CoordinateSystem != "xy-metres-z-up") Error("coordinate-system", "coordinateSystem", "Only common XY metres, absolute Z-up elevations are supported.");
             Id(plan.Id, "id"); Text(plan.Name, "name"); Text(plan.Purpose, "purpose", 2048); Text(plan.ArchitecturalStyle, "architecturalStyle", 2048);
             if (plan.StyleSha256 is null || !Regex.IsMatch(plan.StyleSha256, "\\A[a-f0-9]{64}\\z", RegexOptions.CultureInvariant)) Error("invalid-style-hash", "styleSha256", "Exact lower-case SHA-256 style identity is required.");
@@ -140,7 +144,7 @@ public sealed class BuildingPlanValidator : IBuildingPlanValidator
             void Bound(long value, long maximum, string name) { if (value <= 0 || value > maximum) Error("invalid-budget", "budgets." + name, $"Budget must be in [1, {maximum}]."); }
             Bound(b.MaxStoreys, 64, "maxStoreys"); Bound(b.MaxRooms, 4096, "maxRooms"); Bound(b.MaxWalls, 16384, "maxWalls"); Bound(b.MaxOpenings, 16384, "maxOpenings");
             Bound(b.MaxStairs, 1024, "maxStairs"); Bound(b.MaxRoofPlanes, 4096, "maxRoofPlanes"); Bound(b.MaxVertices, 100_000, "maxVertices"); Bound(b.MaxGeometryChecks, 5_000_000, "maxGeometryChecks");
-            Bound(b.MaxPreviewBytes, 67_108_864, "maxPreviewBytes"); Bound(b.MaxExportBytes, 1_073_741_824, "maxExportBytes"); Bound(b.MaxGeneratedTriangles, 10_000_000, "maxGeneratedTriangles");
+            Bound(b.MaxPreviewBytes, 67_108_864, "maxPreviewBytes"); Bound(b.MaxExportBytes, 1_073_741_824, "maxExportBytes"); Bound(b.MaxGeneratedTriangles, plan.SchemaVersion == "bubo-building-plan/v2" ? 4_000_000 : 10_000_000, "maxGeneratedTriangles");
         }
 
         private void Structure()

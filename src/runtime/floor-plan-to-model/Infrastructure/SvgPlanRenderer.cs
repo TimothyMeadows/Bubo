@@ -48,7 +48,41 @@ public sealed class SvgPlanRenderer : IArchitecturalPreviewRenderer
         var stairs = plan.Stairs.OrderBy(s => s.Id, StringComparer.Ordinal).ToList();
         for (var i = 0; i < stairs.Count; i++)
             Add($"section-stair-{i + 1:00}.svg", Section(plan, stairs[i].Id, stairs[i].Start, Unit(Sub(stairs[i].End, stairs[i].Start)), stairs[i], budget, cancellationToken));
+        if (plan.Construction is not null) Add("construction-details.svg", ConstructionDetails(plan, budget, cancellationToken));
         return result;
+    }
+
+    private static Sheet ConstructionDetails(BuildingPlan plan, PreviewBudget budget, CancellationToken ct)
+    {
+        var profile = plan.Construction!;
+        var sheet = new Sheet(plan, "construction-details", "Approved architectural construction details", "All dimensions are explicit source values; metres unless labeled otherwise", "construction-details", budget);
+        sheet.Root.SetAttributeValue("data-plan-schema", plan.SchemaVersion);
+        void Note(double x, double y, string text, double size) => sheet.Text(x, y, text, size, "#243b42");
+        Note(110, 190, "DETAILS INCLUDED IN WHOLE-BUILDING REVIEW", 18);
+        Note(110, 230, "Roof vertices are underside elevations; thickness extends upward.", 14);
+        var roofY = 350.0; var scale = Math.Min(350.0, 100.0 / profile.RoofThickness);
+        sheet.Line(new(150, roofY), new(650, roofY), "#243b42", 3);
+        sheet.Line(new(150, roofY - profile.RoofThickness * scale), new(650, roofY - profile.RoofThickness * scale), "#243b42", 3);
+        sheet.Dimension(new(700, roofY), new(700, roofY - profile.RoofThickness * scale), profile.RoofThickness, "roof-thickness");
+        Note(150, roofY + 40, "Roof thickness: " + E(profile.RoofThickness) + " m vertically", 14);
+        Note(110, 490, "Door/window frames stay outside the nominal clear aperture.", 14);
+        Note(110, 530, "Door opening angle: " + E(profile.DoorOpenAngleDegrees) + " degrees", 14);
+        Note(110, 570, "Railing height: " + E(profile.RailingHeight) + " m; clear baluster gap: " + E(profile.BalusterGap) + " m", 14);
+        Note(110, 610, profile.CeilingThickness == 0 ? "Ceilings share structural undersides; no duplicate panel." : "Explicit ceiling panels: " + E(profile.CeilingThickness) + " m", 14);
+        foreach (var property in typeof(ConstructionProfile).GetProperties().OrderBy(p => p.Name, StringComparer.Ordinal))
+        {
+            ct.ThrowIfCancellationRequested();
+            var value = property.GetValue(profile);
+            var text = value is double number ? E(number) : Convert.ToString(value, CultureInfo.InvariantCulture)!;
+            sheet.Row("construction-parameter", property.Name + ": " + text, ("data-parameter", property.Name), ("data-value", text));
+        }
+        foreach (var stair in plan.Stairs.OrderBy(s => s.Id, StringComparer.Ordinal))
+        {
+            var physicalWidth = stair.Width + 2 * (profile.RailingOffset + Math.Max(profile.RailThickness, profile.BalusterThickness));
+            sheet.Row("stair-construction-width", stair.Id + ": clear width " + E(stair.Width) + " m; physical railing envelope " + E(physicalWidth) + " m",
+                ("data-stair-id", stair.Id), ("data-clear-width", E(stair.Width)), ("data-physical-width", E(physicalWidth)));
+        }
+        return sheet;
     }
 
     private static Sheet Floor(BuildingPlan plan, StoreyPlan floor, Bounds bounds, PreviewBudget budget, CancellationToken ct)
@@ -107,8 +141,23 @@ public sealed class SvgPlanRenderer : IArchitecturalPreviewRenderer
                     var hinge = opening.Pivot == DoorPivot.Start ? oa : ob; var closed = opening.Pivot == DoorPivot.Start ? ob : oa;
                     var side = opening.Swing == DoorSwing.Left ? 1 : -1;
                     var opened = Add(hinge, Mul(new Point2(-unit.Y, unit.X), side * opening.Width));
+                    var leafWidth = opening.Width;
+                    if (plan.Construction is { } detail)
+                    {
+                        var normal = new Point2(-unit.Y, unit.X);
+                        var inset = -wall.Thickness / 2 + detail.DoorRevealDepth + detail.DoorLeafThickness / 2;
+                        var start = Add(Add(oa, Mul(unit, detail.DoorLeafGap)), Mul(normal, inset));
+                        var end = Add(Sub(ob, Mul(unit, detail.DoorLeafGap)), Mul(normal, inset));
+                        hinge = opening.Pivot == DoorPivot.Start ? start : end; closed = opening.Pivot == DoorPivot.Start ? end : start;
+                        var angle = detail.DoorOpenAngleDegrees * Math.PI / 180 * side * (opening.Pivot == DoorPivot.Start ? 1 : -1);
+                        var vector = Sub(closed, hinge);
+                        opened = Add(hinge, new(vector.X * Math.Cos(angle) - vector.Y * Math.Sin(angle), vector.X * Math.Sin(angle) + vector.Y * Math.Cos(angle)));
+                        leafWidth -= 2 * detail.DoorLeafGap;
+                        o.SetAttributeValue("data-pivot-xy", E(hinge.X) + "," + E(hinge.Y));
+                        o.SetAttributeValue("data-open-angle-degrees", E(detail.DoorOpenAngleDegrees));
+                    }
                     o.Add(LineElement(map(hinge), map(opened), "#985d21", 1.5));
-                    var hp = map(hinge); var cp = map(closed); var ep = map(opened); var radius = opening.Width * PlanScale(bounds);
+                    var hp = map(hinge); var cp = map(closed); var ep = map(opened); var radius = leafWidth * PlanScale(bounds);
                     o.Add(PathElement($"M {P(cp)} A {F(radius)} {F(radius)} 0 0 {(Cross(Sub(cp, hp), Sub(ep, hp)) > 0 ? 1 : 0)} {P(ep)}", "none", "#b7834b", 1));
                 }
                 var label = map(Lerp(oa, ob, 0.5));

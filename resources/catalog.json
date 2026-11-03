@@ -118,6 +118,16 @@
     "resources/proof-to-model/source-set.schema.json": "20627565dd93b940e35d3e807a61c169665233e8a05ea0ce8fa8b74034156477",
     "resources/proof-to-model/toolchain.json": "782a538d5e07e555b10517248a5ee9bfd94532d7f1448bb89ead7e08db01cc0d",
     "resources/proof-to-model/toolchain.single-view-diagnostic.json": "02c640b31a29adf99528e3c3ee45c9904e274e8299a3f802d092b2a78a0a3c71",
-    "resources/proof-to-model/TRIANGLE_ATLAS_CONTRACT.md": "178a30369b01f53289554f2445e3f295b0e422840d52261a093d13fc2924e5c5"
+    "resources/proof-to-model/TRIANGLE_ATLAS_CONTRACT.md": "178a30369b01f53289554f2445e3f295b0e422840d52261a093d13fc2924e5c5",
+    "resources/floor-plan-to-model/CONSTRUCTION.md": "dfc0f3321c41223308aee8221bc960cc610d6c621d7f097f32f8696da330c81d",
+    "resources/floor-plan-to-model/blender/README.md": "08cd842d1ff737c7dfc9f762bd433598a6250aecd028faea512b8114178a5aff",
+    "resources/floor-plan-to-model/blender/admission.py": "3efc2c8f075fcc91142d8239696838a0474eb66441cc314921860a8c93a221fb",
+    "resources/floor-plan-to-model/blender/author.py": "a2f29c89ee00dbfdfd8b6d4b14beba54f1e0e976be47a399148ae31353687700",
+    "resources/floor-plan-to-model/blender/review.py": "a08e706a5c1beb3f46326c113e994c198e18aba1dd54cdd1830d1db18f24e3cc",
+    "resources/floor-plan-to-model/building-plan-v2.schema.json": "b3838505b7bf40dae6271ba47ce1445a3d58bd184c5be23bff58a295355d11ca",
+    "resources/floor-plan-to-model/examples-v2/angled-courtyard.json": "e69ccda00199fe957f6b3573dd1a4a40607f718e1ac421acfb99d7304b80ec52",
+    "resources/floor-plan-to-model/examples-v2/multi-storey.json": "46264dd393305b9b37b4dcb5be41c73fdfc3d1c97fdc30edd14faaa6a15055fe",
+    "resources/floor-plan-to-model/examples-v2/single-storey.json": "ae6867c7d377e26d62cdf5bb2cf94dbc356c3c9ec3687266a301ef51ae62a689",
+    "resources/floor-plan-to-model/examples-v2/stacked-three-storey.json": "20a9b825b4da1b727c6ba639852762fadc6f4d61bbe1659608b5114346ce77fd"
   }
 }

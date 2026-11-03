@@ -26,6 +26,10 @@ public static class StrictPlanJson
         if (bytes.Length is < 2 or > MaximumInputBytes) throw new InvalidOperationException("Missing or oversized native design JSON");
         using var document = JsonDocument.Parse(bytes.ToArray(), new JsonDocumentOptions { MaxDepth = 64 });
         Check(document.RootElement);
+        if (typeof(T) == typeof(BuildingPlan) && document.RootElement.ValueKind == JsonValueKind.Object
+            && document.RootElement.TryGetProperty("schemaVersion", out var version) && version.ValueKind == JsonValueKind.String
+            && version.GetString() == "bubo-building-plan/v1" && document.RootElement.TryGetProperty("construction", out _))
+            throw new JsonException("The closed v1 design contract has no construction field; author an explicit v2 candidate");
         return JsonSerializer.Deserialize<T>(bytes, Options) ?? throw new InvalidOperationException("Null native design JSON");
     }
     public static T Read<T>(string file)

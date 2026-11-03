@@ -1,0 +1,306 @@
+{
+  "schemaVersion": "bubo-building-plan/v2",
+  "id": "building-example",
+  "name": "Construction-ready Empty masonry building",
+  "purpose": "Architectural planning of an empty navigable game building",
+  "architecturalStyle": "Restrained masonry with flat parapet roof",
+  "styleSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "coordinateSystem": "xy-metres-z-up",
+  "numerics": {
+    "linearTolerance": 1E-06,
+    "angularToleranceDegrees": 0.01,
+    "maxCoordinateMagnitude": 10000,
+    "minimumFeatureSize": 0.001
+  },
+  "player": {
+    "radius": 0.3,
+    "height": 1.8,
+    "maxStepHeight": 0.22,
+    "minLandingDepth": 1.2
+  },
+  "budgets": {
+    "maxStoreys": 8,
+    "maxRooms": 64,
+    "maxWalls": 256,
+    "maxOpenings": 256,
+    "maxStairs": 16,
+    "maxRoofPlanes": 64,
+    "maxVertices": 10000,
+    "maxGeometryChecks": 1000000,
+    "maxPreviewBytes": 4194304,
+    "maxExportBytes": 16777216,
+    "maxGeneratedTriangles": 100000
+  },
+  "entryRoomId": "ground-room",
+  "materials": [
+    {
+      "id": "masonry",
+      "name": "Warm masonry",
+      "color": "#C7B9A1",
+      "roughness": 0.8,
+      "metallic": 0
+    },
+    {
+      "id": "plaster",
+      "name": "Warm pale ceiling plaster",
+      "color": "#ECE8DE",
+      "roughness": 0.85,
+      "metallic": 0
+    },
+    {
+      "id": "timber",
+      "name": "Solid brown timber doors",
+      "color": "#6D4D30",
+      "roughness": 0.65,
+      "metallic": 0
+    },
+    {
+      "id": "frame-paint",
+      "name": "Pale painted frames",
+      "color": "#DED6C8",
+      "roughness": 0.55,
+      "metallic": 0
+    },
+    {
+      "id": "clear-glass",
+      "name": "Pale blue transmissive glazing",
+      "color": "#C9E1EA",
+      "roughness": 0.05,
+      "metallic": 0
+    },
+    {
+      "id": "rail-metal",
+      "name": "Dark metal rails",
+      "color": "#56595B",
+      "roughness": 0.4,
+      "metallic": 0.65
+    }
+  ],
+  "detailProfiles": [
+    {
+      "id": "restrained-detail",
+      "name": "Low plinth and cornice",
+      "plinthHeight": 0.2,
+      "plinthProjection": 0.03,
+      "corniceHeight": 0.12,
+      "corniceProjection": 0.08,
+      "eaveOverhang": 0.2,
+      "fasciaDepth": 0.12
+    }
+  ],
+  "storeys": [
+    {
+      "id": "ground",
+      "name": "ground storey",
+      "elevation": 0,
+      "height": 3,
+      "slabThickness": 0.2,
+      "floorMaterialId": "masonry",
+      "footprint": {
+        "outer": [
+          {
+            "x": 0,
+            "y": 0
+          },
+          {
+            "x": 10,
+            "y": 0
+          },
+          {
+            "x": 10,
+            "y": 8
+          },
+          {
+            "x": 0,
+            "y": 8
+          }
+        ],
+        "holes": []
+      },
+      "rooms": [
+        {
+          "id": "ground-room",
+          "name": "Empty studio",
+          "boundary": {
+            "outer": [
+              {
+                "x": 0.1,
+                "y": 0.1
+              },
+              {
+                "x": 9.9,
+                "y": 0.1
+              },
+              {
+                "x": 9.9,
+                "y": 7.9
+              },
+              {
+                "x": 0.1,
+                "y": 7.9
+              }
+            ],
+            "holes": []
+          },
+          "requiresAccess": true
+        }
+      ],
+      "walls": [
+        {
+          "id": "ground-wall-0-0",
+          "start": {
+            "x": 0,
+            "y": 0
+          },
+          "end": {
+            "x": 10,
+            "y": 0
+          },
+          "thickness": 0.2,
+          "height": 3,
+          "materialId": "masonry",
+          "detailProfileId": "restrained-detail",
+          "leftRoomId": "ground-room",
+          "rightRoomId": null,
+          "openings": [
+            {
+              "id": "ground-entry",
+              "kind": "door",
+              "offset": 1,
+              "width": 1.2,
+              "sill": 0,
+              "head": 2.2,
+              "pivot": "start",
+              "swing": "left"
+            }
+          ]
+        },
+        {
+          "id": "ground-wall-0-1",
+          "start": {
+            "x": 10,
+            "y": 0
+          },
+          "end": {
+            "x": 10,
+            "y": 8
+          },
+          "thickness": 0.2,
+          "height": 3,
+          "materialId": "masonry",
+          "detailProfileId": "restrained-detail",
+          "leftRoomId": "ground-room",
+          "rightRoomId": null,
+          "openings": [
+            {
+              "id": "ground-window",
+              "kind": "window",
+              "offset": 2,
+              "width": 1.4,
+              "sill": 0.9,
+              "head": 2.1,
+              "pivot": null,
+              "swing": null
+            }
+          ]
+        },
+        {
+          "id": "ground-wall-0-2",
+          "start": {
+            "x": 10,
+            "y": 8
+          },
+          "end": {
+            "x": 0,
+            "y": 8
+          },
+          "thickness": 0.2,
+          "height": 3,
+          "materialId": "masonry",
+          "detailProfileId": "restrained-detail",
+          "leftRoomId": "ground-room",
+          "rightRoomId": null,
+          "openings": []
+        },
+        {
+          "id": "ground-wall-0-3",
+          "start": {
+            "x": 0,
+            "y": 8
+          },
+          "end": {
+            "x": 0,
+            "y": 0
+          },
+          "thickness": 0.2,
+          "height": 3,
+          "materialId": "masonry",
+          "detailProfileId": "restrained-detail",
+          "leftRoomId": "ground-room",
+          "rightRoomId": null,
+          "openings": []
+        }
+      ],
+      "slabOpenings": []
+    }
+  ],
+  "stairs": [],
+  "roofs": [
+    {
+      "id": "flat-roof",
+      "vertices": [
+        {
+          "x": -0.3,
+          "y": -0.3,
+          "z": 3
+        },
+        {
+          "x": 10.3,
+          "y": -0.3,
+          "z": 3
+        },
+        {
+          "x": 10.3,
+          "y": 8.3,
+          "z": 3
+        },
+        {
+          "x": -0.3,
+          "y": 8.3,
+          "z": 3
+        }
+      ],
+      "materialId": "masonry",
+      "detailProfileId": "restrained-detail"
+    }
+  ],
+  "construction": {
+    "roofThickness": 0.18,
+    "ceilingThickness": 0,
+    "doorLeafThickness": 0.04,
+    "doorLeafGap": 0.025,
+    "doorFrameWidth": 0.06,
+    "doorFrameDepth": 0.025,
+    "doorRevealDepth": 0.04,
+    "doorOpenAngleDegrees": 90,
+    "windowFrameWidth": 0.06,
+    "windowFrameDepth": 0.025,
+    "glassThickness": 0.012,
+    "railingHeight": 1,
+    "railThickness": 0.05,
+    "balusterThickness": 0.03,
+    "balusterGap": 0.12,
+    "railingOffset": 0.02,
+    "glassTransmission": 0.95,
+    "glassIor": 1.45,
+    "ceilingMaterialId": "plaster",
+    "doorMaterialId": "timber",
+    "frameMaterialId": "frame-paint",
+    "glassMaterialId": "clear-glass",
+    "railingMaterialId": "rail-metal",
+    "maxMeshes": 10000,
+    "maxConstructionVertices": 300000,
+    "maxArrangementCells": 20000,
+    "maxJobBytes": 16777216
+  }
+}
