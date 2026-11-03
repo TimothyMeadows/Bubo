@@ -3,6 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="../Bubo.Host/Bubo.Host.csproj" />
     <ProjectReference Include="../runtime/floor-plan-to-model/Infrastructure/FloorPlan.Infrastructure.csproj" />
+    <ProjectReference Include="../runtime/schematic-to-model/Infrastructure/Schematic.Infrastructure.csproj" />
     <ProjectReference Include="../media/Infrastructure/Media.Infrastructure.csproj" />
     <ProjectReference Include="../runtime/proof-to-model/Infrastructure/ProofToModel.Infrastructure.csproj" />
     <ProjectReference Include="../runtime/model-to-animation/Infrastructure/Motion.Infrastructure.csproj" />

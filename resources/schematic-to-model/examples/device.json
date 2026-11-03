@@ -1,0 +1,732 @@
+{
+  "schemaVersion": "bubo-assembly-design/v1",
+  "id": "device-example",
+  "name": "device-example",
+  "purpose": "Owned schematic design fixture for a mechanically coherent game asset",
+  "styleSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "coordinateSystem": "xy-metres-z-up",
+  "numerics": {
+    "linearTolerance": 1E-06,
+    "angularToleranceDegrees": 0.01,
+    "minimumFeatureSize": 0.0001,
+    "maxCoordinateMagnitude": 10000
+  },
+  "budgets": {
+    "maxPartDefinitions": 128,
+    "maxInstances": 1024,
+    "maxFeatures": 4096,
+    "maxRoutePoints": 4096,
+    "maxDrawings": 256,
+    "maxValidationChecks": 1000000,
+    "maxPreviewBytes": 16777216,
+    "maxExportBytes": 268435456,
+    "maxGeneratedTriangles": 500000,
+    "maxMotionSamples": 10000
+  },
+  "observations": [
+    {
+      "id": "design-assumption",
+      "kind": "assumed",
+      "description": "Dimensions and construction are authored fixture choices; references do not determine scale",
+      "source": "Owned engineering fixture"
+    },
+    {
+      "id": "design-simplification",
+      "kind": "simplified",
+      "description": "Bounded demonstration assembly; unlisted commercial systems are excluded from this explicit design, not silently omitted during construction",
+      "source": "Synthetic fixture scope"
+    }
+  ],
+  "materials": [
+    {
+      "id": "steel",
+      "name": "Brushed steel",
+      "color": "#708090",
+      "roughness": 0.45,
+      "metallic": 0.8
+    }
+  ],
+  "parts": [
+    {
+      "id": "shell-definition",
+      "name": "shell-definition",
+      "purpose": "Independently authored mechanical fixture component",
+      "detail": "Approved smooth surfaces and individually addressable hardware; explicit idealized design, no manufacturing certification",
+      "materialId": "steel",
+      "kind": "rigid",
+      "size": {
+        "x": 0.8,
+        "y": 0.5,
+        "z": 0.2
+      },
+      "features": [
+        {
+          "id": "solid",
+          "kind": "box",
+          "operation": "add",
+          "frame": {
+            "origin": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          },
+          "parameters": {
+            "width": 0.8,
+            "depth": 0.5,
+            "height": 0.2
+          },
+          "profile": [],
+          "path": [],
+          "sections": []
+        },
+        {
+          "id": "cavity",
+          "kind": "box",
+          "operation": "subtract",
+          "frame": {
+            "origin": {
+              "x": 0.03,
+              "y": 0.03,
+              "z": 0.02
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          },
+          "parameters": {
+            "width": 0.74,
+            "depth": 0.44,
+            "height": 0.2
+          },
+          "profile": [],
+          "path": [],
+          "sections": []
+        }
+      ],
+      "interfaces": [
+        {
+          "id": "lid-hinge",
+          "name": "lid-hinge",
+          "frame": {
+            "origin": {
+              "x": 0,
+              "y": 0,
+              "z": 0.2
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          }
+        }
+      ],
+      "terminals": [],
+      "flexible": null
+    },
+    {
+      "id": "lid-definition",
+      "name": "lid-definition",
+      "purpose": "Independently authored mechanical fixture component",
+      "detail": "Approved smooth surfaces and individually addressable hardware; explicit idealized design, no manufacturing certification",
+      "materialId": "steel",
+      "kind": "rigid",
+      "size": {
+        "x": 0.8,
+        "y": 0.5,
+        "z": 0.03
+      },
+      "features": [
+        {
+          "id": "lid-extrusion",
+          "kind": "extrude",
+          "operation": "add",
+          "frame": {
+            "origin": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          },
+          "parameters": {
+            "depth": 0.03
+          },
+          "profile": [
+            {
+              "x": 0,
+              "y": 0
+            },
+            {
+              "x": 0.8,
+              "y": 0
+            },
+            {
+              "x": 0.8,
+              "y": 0.5
+            },
+            {
+              "x": 0,
+              "y": 0.5
+            }
+          ],
+          "path": [],
+          "sections": []
+        }
+      ],
+      "interfaces": [
+        {
+          "id": "hinge",
+          "name": "hinge",
+          "frame": {
+            "origin": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          }
+        }
+      ],
+      "terminals": [],
+      "flexible": null
+    },
+    {
+      "id": "battery-definition",
+      "name": "battery-definition",
+      "purpose": "Independently authored mechanical fixture component",
+      "detail": "Approved smooth surfaces and individually addressable hardware; explicit idealized design, no manufacturing certification",
+      "materialId": "steel",
+      "kind": "rigid",
+      "size": {
+        "x": 0.1,
+        "y": 0.1,
+        "z": 0.05
+      },
+      "features": [
+        {
+          "id": "solid",
+          "kind": "box",
+          "operation": "add",
+          "frame": {
+            "origin": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          },
+          "parameters": {
+            "width": 0.1,
+            "depth": 0.1,
+            "height": 0.05
+          },
+          "profile": [],
+          "path": [],
+          "sections": []
+        }
+      ],
+      "interfaces": [
+        {
+          "id": "mount",
+          "name": "mount",
+          "frame": {
+            "origin": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          }
+        }
+      ],
+      "terminals": [
+        {
+          "id": "positive",
+          "name": "Positive power",
+          "kind": "power",
+          "frame": {
+            "origin": {
+              "x": 0.02,
+              "y": 0.02,
+              "z": 0.02
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          }
+        }
+      ],
+      "flexible": null
+    },
+    {
+      "id": "motor-definition",
+      "name": "motor-definition",
+      "purpose": "Independently authored mechanical fixture component",
+      "detail": "Approved smooth surfaces and individually addressable hardware; explicit idealized design, no manufacturing certification",
+      "materialId": "steel",
+      "kind": "rigid",
+      "size": {
+        "x": 0.1,
+        "y": 0.1,
+        "z": 0.08
+      },
+      "features": [
+        {
+          "id": "motor-cylinder",
+          "kind": "cylinder",
+          "operation": "add",
+          "frame": {
+            "origin": {
+              "x": 0.05,
+              "y": 0.05,
+              "z": 0
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          },
+          "parameters": {
+            "radius": 0.05,
+            "length": 0.08,
+            "segments": 32
+          },
+          "profile": [],
+          "path": [],
+          "sections": []
+        }
+      ],
+      "interfaces": [
+        {
+          "id": "mount",
+          "name": "mount",
+          "frame": {
+            "origin": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          }
+        }
+      ],
+      "terminals": [
+        {
+          "id": "power",
+          "name": "Motor power",
+          "kind": "power",
+          "frame": {
+            "origin": {
+              "x": 0.02,
+              "y": 0.02,
+              "z": 0.02
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          }
+        }
+      ],
+      "flexible": null
+    },
+    {
+      "id": "screw-definition",
+      "name": "screw-definition",
+      "purpose": "Independently authored mechanical fixture component",
+      "detail": "Approved smooth surfaces and individually addressable hardware; explicit idealized design, no manufacturing certification",
+      "materialId": "steel",
+      "kind": "rigid",
+      "size": {
+        "x": 0.012,
+        "y": 0.012,
+        "z": 0.03
+      },
+      "features": [
+        {
+          "id": "screw-shaft",
+          "kind": "cylinder",
+          "operation": "add",
+          "frame": {
+            "origin": {
+              "x": 0.006,
+              "y": 0.006,
+              "z": 0
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          },
+          "parameters": {
+            "radius": 0.006,
+            "length": 0.03,
+            "segments": 16
+          },
+          "profile": [],
+          "path": [],
+          "sections": []
+        }
+      ],
+      "interfaces": [
+        {
+          "id": "mount",
+          "name": "mount",
+          "frame": {
+            "origin": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          }
+        }
+      ],
+      "terminals": [],
+      "flexible": null
+    },
+    {
+      "id": "wire-definition",
+      "name": "wire-definition",
+      "purpose": "Independently authored mechanical fixture component",
+      "detail": "Approved smooth surfaces and individually addressable hardware; explicit idealized design, no manufacturing certification",
+      "materialId": "steel",
+      "kind": "wire",
+      "size": {
+        "x": 0.23,
+        "y": 0.01,
+        "z": 0.01
+      },
+      "features": [
+        {
+          "id": "wire-sweep",
+          "kind": "sweep",
+          "operation": "add",
+          "frame": {
+            "origin": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          },
+          "parameters": {
+            "radius": 0.003,
+            "segments": 8
+          },
+          "profile": [],
+          "path": [
+            {
+              "x": 0.005,
+              "y": 0.005,
+              "z": 0.005
+            },
+            {
+              "x": 0.225,
+              "y": 0.005,
+              "z": 0.005
+            }
+          ],
+          "sections": []
+        }
+      ],
+      "interfaces": [],
+      "terminals": [],
+      "flexible": {
+        "restLength": 0.22,
+        "minimumLength": 0.22,
+        "maximumLength": 0.2222,
+        "minimumBendRadius": 0.015,
+        "maximumStretchRatio": 1.01,
+        "skinSegments": 24
+      }
+    }
+  ],
+  "subassemblies": [
+    {
+      "id": "assembly",
+      "name": "Complete assembly",
+      "parentId": null,
+      "frame": {
+        "origin": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "rotationDegrees": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        }
+      }
+    }
+  ],
+  "instances": [
+    {
+      "id": "shell",
+      "partId": "shell-definition",
+      "parentId": "assembly",
+      "frame": {
+        "origin": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "rotationDegrees": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        }
+      },
+      "explodeOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "lid",
+      "partId": "lid-definition",
+      "parentId": "assembly",
+      "frame": {
+        "origin": {
+          "x": 0,
+          "y": 0,
+          "z": 0.2
+        },
+        "rotationDegrees": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        }
+      },
+      "explodeOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0.6
+      }
+    },
+    {
+      "id": "battery",
+      "partId": "battery-definition",
+      "parentId": "assembly",
+      "frame": {
+        "origin": {
+          "x": 0.1,
+          "y": 0.1,
+          "z": 0.05
+        },
+        "rotationDegrees": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        }
+      },
+      "explodeOffset": {
+        "x": -0.3,
+        "y": 0,
+        "z": 0.25
+      }
+    },
+    {
+      "id": "motor",
+      "partId": "motor-definition",
+      "parentId": "assembly",
+      "frame": {
+        "origin": {
+          "x": 0.32,
+          "y": 0.1,
+          "z": 0.05
+        },
+        "rotationDegrees": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        }
+      },
+      "explodeOffset": {
+        "x": 0.3,
+        "y": 0,
+        "z": 0.25
+      }
+    },
+    {
+      "id": "screw-left",
+      "partId": "screw-definition",
+      "parentId": "assembly",
+      "frame": {
+        "origin": {
+          "x": 0.015,
+          "y": 0.015,
+          "z": 0.18
+        },
+        "rotationDegrees": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        }
+      },
+      "explodeOffset": {
+        "x": -0.15,
+        "y": -0.2,
+        "z": 0.45
+      }
+    },
+    {
+      "id": "screw-right",
+      "partId": "screw-definition",
+      "parentId": "assembly",
+      "frame": {
+        "origin": {
+          "x": 0.77,
+          "y": 0.015,
+          "z": 0.18
+        },
+        "rotationDegrees": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        }
+      },
+      "explodeOffset": {
+        "x": 0.15,
+        "y": -0.2,
+        "z": 0.45
+      }
+    },
+    {
+      "id": "power-wire",
+      "partId": "wire-definition",
+      "parentId": "assembly",
+      "frame": {
+        "origin": {
+          "x": 0.115,
+          "y": 0.115,
+          "z": 0.065
+        },
+        "rotationDegrees": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        }
+      },
+      "explodeOffset": {
+        "x": 0,
+        "y": -0.3,
+        "z": 0.25
+      }
+    }
+  ],
+  "joints": [
+    {
+      "id": "lid-joint",
+      "kind": "hinge",
+      "parentInstanceId": "shell",
+      "childInstanceId": "lid",
+      "parentInterfaceId": "lid-hinge",
+      "childInterfaceId": "hinge",
+      "axis": {
+        "x": 1,
+        "y": 0,
+        "z": 0
+      },
+      "minimum": 0,
+      "maximum": 110,
+      "rest": 0,
+      "pitch": 0,
+      "clearance": 0.001
+    }
+  ],
+  "mechanisms": [],
+  "routes": [
+    {
+      "id": "power-route",
+      "instanceId": "power-wire",
+      "points": [
+        {
+          "x": 0.12,
+          "y": 0.12,
+          "z": 0.07
+        },
+        {
+          "x": 0.34,
+          "y": 0.12,
+          "z": 0.07
+        }
+      ],
+      "closed": false,
+      "from": {
+        "instanceId": "battery",
+        "portId": "positive"
+      },
+      "to": {
+        "instanceId": "motor",
+        "portId": "power"
+      }
+    }
+  ],
+  "connections": [
+    {
+      "id": "motor-power-connection",
+      "kind": "power",
+      "from": {
+        "instanceId": "battery",
+        "portId": "positive"
+      },
+      "to": {
+        "instanceId": "motor",
+        "portId": "power"
+      },
+      "routeId": "power-route"
+    }
+  ],
+  "sections": [
+    {
+      "id": "device-internal-section",
+      "axis": "z",
+      "offset": 0.1
+    }
+  ]
+}

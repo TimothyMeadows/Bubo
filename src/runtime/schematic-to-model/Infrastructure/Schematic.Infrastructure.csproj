@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><AssemblyName>Bubo.Schematic.Infrastructure</AssemblyName></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Application/Schematic.Application.csproj" />
+    <ProjectReference Include="../../asset-production/AssetProduction.csproj" />
+    <InternalsVisibleTo Include="Bubo.Schematic.Tests" />
+  </ItemGroup>
+</Project>

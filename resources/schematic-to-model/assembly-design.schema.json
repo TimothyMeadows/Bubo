@@ -1,0 +1,1397 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:bubo:assembly-design:v1",
+  "title": "Bubo schematic assembly design",
+  "description": "Closed declaration shape. The native validator additionally checks numerical coherence, identities, references, geometry declarations, connectivity and budgets; this schema does not certify actual construction or motion.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": "bubo-assembly-design/v1"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$",
+      "not": {
+        "const": ".."
+      }
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048,
+      "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+    },
+    "purpose": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048,
+      "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+    },
+    "styleSha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "coordinateSystem": {
+      "const": "xy-metres-z-up"
+    },
+    "numerics": {
+      "$ref": "#/$defs/numerics"
+    },
+    "budgets": {
+      "$ref": "#/$defs/budgets"
+    },
+    "observations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/observation"
+      },
+      "maxItems": 4096,
+      "minItems": 1
+    },
+    "materials": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/material"
+      },
+      "maxItems": 4096,
+      "minItems": 1
+    },
+    "parts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/part"
+      },
+      "maxItems": 4096,
+      "minItems": 1
+    },
+    "subassemblies": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/subassembly"
+      },
+      "maxItems": 32768,
+      "minItems": 1
+    },
+    "instances": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/instance"
+      },
+      "maxItems": 32768,
+      "minItems": 1
+    },
+    "joints": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/joint"
+      },
+      "maxItems": 32768,
+      "minItems": 0
+    },
+    "mechanisms": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/mechanism"
+      },
+      "maxItems": 32768,
+      "minItems": 0
+    },
+    "routes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/route"
+      },
+      "maxItems": 32768,
+      "minItems": 0
+    },
+    "connections": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/connection"
+      },
+      "maxItems": 32768,
+      "minItems": 0
+    },
+    "sections": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/section"
+      },
+      "maxItems": 128,
+      "minItems": 1
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "id",
+    "name",
+    "purpose",
+    "styleSha256",
+    "coordinateSystem",
+    "numerics",
+    "budgets",
+    "observations",
+    "materials",
+    "parts",
+    "subassemblies",
+    "instances",
+    "joints",
+    "mechanisms",
+    "routes",
+    "connections",
+    "sections"
+  ],
+  "$defs": {
+    "vec2": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "x",
+        "y"
+      ]
+    },
+    "vec3": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "z": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "z"
+      ]
+    },
+    "frame": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "origin": {
+          "$ref": "#/$defs/vec3"
+        },
+        "rotationDegrees": {
+          "$ref": "#/$defs/vec3"
+        }
+      },
+      "required": [
+        "origin",
+        "rotationDegrees"
+      ]
+    },
+    "numerics": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "linearTolerance": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "angularToleranceDegrees": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1
+        },
+        "minimumFeatureSize": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "maxCoordinateMagnitude": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1000000
+        }
+      },
+      "required": [
+        "linearTolerance",
+        "angularToleranceDegrees",
+        "minimumFeatureSize",
+        "maxCoordinateMagnitude"
+      ]
+    },
+    "budgets": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "maxPartDefinitions": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4096
+        },
+        "maxInstances": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 32768
+        },
+        "maxFeatures": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 131072
+        },
+        "maxRoutePoints": {
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 262144
+        },
+        "maxDrawings": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 8192
+        },
+        "maxValidationChecks": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10000000
+        },
+        "maxPreviewBytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 67108864
+        },
+        "maxExportBytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 17179869184
+        },
+        "maxGeneratedTriangles": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50000000
+        },
+        "maxMotionSamples": {
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 1000000
+        }
+      },
+      "required": [
+        "maxPartDefinitions",
+        "maxInstances",
+        "maxFeatures",
+        "maxRoutePoints",
+        "maxDrawings",
+        "maxValidationChecks",
+        "maxPreviewBytes",
+        "maxExportBytes",
+        "maxGeneratedTriangles",
+        "maxMotionSamples"
+      ]
+    },
+    "observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$",
+          "not": {
+            "const": ".."
+          }
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "observed",
+            "assumed",
+            "unresolved",
+            "simplified"
+          ]
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048,
+          "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048,
+          "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "description",
+        "source"
+      ]
+    },
+    "material": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$",
+          "not": {
+            "const": ".."
+          }
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048,
+          "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+        },
+        "color": {
+          "type": "string",
+          "pattern": "^#[0-9A-Fa-f]{6}$"
+        },
+        "roughness": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "metallic": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "color",
+        "roughness",
+        "metallic"
+      ]
+    },
+    "loftSection": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "frame": {
+          "$ref": "#/$defs/frame"
+        },
+        "profile": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/vec2"
+          },
+          "maxItems": 4096,
+          "minItems": 3
+        }
+      },
+      "required": [
+        "frame",
+        "profile"
+      ]
+    },
+    "feature": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$",
+          "not": {
+            "const": ".."
+          }
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "box",
+            "cylinder",
+            "extrude",
+            "revolve",
+            "sweep",
+            "loft"
+          ]
+        },
+        "operation": {
+          "type": "string",
+          "enum": [
+            "add",
+            "subtract"
+          ]
+        },
+        "frame": {
+          "$ref": "#/$defs/frame"
+        },
+        "parameters": {
+          "type": "object",
+          "maxProperties": 16,
+          "additionalProperties": {
+            "type": "number"
+          }
+        },
+        "profile": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/vec2"
+          },
+          "maxItems": 4096,
+          "minItems": 0
+        },
+        "path": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/vec3"
+          },
+          "maxItems": 262144,
+          "minItems": 0
+        },
+        "sections": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/loftSection"
+          },
+          "maxItems": 1024,
+          "minItems": 0
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "operation",
+        "frame",
+        "parameters",
+        "profile",
+        "path",
+        "sections"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "box"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "width": {
+                    "type": "number"
+                  },
+                  "depth": {
+                    "type": "number"
+                  },
+                  "height": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "width",
+                  "depth",
+                  "height"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "cylinder"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "radius": {
+                    "type": "number"
+                  },
+                  "length": {
+                    "type": "number"
+                  },
+                  "segments": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "radius",
+                  "length",
+                  "segments"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "extrude"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "depth": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "depth"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "revolve"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "angleDegrees": {
+                    "type": "number"
+                  },
+                  "segments": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "angleDegrees",
+                  "segments"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "sweep"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "radius": {
+                    "type": "number"
+                  },
+                  "segments": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "radius",
+                  "segments"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "loft"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {},
+                "required": []
+              }
+            }
+          }
+        }
+      ]
+    },
+    "port": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$",
+          "not": {
+            "const": ".."
+          }
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048,
+          "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+        },
+        "frame": {
+          "$ref": "#/$defs/frame"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "frame"
+      ]
+    },
+    "terminal": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$",
+          "not": {
+            "const": ".."
+          }
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048,
+          "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "power",
+            "signal",
+            "ground"
+          ]
+        },
+        "frame": {
+          "$ref": "#/$defs/frame"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "kind",
+        "frame"
+      ]
+    },
+    "flexible": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "restLength": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "minimumLength": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "maximumLength": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "minimumBendRadius": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "maximumStretchRatio": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "skinSegments": {
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 4096
+        }
+      },
+      "required": [
+        "restLength",
+        "minimumLength",
+        "maximumLength",
+        "minimumBendRadius",
+        "maximumStretchRatio",
+        "skinSegments"
+      ]
+    },
+    "part": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$",
+          "not": {
+            "const": ".."
+          }
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048,
+          "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+        },
+        "purpose": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048,
+          "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+        },
+        "detail": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048,
+          "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+        },
+        "materialId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$",
+          "not": {
+            "const": ".."
+          }
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "rigid",
+            "wire",
+            "hose",
+            "spring",
+            "belt"
+          ]
+        },
+        "size": {
+          "$ref": "#/$defs/vec3"
+        },
+        "features": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/feature"
+          },
+          "maxItems": 131072,
+          "minItems": 1
+        },
+        "interfaces": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/port"
+          },
+          "maxItems": 4096,
+          "minItems": 0
+        },
+        "terminals": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/terminal"
+          },
+          "maxItems": 4096,
+          "minItems": 0
+        },
+        "flexible": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/flexible"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "purpose",
+        "detail",
+        "materialId",
+        "kind",
+        "size",
+        "features",
+        "interfaces",
+        "terminals",
+        "flexible"
+      ]
+    },
+    "subassembly": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$",
+          "not": {
+            "const": ".."
+          }
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048,
+          "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+        },
+        "parentId": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$",
+              "not": {
+                "const": ".."
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "frame": {
+          "$ref": "#/$defs/frame"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "parentId",
+        "frame"
+      ]
+    },
+    "instance": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$",
+          "not": {
+            "const": ".."
+          }
+        },
+        "partId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$",
+          "not": {
+            "const": ".."
+          }
+        },
+        "parentId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$",
+          "not": {
+            "const": ".."
+          }
+        },
+        "frame": {
+          "$ref": "#/$defs/frame"
+        },
+        "explodeOffset": {
+          "$ref": "#/$defs/vec3"
+        }
+      },
+      "required": [
+        "id",
+        "partId",
+        "parentId",
+        "frame",
+        "explodeOffset"
+      ]
+    },
+    "joint": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$",
+          "not": {
+            "const": ".."
+          }
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "fixed",
+            "hinge",
+            "rotary",
+            "slider",
+            "screw"
+          ]
+        },
+        "parentInstanceId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$",
+          "not": {
+            "const": ".."
+          }
+        },
+        "childInstanceId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$",
+          "not": {
+            "const": ".."
+          }
+        },
+        "parentInterfaceId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$",
+          "not": {
+            "const": ".."
+          }
+        },
+        "childInterfaceId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$",
+          "not": {
+            "const": ".."
+          }
+        },
+        "axis": {
+          "$ref": "#/$defs/vec3"
+        },
+        "minimum": {
+          "type": "number"
+        },
+        "maximum": {
+          "type": "number"
+        },
+        "rest": {
+          "type": "number"
+        },
+        "pitch": {
+          "type": "number"
+        },
+        "clearance": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "parentInstanceId",
+        "childInstanceId",
+        "parentInterfaceId",
+        "childInterfaceId",
+        "axis",
+        "minimum",
+        "maximum",
+        "rest",
+        "pitch",
+        "clearance"
+      ]
+    },
+    "mechanism": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$",
+          "not": {
+            "const": ".."
+          }
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "spurGears",
+            "rackAndPinion",
+            "pulleyBelt",
+            "sliderCrank",
+            "fourBar"
+          ]
+        },
+        "jointIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$",
+            "not": {
+              "const": ".."
+            }
+          },
+          "maxItems": 4,
+          "minItems": 2
+        },
+        "parameters": {
+          "type": "object",
+          "maxProperties": 8,
+          "additionalProperties": {
+            "type": "number"
+          }
+        },
+        "branch": {
+          "type": "string",
+          "enum": [
+            "open",
+            "crossed"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "jointIds",
+        "parameters",
+        "branch"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "spurGears"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "ratio": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "ratio"
+                ]
+              },
+              "jointIds": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "uniqueItems": true
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "rackAndPinion"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "pitchRadius": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "pitchRadius"
+                ]
+              },
+              "jointIds": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "uniqueItems": true
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "pulleyBelt"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "ratio": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "ratio"
+                ]
+              },
+              "jointIds": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "uniqueItems": true
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "sliderCrank"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "crankLength": {
+                    "type": "number"
+                  },
+                  "rodLength": {
+                    "type": "number"
+                  },
+                  "offset": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "crankLength",
+                  "rodLength",
+                  "offset"
+                ]
+              },
+              "jointIds": {
+                "type": "array",
+                "minItems": 4,
+                "maxItems": 4,
+                "uniqueItems": true
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "fourBar"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "groundLength": {
+                    "type": "number"
+                  },
+                  "inputLength": {
+                    "type": "number"
+                  },
+                  "couplerLength": {
+                    "type": "number"
+                  },
+                  "outputLength": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "groundLength",
+                  "inputLength",
+                  "couplerLength",
+                  "outputLength"
+                ]
+              },
+              "jointIds": {
+                "type": "array",
+                "minItems": 4,
+                "maxItems": 4,
+                "uniqueItems": true
+              }
+            }
+          }
+        }
+      ]
+    },
+    "endpoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "instanceId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$",
+          "not": {
+            "const": ".."
+          }
+        },
+        "portId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$",
+          "not": {
+            "const": ".."
+          }
+        }
+      },
+      "required": [
+        "instanceId",
+        "portId"
+      ]
+    },
+    "route": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$",
+          "not": {
+            "const": ".."
+          }
+        },
+        "instanceId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$",
+          "not": {
+            "const": ".."
+          }
+        },
+        "points": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/vec3"
+          },
+          "maxItems": 262144,
+          "minItems": 2
+        },
+        "closed": {
+          "type": "boolean"
+        },
+        "from": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/endpoint"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "to": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/endpoint"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "instanceId",
+        "points",
+        "closed",
+        "from",
+        "to"
+      ]
+    },
+    "connection": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$",
+          "not": {
+            "const": ".."
+          }
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "power",
+            "signal",
+            "ground",
+            "mechanical"
+          ]
+        },
+        "from": {
+          "$ref": "#/$defs/endpoint"
+        },
+        "to": {
+          "$ref": "#/$defs/endpoint"
+        },
+        "routeId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$",
+          "not": {
+            "const": ".."
+          }
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "from",
+        "to",
+        "routeId"
+      ]
+    },
+    "section": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$",
+          "not": {
+            "const": ".."
+          }
+        },
+        "axis": {
+          "type": "string",
+          "enum": [
+            "x",
+            "y",
+            "z"
+          ]
+        },
+        "offset": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "axis",
+        "offset"
+      ]
+    }
+  }
+}

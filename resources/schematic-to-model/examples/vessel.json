@@ -1,0 +1,609 @@
+{
+  "schemaVersion": "bubo-assembly-design/v1",
+  "id": "vessel-example",
+  "name": "vessel-example",
+  "purpose": "Owned schematic design fixture for a mechanically coherent game asset",
+  "styleSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "coordinateSystem": "xy-metres-z-up",
+  "numerics": {
+    "linearTolerance": 1E-06,
+    "angularToleranceDegrees": 0.01,
+    "minimumFeatureSize": 0.0001,
+    "maxCoordinateMagnitude": 10000
+  },
+  "budgets": {
+    "maxPartDefinitions": 128,
+    "maxInstances": 1024,
+    "maxFeatures": 4096,
+    "maxRoutePoints": 4096,
+    "maxDrawings": 256,
+    "maxValidationChecks": 1000000,
+    "maxPreviewBytes": 16777216,
+    "maxExportBytes": 268435456,
+    "maxGeneratedTriangles": 500000,
+    "maxMotionSamples": 10000
+  },
+  "observations": [
+    {
+      "id": "design-assumption",
+      "kind": "assumed",
+      "description": "Dimensions and construction are authored fixture choices; references do not determine scale",
+      "source": "Owned engineering fixture"
+    },
+    {
+      "id": "design-simplification",
+      "kind": "simplified",
+      "description": "Bounded demonstration assembly; unlisted commercial systems are excluded from this explicit design, not silently omitted during construction",
+      "source": "Synthetic fixture scope"
+    }
+  ],
+  "materials": [
+    {
+      "id": "steel",
+      "name": "Brushed steel",
+      "color": "#708090",
+      "roughness": 0.45,
+      "metallic": 0.8
+    }
+  ],
+  "parts": [
+    {
+      "id": "hull-definition",
+      "name": "hull-definition",
+      "purpose": "Independently authored mechanical fixture component",
+      "detail": "Approved smooth surfaces and individually addressable hardware; explicit idealized design, no manufacturing certification",
+      "materialId": "steel",
+      "kind": "rigid",
+      "size": {
+        "x": 12,
+        "y": 3,
+        "z": 2
+      },
+      "features": [
+        {
+          "id": "hull-loft",
+          "kind": "loft",
+          "operation": "add",
+          "frame": {
+            "origin": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          },
+          "parameters": {},
+          "profile": [],
+          "path": [],
+          "sections": [
+            {
+              "frame": {
+                "origin": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 0
+                },
+                "rotationDegrees": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 0
+                }
+              },
+              "profile": [
+                {
+                  "x": 0,
+                  "y": 1.5
+                },
+                {
+                  "x": 0.5,
+                  "y": 1
+                },
+                {
+                  "x": 11.5,
+                  "y": 1
+                },
+                {
+                  "x": 12,
+                  "y": 1.5
+                },
+                {
+                  "x": 11.5,
+                  "y": 2
+                },
+                {
+                  "x": 0.5,
+                  "y": 2
+                }
+              ]
+            },
+            {
+              "frame": {
+                "origin": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 1
+                },
+                "rotationDegrees": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 0
+                }
+              },
+              "profile": [
+                {
+                  "x": 0,
+                  "y": 1.5
+                },
+                {
+                  "x": 0.5,
+                  "y": 0.25
+                },
+                {
+                  "x": 11.5,
+                  "y": 0.25
+                },
+                {
+                  "x": 12,
+                  "y": 1.5
+                },
+                {
+                  "x": 11.5,
+                  "y": 2.75
+                },
+                {
+                  "x": 0.5,
+                  "y": 2.75
+                }
+              ]
+            },
+            {
+              "frame": {
+                "origin": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 2
+                },
+                "rotationDegrees": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 0
+                }
+              },
+              "profile": [
+                {
+                  "x": 0,
+                  "y": 1.5
+                },
+                {
+                  "x": 0.5,
+                  "y": 0
+                },
+                {
+                  "x": 11.5,
+                  "y": 0
+                },
+                {
+                  "x": 12,
+                  "y": 1.5
+                },
+                {
+                  "x": 11.5,
+                  "y": 3
+                },
+                {
+                  "x": 0.5,
+                  "y": 3
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "interfaces": [
+        {
+          "id": "shaft-bearing",
+          "name": "shaft-bearing",
+          "frame": {
+            "origin": {
+              "x": 10,
+              "y": 1.5,
+              "z": 0.5
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          }
+        },
+        {
+          "id": "rudder-pivot",
+          "name": "rudder-pivot",
+          "frame": {
+            "origin": {
+              "x": 11.5,
+              "y": 1.5,
+              "z": 0.5
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          }
+        }
+      ],
+      "terminals": [],
+      "flexible": null
+    },
+    {
+      "id": "deck-definition",
+      "name": "deck-definition",
+      "purpose": "Independently authored mechanical fixture component",
+      "detail": "Approved smooth surfaces and individually addressable hardware; explicit idealized design, no manufacturing certification",
+      "materialId": "steel",
+      "kind": "rigid",
+      "size": {
+        "x": 12,
+        "y": 3,
+        "z": 0.15
+      },
+      "features": [
+        {
+          "id": "deck-extrusion",
+          "kind": "extrude",
+          "operation": "add",
+          "frame": {
+            "origin": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          },
+          "parameters": {
+            "depth": 0.15
+          },
+          "profile": [
+            {
+              "x": 0,
+              "y": 1.5
+            },
+            {
+              "x": 0.5,
+              "y": 0
+            },
+            {
+              "x": 11.5,
+              "y": 0
+            },
+            {
+              "x": 12,
+              "y": 1.5
+            },
+            {
+              "x": 11.5,
+              "y": 3
+            },
+            {
+              "x": 0.5,
+              "y": 3
+            }
+          ],
+          "path": [],
+          "sections": []
+        }
+      ],
+      "interfaces": [
+        {
+          "id": "mount",
+          "name": "mount",
+          "frame": {
+            "origin": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          }
+        }
+      ],
+      "terminals": [],
+      "flexible": null
+    },
+    {
+      "id": "shaft-definition",
+      "name": "shaft-definition",
+      "purpose": "Independently authored mechanical fixture component",
+      "detail": "Approved smooth surfaces and individually addressable hardware; explicit idealized design, no manufacturing certification",
+      "materialId": "steel",
+      "kind": "rigid",
+      "size": {
+        "x": 0.1,
+        "y": 0.1,
+        "z": 1.5
+      },
+      "features": [
+        {
+          "id": "shaft-cylinder",
+          "kind": "cylinder",
+          "operation": "add",
+          "frame": {
+            "origin": {
+              "x": 0.05,
+              "y": 0.05,
+              "z": 0
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          },
+          "parameters": {
+            "radius": 0.05,
+            "length": 1.5,
+            "segments": 24
+          },
+          "profile": [],
+          "path": [],
+          "sections": []
+        }
+      ],
+      "interfaces": [
+        {
+          "id": "bearing",
+          "name": "bearing",
+          "frame": {
+            "origin": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          }
+        }
+      ],
+      "terminals": [],
+      "flexible": null
+    },
+    {
+      "id": "rudder-definition",
+      "name": "rudder-definition",
+      "purpose": "Independently authored mechanical fixture component",
+      "detail": "Approved smooth surfaces and individually addressable hardware; explicit idealized design, no manufacturing certification",
+      "materialId": "steel",
+      "kind": "rigid",
+      "size": {
+        "x": 0.8,
+        "y": 0.08,
+        "z": 0.9
+      },
+      "features": [
+        {
+          "id": "solid",
+          "kind": "box",
+          "operation": "add",
+          "frame": {
+            "origin": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          },
+          "parameters": {
+            "width": 0.8,
+            "depth": 0.08,
+            "height": 0.9
+          },
+          "profile": [],
+          "path": [],
+          "sections": []
+        }
+      ],
+      "interfaces": [
+        {
+          "id": "pivot",
+          "name": "pivot",
+          "frame": {
+            "origin": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          }
+        }
+      ],
+      "terminals": [],
+      "flexible": null
+    }
+  ],
+  "subassemblies": [
+    {
+      "id": "assembly",
+      "name": "Complete assembly",
+      "parentId": null,
+      "frame": {
+        "origin": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "rotationDegrees": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        }
+      }
+    }
+  ],
+  "instances": [
+    {
+      "id": "hull",
+      "partId": "hull-definition",
+      "parentId": "assembly",
+      "frame": {
+        "origin": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "rotationDegrees": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        }
+      },
+      "explodeOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "deck",
+      "partId": "deck-definition",
+      "parentId": "assembly",
+      "frame": {
+        "origin": {
+          "x": 0,
+          "y": 0,
+          "z": 2
+        },
+        "rotationDegrees": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        }
+      },
+      "explodeOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 2
+      }
+    },
+    {
+      "id": "propeller-shaft",
+      "partId": "shaft-definition",
+      "parentId": "assembly",
+      "frame": {
+        "origin": {
+          "x": 10,
+          "y": 1.5,
+          "z": 0.5
+        },
+        "rotationDegrees": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        }
+      },
+      "explodeOffset": {
+        "x": 0,
+        "y": 3,
+        "z": 0
+      }
+    },
+    {
+      "id": "rudder",
+      "partId": "rudder-definition",
+      "parentId": "assembly",
+      "frame": {
+        "origin": {
+          "x": 11.5,
+          "y": 1.5,
+          "z": 0.5
+        },
+        "rotationDegrees": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        }
+      },
+      "explodeOffset": {
+        "x": 2,
+        "y": 0,
+        "z": 0
+      }
+    }
+  ],
+  "joints": [
+    {
+      "id": "shaft-bearing-joint",
+      "kind": "rotary",
+      "parentInstanceId": "hull",
+      "childInstanceId": "propeller-shaft",
+      "parentInterfaceId": "shaft-bearing",
+      "childInterfaceId": "bearing",
+      "axis": {
+        "x": 0,
+        "y": 0,
+        "z": 1
+      },
+      "minimum": -90,
+      "maximum": 90,
+      "rest": 0,
+      "pitch": 0,
+      "clearance": 0.001
+    },
+    {
+      "id": "rudder-joint",
+      "kind": "hinge",
+      "parentInstanceId": "hull",
+      "childInstanceId": "rudder",
+      "parentInterfaceId": "rudder-pivot",
+      "childInterfaceId": "pivot",
+      "axis": {
+        "x": 0,
+        "y": 0,
+        "z": 1
+      },
+      "minimum": -35,
+      "maximum": 35,
+      "rest": 0,
+      "pitch": 0,
+      "clearance": 0.001
+    }
+  ],
+  "mechanisms": [],
+  "routes": [],
+  "connections": [],
+  "sections": [
+    {
+      "id": "vessel-longitudinal-section",
+      "axis": "y",
+      "offset": 1.5
+    },
+    {
+      "id": "vessel-cross-section",
+      "axis": "x",
+      "offset": 6
+    }
+  ]
+}

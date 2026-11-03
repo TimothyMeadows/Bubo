@@ -1,0 +1,4 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><AssemblyName>Bubo.Schematic.Application</AssemblyName></PropertyGroup>
+  <ItemGroup><ProjectReference Include="../Domain/Schematic.Domain.csproj" /></ItemGroup>
+</Project>

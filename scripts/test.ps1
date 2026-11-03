@@ -7,7 +7,7 @@ $buboPreviousTemp=$env:TEMP; $buboPreviousTmp=$env:TMP
 $env:TEMP=$buboFixtureRoot; $env:TMP=$buboFixtureRoot
 Push-Location $buboRepositoryRoot
 try {
-    foreach ($buboTestProject in @('src/Bubo.Host.Tests/Bubo.Host.Tests.csproj','src/runtime/proof-to-model/Tests/RuntimeTests.csproj','src/runtime/model-to-animation/Tests/RuntimeTests.csproj','src/runtime/model-to-action/Tests/RuntimeTests.csproj','src/media/Tests/Media.Tests.csproj','src/runtime/floor-plan-to-model/Tests/FloorPlan.Tests.csproj')) {
+    foreach ($buboTestProject in @('src/Bubo.Host.Tests/Bubo.Host.Tests.csproj','src/runtime/proof-to-model/Tests/RuntimeTests.csproj','src/runtime/model-to-animation/Tests/RuntimeTests.csproj','src/runtime/model-to-action/Tests/RuntimeTests.csproj','src/media/Tests/Media.Tests.csproj','src/runtime/floor-plan-to-model/Tests/FloorPlan.Tests.csproj','src/runtime/schematic-to-model/Tests/Schematic.Tests.csproj')) {
         dotnet run --project $buboTestProject --configuration $Configuration --no-build
         if ($LASTEXITCODE -ne 0) { throw "Tests failed: $buboTestProject" }
     }
@@ -23,6 +23,8 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Floor-plan fixed export admission checks failed.' }
     python -X utf8 tests/test-floor-plan-cli.py --cli "src/Bubo.Cli/bin/$Configuration/net10.0/bubo.dll"
     if ($LASTEXITCODE -ne 0) { throw 'Floor-plan public CLI contract checks failed.' }
+    python -X utf8 tests/test-schematic-cli.py --cli "src/Bubo.Cli/bin/$Configuration/net10.0/bubo.dll"
+    if ($LASTEXITCODE -ne 0) { throw 'Schematic public CLI contract checks failed.' }
     python -X utf8 tests/test-media-provision.py
     if ($LASTEXITCODE -ne 0) { throw 'Fixed media provisioning contract checks failed.' }
     python -X utf8 tests/test-music-worker.py
