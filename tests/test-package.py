@@ -24,6 +24,12 @@ def main():
         for name in ('resources/media/voice/worker.py','resources/media/voice/source-adaptations/core-init.py','resources/media/voice/source-adaptations/tokenizer-init.py','resources/media/notices/Qwen3-TTS-LICENSE.txt','resources/media/notices/Qwen3-TTS-NOTICE.txt'):
             assert read(name),'Missing/empty direct voice resource: '+name
         receipt=json.loads(read('build-info.json'))
+        assert read('docs/VFX_ASSETS.md'), 'Missing VFX contract documentation'
+        for name in ('Bubo.Vfx.Domain.dll', 'Bubo.Vfx.Application.dll', 'Bubo.Vfx.Infrastructure.dll'):
+            assert read(name), 'Missing standalone VFX runtime assembly: '+name
+        vfx=receipt['capabilities']['vfx']
+        assert vfx['operations']==['validate','inspect'] and vfx['packageSchema']=='bubo-vfx-package/v1'
+        assert not any(vfx[key] for key in ('processingAvailable','renderingAvailable','runtimeAcceptanceAvailable')), 'Contract package advertises unavailable production'
         build=receipt['capabilities']['build']
         assert sha('resources/catalog.json')==build['resourceCatalogSha256'],'Catalog identity differs from the verified build'
         catalog=json.loads(read('resources/catalog.json'))

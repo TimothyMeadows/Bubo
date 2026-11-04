@@ -8,6 +8,7 @@ export TMPDIR="$root/.bubo/test-temp"
 for project in src/Bubo.Host.Tests/Bubo.Host.Tests.csproj src/runtime/proof-to-model/Tests/RuntimeTests.csproj src/runtime/model-to-animation/Tests/RuntimeTests.csproj src/runtime/model-to-action/Tests/RuntimeTests.csproj src/media/Tests/Media.Tests.csproj src/runtime/floor-plan-to-model/Tests/FloorPlan.Tests.csproj src/runtime/schematic-to-model/Tests/Schematic.Tests.csproj; do
   dotnet run --project "$project" -c "$configuration" --no-build
 done
+dotnet run --project src/runtime/vfx-assets/Tests/Vfx.Tests.csproj -c "$configuration" --no-build -- --cli "src/Bubo.Cli/bin/$configuration/net10.0/bubo.dll"
 python3 scripts/audit-resources.py
 python3 tests/test-cli-contract.py --cli "src/Bubo.Cli/bin/$configuration/net10.0/bubo.dll"
 python3 tests/test-floor-plan-authoring.py

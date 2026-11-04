@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><AssemblyName>Bubo.Vfx.Application</AssemblyName></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Domain/Vfx.Domain.csproj" />
+    <ProjectReference Include="../../asset-production/AssetProduction.csproj" />
+  </ItemGroup>
+</Project>

@@ -2,6 +2,7 @@
   <PropertyGroup><OutputType>Exe</OutputType><AssemblyName>bubo</AssemblyName><Version>1.0.0</Version></PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../Bubo.Host/Bubo.Host.csproj" />
+    <ProjectReference Include="../runtime/vfx-assets/Infrastructure/Vfx.Infrastructure.csproj" />
     <ProjectReference Include="../runtime/floor-plan-to-model/Infrastructure/FloorPlan.Infrastructure.csproj" />
     <ProjectReference Include="../runtime/schematic-to-model/Infrastructure/Schematic.Infrastructure.csproj" />
     <ProjectReference Include="../media/Infrastructure/Media.Infrastructure.csproj" />

@@ -1,4 +1,10 @@
 <Solution>
+  <Folder Name="/src/runtime/vfx-assets/">
+    <Project Path="src/runtime/vfx-assets/Domain/Vfx.Domain.csproj" />
+    <Project Path="src/runtime/vfx-assets/Application/Vfx.Application.csproj" />
+    <Project Path="src/runtime/vfx-assets/Infrastructure/Vfx.Infrastructure.csproj" />
+    <Project Path="src/runtime/vfx-assets/Tests/Vfx.Tests.csproj" />
+  </Folder>
   <Folder Name="/src/runtime/schematic-to-model/">
     <Project Path="src/runtime/schematic-to-model/Domain/Schematic.Domain.csproj" />
     <Project Path="src/runtime/schematic-to-model/Application/Schematic.Application.csproj" />
