@@ -130,7 +130,9 @@ internal static class PreparationTests
             ("unsupported critical chunk", PreparationFixtures.Png(5, 4, pixels, ancillary: [("ABCD", new byte[] { 0 })])),
             ("ICC profile conversion", PreparationFixtures.Png(5, 4, pixels, ancillary: [("iCCP", new byte[] { 0 })])),
             ("animated PNG", PreparationFixtures.Png(5, 4, pixels, ancillary: [("acTL", new byte[8])])),
-            ("conflicting linear gamma", PreparationFixtures.Png(5, 4, pixels, ancillary: [("gAMA", Gamma(100000))]))
+            ("conflicting linear gamma", PreparationFixtures.Png(5, 4, pixels, ancillary: [("gAMA", Gamma(100000))])),
+            ("sRGB after palette", PreparationFixtures.Png(5, 4, pixels, ancillary: [("PLTE", new byte[] { 0, 0, 0 }), ("sRGB", new byte[] { 0 })])),
+            ("gamma after palette", PreparationFixtures.Png(5, 4, pixels, ancillary: [("PLTE", new byte[] { 0, 0, 0 }), ("gAMA", Gamma(45455))]))
         })
         {
             Reject(() => RgbaPngCodec.Read(new MemoryStream(encoded), new() { ColorSpace = "srgb" }), "bounded strict codec rejects " + name);

@@ -135,12 +135,12 @@ public static class RgbaPngCodec
                     end = true;
                     break;
                 case "sRGB" when bound.ColorSpace is not null:
-                    if (srgb || data || length != 1 || small[0] > 3 || bound.ColorSpace != "srgb")
+                    if (srgb || palette || data || length != 1 || small[0] > 3 || bound.ColorSpace != "srgb")
                         throw new InvalidOperationException("PNG sRGB profile conflicts with explicit color space or chunk order");
                     srgb = true;
                     break;
                 case "gAMA" when bound.ColorSpace is not null:
-                    if (gamma || data || length != 4 || BinaryPrimitives.ReadUInt32BigEndian(small) != (bound.ColorSpace == "srgb" ? 45455u : 100000u))
+                    if (gamma || palette || data || length != 4 || BinaryPrimitives.ReadUInt32BigEndian(small) != (bound.ColorSpace == "srgb" ? 45455u : 100000u))
                         throw new InvalidOperationException("PNG gamma conflicts with explicit color space or chunk order");
                     gamma = true;
                     break;
