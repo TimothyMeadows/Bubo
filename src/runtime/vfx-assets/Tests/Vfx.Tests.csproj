@@ -1,0 +1,4 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><AssemblyName>Bubo.Vfx.Tests</AssemblyName></PropertyGroup>
+  <ItemGroup><ProjectReference Include="../Infrastructure/Vfx.Infrastructure.csproj" /></ItemGroup>
+</Project>
