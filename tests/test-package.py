@@ -28,8 +28,10 @@ def main():
         for name in ('Bubo.Vfx.Domain.dll', 'Bubo.Vfx.Application.dll', 'Bubo.Vfx.Infrastructure.dll'):
             assert read(name), 'Missing standalone VFX runtime assembly: '+name
         vfx=receipt['capabilities']['vfx']
-        assert vfx['operations']==['validate','inspect'] and vfx['packageSchema']=='bubo-vfx-package/v1'
-        assert not any(vfx[key] for key in ('processingAvailable','renderingAvailable','runtimeAcceptanceAvailable')), 'Contract package advertises unavailable production'
+        assert vfx['operations']==['validate','inspect','prepare','verify-preparation'] and vfx['packageSchema']=='bubo-vfx-package/v1'
+        assert vfx['processingAvailable'] and vfx['packageSchemas']==['bubo-vfx-package/v1','bubo-vfx-package/v2']
+        assert vfx['processingProfiles']==['sheet','sequence','math-mask']
+        assert not any(vfx[key] for key in ('videoDecodingAvailable','hardProcessingMemoryAvailable','renderingAvailable','runtimeAcceptanceAvailable')), 'Package advertises unavailable production'
         build=receipt['capabilities']['build']
         assert sha('resources/catalog.json')==build['resourceCatalogSha256'],'Catalog identity differs from the verified build'
         catalog=json.loads(read('resources/catalog.json'))

@@ -66,7 +66,7 @@ internal static class DomainTests
 
         foreach (var (name, change, code) in new (string, Action<JsonObject>, string)[]
         {
-            ("future schema", p => p["schemaVersion"] = "bubo-vfx-package/v2", "invalid-schema"),
+            ("future schema", p => p["schemaVersion"] = "bubo-vfx-package/v3", "invalid-schema"),
             ("unknown engine", p => p["engine"]!["id"] = "UNREGISTERED", "invalid-engine"),
             ("style hash syntax", p => p["styleSha256"] = "bad", "invalid-hash"),
             ("upper-case engine hash", p => p["engine"]!["registrySha256"] = new string('A', 64), "invalid-hash"),

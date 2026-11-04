@@ -23,7 +23,7 @@ internal static class InspectionTests
         Check.That(result.PackagePath == Fixture.PackagePath && result.ObservedResources[0].Path == "textures/spark.png" && result.ObservedResources[0].ProjectPath == Fixture.TexturePath, "package-relative dependencies retain project-relative read identities");
         Check.That(result.Requirements.Engine.Id == "THREEJS" && result.Requirements.StyleSha256 == good.Hash("STYLE.md") && result.Requirements.LayerKinds.Contains("sprite"), "requirements describe exact declared host identities and layer kinds");
         Check.That(result.Capabilities.ContractValidationAvailable && result.Capabilities.DependencyInspectionAvailable
-            && !result.Capabilities.ResourceContentValidationAvailable && !result.Capabilities.ResourcePreparationAvailable
+            && !result.Capabilities.ResourceContentValidationAvailable && result.Capabilities.ResourcePreparationAvailable
             && !result.Capabilities.RuntimeRenderingAvailable && !result.Capabilities.ActionCompositionAvailable
             && !result.Capabilities.VideoDecodingAvailable && !result.Capabilities.MediaGenerationAvailable
             && !result.Capabilities.PromotionAvailable && result.Capabilities.ResourceContentStatus == "envelope-only-not-decoded", "capabilities distinguish contract inspection from unavailable production and content certification");

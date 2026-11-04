@@ -12,6 +12,7 @@ var root = Path.Combine(project, "bin/test-fixtures/run-" + Guid.NewGuid().ToStr
 Directory.CreateDirectory(root);
 DomainTests.Run();
 InspectionTests.Run(root);
+PreparationTests.Run(root, cli);
 if (cli is null) Check.Limits.Add("Actual public CLI rejection checks not run; select --cli EXISTING_BUBO_DLL_OR_EXE.");
 else CliTests.Run(cli, root);
 foreach (var limitation in Check.Limits) Console.WriteLine("NOT RUN: " + limitation);
