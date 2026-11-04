@@ -93,6 +93,14 @@ public static class VfxInspection
         cancellation.ThrowIfCancellationRequested();
         if (maximumBytes < 1) throw new InvalidOperationException("VFX input has no remaining byte allowance");
         var resolved = Resolve(workspace, path, cancellation);
+        // Unix FIFOs/devices can satisfy File.Exists but block while opening.
+        // Reject entries without a finite positive declared snapshot first;
+        // the opened stream is still independently checked and hashed below.
+        var snapshotLength = new FileInfo(resolved).Length;
+        if (snapshotLength < 1 || snapshotLength > maximumBytes
+            || (expectedBytes is not null && snapshotLength != expectedBytes))
+            throw new InvalidOperationException("VFX input has no matching finite bounded file length");
+        cancellation.ThrowIfCancellationRequested();
         using var stream = new FileStream(resolved, FileMode.Open, FileAccess.Read, FileShare.Read,
             BlockBytes, FileOptions.SequentialScan);
         using var reader = new VfxInputReader(stream, maximumBytes, expectedBytes, retainContent, cancellation);

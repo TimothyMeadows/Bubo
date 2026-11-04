@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Text.Json.Nodes;
 
 namespace Bubo.Vfx.Tests;
@@ -65,7 +66,30 @@ internal static class CliTests
             Check.That(response.ExitCode != 0 && response.Json["status"]?.GetValue<string>() == "failed", "actual CLI rejects unavailable operation or undeclared option: " + string.Join(' ', options.Take(2)) + " " + options[^2]);
             Check.That(InspectionTests.Equal(before, good.Snapshot()), "actual CLI unsupported-operation/options fail without writes");
         }
+        if (OperatingSystem.IsLinux())
+        {
+            var fifo = Make("fifo-dependency");
+            var texture = fifo.Full(Fixture.TexturePath);
+            File.Delete(texture);
+            if (MkFifo(texture, 0x180) != 0) // Owned fixture, mode 0600; no reader or writer is opened.
+                throw new InvalidOperationException("Cannot create actual Linux FIFO fixture; errno " + Marshal.GetLastPInvokeError());
+            Check.That(File.Exists(texture), "actual Linux FIFO satisfies ordinary file-existence admission");
+            // Never snapshot/hash/read this fixture: opening the FIFO without a peer would block.
+            // Execute owns the existing 15-second process watchdog, so a regression fails boundedly.
+            foreach (var operation in new[] { "validate", "inspect" })
+            {
+                var response = Execute(cli, Arguments(fifo, operation));
+                Check.That(response.ExitCode != 0 && response.Json["status"]?.GetValue<string>() == "failed", "actual CLI " + operation + " rejects an existing Linux FIFO dependency without blocking");
+                Check.That(File.Exists(texture) && new FileInfo(texture).Length == 0, "actual CLI " + operation + " retains the input FIFO");
+                Check.That(!Directory.Exists(fifo.Full(".bubo")) && !Directory.Exists(fifo.Full(".art-staging"))
+                    && !Directory.Exists(fifo.Full("assets")) && !Directory.Exists(fifo.Full(".local")), "actual CLI " + operation + " FIFO rejection creates no state, staging, output or tool directories");
+            }
+        }
+        else Check.Limits.Add("Linux-only actual FIFO CLI regression is not run on " + RuntimeInformation.OSDescription + ".");
     }
+
+    [DllImport("libc", EntryPoint = "mkfifo", SetLastError = true)]
+    static extern int MkFifo([MarshalAs(UnmanagedType.LPUTF8Str)] string path, uint mode);
 
     static string[] Arguments(Fixture fixture, string operation) => ["vfx-assets", operation, "--api-version", "2", "--root", fixture.Root, "--host-context", "host-context.json", "--package", Fixture.PackagePath];
 
