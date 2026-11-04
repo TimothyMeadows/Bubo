@@ -35,8 +35,9 @@ public static class VfxValidation
             Issue("invalid-field", "$", "Package is required");
             return Report();
         }
-        if (package.SchemaVersion != "bubo-vfx-package/v1")
-            Issue("invalid-schema", "schemaVersion", "Expected bubo-vfx-package/v1");
+        if (package.SchemaVersion is not ("bubo-vfx-package/v1" or "bubo-vfx-package/v2"))
+            Issue("invalid-schema", "schemaVersion", "Expected explicit bubo-vfx-package/v1 or bubo-vfx-package/v2");
+        issues.AddRange(VfxAtlasValidation.Validate(package).Issues);
         CheckId(package.Id, "id"); CheckId(package.Version, "version");
         CheckHash(package.StyleSha256, "styleSha256");
         if (package.Engine is null) Issue("invalid-field", "engine", "Engine identity is required");

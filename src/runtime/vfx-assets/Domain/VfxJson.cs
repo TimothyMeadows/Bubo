@@ -27,6 +27,11 @@ public static class VfxJson
             if (document.RootElement.ValueKind != JsonValueKind.Object)
                 throw new InvalidOperationException("VFX package must be a JSON object");
             Inspect(document.RootElement);
+            var version = document.RootElement.TryGetProperty("schemaVersion", out var schema) && schema.ValueKind == JsonValueKind.String ? schema.GetString() : null;
+            if (version != "bubo-vfx-package/v2" && document.RootElement.TryGetProperty("atlases", out _))
+                throw new InvalidOperationException("Atlas declarations require explicit package/v2; v1 fields remain unchanged");
+            if (version == "bubo-vfx-package/v2" && !document.RootElement.TryGetProperty("atlases", out _))
+                throw new InvalidOperationException("Package/v2 requires explicit atlas metadata");
             return JsonSerializer.Deserialize<VfxPackage>(bytes, Options)
                 ?? throw new InvalidOperationException("VFX package must not be null");
         }
@@ -35,6 +40,8 @@ public static class VfxJson
             throw new InvalidOperationException("Invalid strict VFX package JSON: " + error.Message, error);
         }
     }
+
+    public static byte[] Serialize(VfxPackage package) => JsonSerializer.SerializeToUtf8Bytes(package, Options);
 
     static void Inspect(JsonElement element)
     {

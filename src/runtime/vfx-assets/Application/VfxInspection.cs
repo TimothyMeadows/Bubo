@@ -39,7 +39,8 @@ public static class VfxInspection
             Array.AsReadOnly(package.Resources.Select(resource => resource.Kind)
                 .Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray()));
         var result = new VfxInspectionResult(package, ProjectRelative(workspace, fullPackage), packageData.Sha256,
-            packageData.Bytes, observed.AsReadOnly(), validation, requirements, new VfxCapabilities());
+            packageData.Bytes, observed.AsReadOnly(), validation, requirements,
+            new VfxCapabilities { ResourceContentValidationAvailable = package.SchemaVersion == "bubo-vfx-package/v2" });
         // Semantic errors are reported without opening paths from an invalid declaration.
         if (!validation.IsValid) return result;
         if (packageData.Bytes > package.Budgets.MaxPackageBytes)
@@ -70,7 +71,8 @@ public static class VfxInspection
             var limit = Math.Min(package.Budgets.MaxDependencyBytes, available);
             if (resource.Bytes < 1 || resource.Bytes > limit)
                 throw new InvalidOperationException("VFX dependency exceeds the remaining declared byte budget");
-            var data = Read(workspace, resolved, limit, resource.Bytes, false, cancellation, resource.Kind);
+            var atlas = package.Atlases?.SingleOrDefault(a => a.ResourceId == resource.Id);
+            var data = Read(workspace, resolved, limit, resource.Bytes, false, cancellation, resource.Kind, atlas);
             if (!data.Sha256.Equals(resource.Sha256, StringComparison.Ordinal))
                 throw new InvalidOperationException("VFX dependency hash changed: " + resource.Id);
             totalBytes = checked(totalBytes + data.Bytes);
@@ -88,7 +90,7 @@ public static class VfxInspection
     sealed record ReadResult(long Bytes, string Sha256, byte[]? Content);
 
     static ReadResult Read(IWorkspace workspace, string path, long maximumBytes, long? expectedBytes,
-        bool retainContent, CancellationToken cancellation, string? resourceKind = null)
+        bool retainContent, CancellationToken cancellation, string? resourceKind = null, VfxAtlasMetadata? atlas = null)
     {
         cancellation.ThrowIfCancellationRequested();
         if (maximumBytes < 1) throw new InvalidOperationException("VFX input has no remaining byte allowance");
@@ -107,10 +109,30 @@ public static class VfxInspection
         if (resourceKind is null) reader.Drain();
         else VfxResourceEnvelope.Validate(reader, resourceKind, cancellation);
         reader.Complete();
+        var digest = reader.FinishHash();
+        if (atlas is not null)
+        {
+            // Explicit v2 atlas admission decodes the already hashed, still-open file.
+            // v1 retains its original envelope-only profile. No colour conversion occurs.
+            stream.Position = 0;
+            var decoded = RgbaPngCodec.Read(stream, new RgbaPngCodec.Limits
+            {
+                MaxEncodedBytes = Math.Min(maximumBytes, 134217728), MaxChunkBytes = 134217728,
+                MaxCompressedBytes = 134217728, MaxPixels = checked((long)atlas.Width * atlas.Height),
+                MaxWorkingBytes = 268435456, MaxOutputBytes = 134217728, ColorSpace = atlas.ColorSpace
+            }, cancellation);
+            if (decoded.Width != atlas.Width || decoded.Height != atlas.Height)
+                throw new InvalidOperationException("VFX atlas dimensions differ from actual decoded PNG pixels");
+            stream.Position = 0;
+            using var afterDecode = new VfxInputReader(stream, maximumBytes, expectedBytes, false, cancellation);
+            afterDecode.Drain(); afterDecode.Complete();
+            if (afterDecode.FinishHash() != digest)
+                throw new InvalidOperationException("VFX atlas changed while its content was decoded");
+        }
         var checkedAgain = Resolve(workspace, path, cancellation);
         if (!checkedAgain.Equals(resolved, PathComparison))
             throw new InvalidOperationException("VFX input path changed during bounded inspection");
-        return new(reader.Bytes, reader.FinishHash(), reader.Content);
+        return new(reader.Bytes, digest, reader.Content);
     }
 
     static string Resolve(IWorkspace workspace, string path, CancellationToken cancellation)

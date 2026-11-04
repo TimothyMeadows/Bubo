@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Bubo.Vfx.Domain;
 
 /// <summary>Declarative inspection data. This contract grants no authoring or runtime authority.</summary>
@@ -11,6 +13,9 @@ public sealed record VfxPackage
     public required VfxBudgets Budgets { get; init; }
     public required IReadOnlyList<VfxResource> Resources { get; init; }
     public required IReadOnlyList<VfxEffect> Effects { get; init; }
+    /// <summary>Only package/v2 admits this field; absent v1 serialization stays identical.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<VfxAtlasMetadata>? Atlases { get; init; }
 }
 
 public sealed record VfxEngineIdentity

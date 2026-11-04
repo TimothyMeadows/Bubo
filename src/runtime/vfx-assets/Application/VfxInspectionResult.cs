@@ -14,14 +14,15 @@ public sealed record VfxCapabilities
     public bool ContractValidationAvailable => true;
     public bool DependencyInspectionAvailable => true;
     public bool ResourceEnvelopeValidationAvailable => true;
-    public bool ResourceContentValidationAvailable => false;
-    public bool ResourcePreparationAvailable => false;
+    public bool ResourceContentValidationAvailable { get; init; }
+    public bool ResourcePreparationAvailable => true;
     public bool RuntimeRenderingAvailable => false;
     public bool ActionCompositionAvailable => false;
     public bool VideoDecodingAvailable => false;
     public bool MediaGenerationAvailable => false;
     public bool PromotionAvailable => false;
-    public string ResourceContentStatus => "envelope-only-not-decoded";
+    public string ResourceContentStatus => ResourceContentValidationAvailable
+        ? "v2-atlas-png-decoded-mesh-envelope-only" : "envelope-only-not-decoded";
 }
 
 public sealed record VfxInspectionResult(VfxPackage Package, string PackagePath, string PackageSha256,
