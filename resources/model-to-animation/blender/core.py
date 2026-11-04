@@ -11,7 +11,7 @@ import sys
 from urllib.parse import urlparse
 
 sys.dont_write_bytecode = True
-PROFILES = ("skinned", "articulated", "rigid")
+PROFILES = ("skinned", "articulated", "rigid", "mechanical-assembly")
 OPERATIONS = ("inspect", "prepare", "rig", "author", "retarget", "bake", "export", "review")
 BUDGETS = ("maxTriangles", "maxBones", "maxInfluences", "maxMaterials", "maxTextureBytes", "maxRuntimeBytes", "maxClips", "maxClipSeconds", "maxSamples", "maxPreviewFrames", "maxAttempts", "timeoutSeconds", "maxLogBytes")
 
@@ -133,6 +133,9 @@ def validate_recipe(recipe, profile):
     no_excluded_providers(recipe)
     if recipe["schemaVersion"] != 1 or recipe["profile"] != profile or profile not in PROFILES:
         raise ValueError("Recipe profile/version disagrees with the job")
+    if profile == "mechanical-assembly":
+        from mechanical import validate_recipe as validate_mechanical_recipe
+        validate_mechanical_recipe(recipe)
     finite(recipe["fps"], "fps", 1, 120, True)
     budget = recipe["budgets"]
     if not isinstance(budget, dict):
@@ -189,6 +192,8 @@ def validate_recipe(recipe, profile):
             raise ValueError("Clip requires loop and root-motion policies")
         if not isinstance(clip.get("channels"), list) or not isinstance(clip.get("markers"), list):
             raise ValueError("Clip channels/markers must be arrays")
+        if profile != "mechanical-assembly" and any("rig" in channel.get("target", {}) for channel in clip["channels"]):
+            raise ValueError("Owned-rig channel targets require mechanical-assembly")
         for marker in clip["markers"]:
             finite(marker.get("time"), "Marker time", 0, (end - start) / recipe["fps"])
             text(marker.get("event"), "Marker event")
@@ -221,7 +226,7 @@ def load_job():
     if not path.is_file() or path.stat().st_size > 8 * 1024 * 1024:
         raise ValueError("Missing or oversized native job")
     job = json.loads(path.read_text(encoding="utf-8-sig"))
-    allowed = {"schemaVersion", "root", "operation", "input", "outputDir", "result", "asset", "version", "profile", "recipe", "motionSource", "mapping", "revisionClip"}
+    allowed = {"schemaVersion", "root", "operation", "input", "outputDir", "result", "asset", "version", "profile", "recipe", "motionSource", "mapping", "revisionClip", "mechanicalHandoff", "mechanicalMetadata", "mechanicalToolchain"}
     if set(job) - allowed or job.get("schemaVersion") != 1 or job.get("operation") not in OPERATIONS:
         raise ValueError("Invalid native motion job")
     if job.get("revisionClip") is not None:
@@ -264,7 +269,7 @@ def load_job():
     return job, root, source, output, result, recipe
 
 
-def load_scene(source, fps):
+def load_scene(source, fps, mechanical=False):
     import bpy
     if source.suffix.lower() == ".blend":
         bpy.ops.wm.open_mainfile(filepath=str(source), load_ui=False, use_scripts=False)
@@ -273,7 +278,11 @@ def load_scene(source, fps):
     else:
         bpy.ops.wm.read_factory_settings(use_empty=True)
         bpy.context.scene.render.fps = fps
-        bpy.ops.import_scene.gltf(filepath=str(source), loglevel=0)
+        if mechanical:
+            from mechanical import import_static_gltf
+            import_static_gltf(source)
+        else:
+            bpy.ops.import_scene.gltf(filepath=str(source), loglevel=0)
         # The glTF importer creates hidden bone-display meshes; these are UI
         # helpers, not authored model geometry or runtime dependencies.
         helpers={bone.custom_shape for obj in bpy.context.scene.objects if obj.type=="ARMATURE" for bone in obj.pose.bones if bone.custom_shape is not None}
@@ -351,12 +360,15 @@ def inventory(recipe, require_skin=False):
     unweighted = 0
     bad_normalization = 0
     if armatures():
-        names = {bone.name for rig in armatures() for bone in rig.data.bones if bone.use_deform}
         for mesh in meshes():
-            if not any(mod.type == "ARMATURE" and mod.object in armatures() for mod in mesh.modifiers):
+            owned = [mod.object for mod in mesh.modifiers if mod.type == "ARMATURE"]
+            if not owned:
                 if require_skin:
                     raise ValueError("Skinned mesh lacks a declared armature modifier: " + mesh.name)
                 continue
+            if len(owned) != 1 or owned[0] not in armatures():
+                raise ValueError("Mesh requires exactly one existing owning armature: " + mesh.name)
+            names = {bone.name for bone in owned[0].data.bones if bone.use_deform}
             groups = {group.index: group.name for group in mesh.vertex_groups}
             for vertex in mesh.data.vertices:
                 weights = [group.weight for group in vertex.groups if groups.get(group.group) in names and group.weight > 1e-8]

@@ -76,6 +76,44 @@ async Task Approve(Dictionary<string, string> options, string kind, string revie
 async Task Ready(Dictionary<string, string> options) { foreach (var command in new[] { "inspect", "prepare", "rig" }) await Run(options, command); await Approve(options, "rig"); }
 try
 {
+    passed += MechanicalAdmissionFixtures.Run(w, FixtureRecipe());
+    var mechanicalOptions = Settings("mechanical");
+    mechanicalOptions["model"] = "mechanical-fixtures/assembly.glb";
+    mechanicalOptions["recipe"] = "mechanical-fixtures/recipe.json";
+    mechanicalOptions["handoff"] = "mechanical-fixtures/handoff.json";
+    await Run(mechanicalOptions, "init");
+    mechanicalOptions["manifest"] = ".hephaera/.cache/tasks/motion-tests/model-to-animation/mechanical/v1/manifest.json";
+    var mechanicalState = State(mechanicalOptions);
+    Check(mechanicalState.MechanicalHandoff is not null && mechanicalState.MechanicalMetadata is not null && mechanicalState.Originals.ContainsKey(mechanicalState.MechanicalHandoff) && mechanicalState.Originals.ContainsKey(mechanicalState.MechanicalMetadata), "mechanical init snapshots immutable handoff and relationship metadata");
+    Check(mechanicalState.Approvals.Count == 0, "reviewed mechanical source grants no motion or human runtime approval");
+    Check(File.ReadAllBytes(w.Resolve(mechanicalState.MechanicalHandoff!)).SequenceEqual(File.ReadAllBytes(w.Resolve(mechanicalOptions["handoff"]))), "mechanical handoff is preserved content-identically");
+    fake.JobObserved = job => Check(job["mechanicalHandoff"]?["schemaVersion"]?.GetValue<string>() == MechanicalAdmission.Schema && job["mechanicalMetadata"] is JsonObject, "mechanical native job carries immutable admission and relationships");
+    await Run(mechanicalOptions, "inspect");
+    fake.JobObserved = null;
+    var metadataBefore = File.ReadAllBytes(w.Resolve("mechanical-fixtures/metadata.json"));
+    File.AppendAllText(w.Resolve("mechanical-fixtures/metadata.json"), " ");
+    var beforeChangedMechanical = fake.Calls;
+    await Reject(() => Run(mechanicalOptions, "doctor"), "changed mechanical source metadata invalidates downstream admission");
+    Check(fake.Calls == beforeChangedMechanical, "stale mechanical source stops before native tool launch");
+    File.WriteAllBytes(w.Resolve("mechanical-fixtures/metadata.json"), metadataBefore);
+    var sdkFile="4.5/scripts/addons_core/io_scene_gltf2/__init__.py";
+    var sdkBefore=File.ReadAllBytes(w.Resolve(sdkFile));
+    fake.JobObserved=_=>File.AppendAllText(w.Resolve(sdkFile),"# synthetic same-invocation SDK mutation\n");
+    await Reject(()=>Run(mechanicalOptions,"inspect"),"SDK mutation during worker cannot produce a completed mechanical stage");
+    fake.JobObserved=null;
+    Check(State(mechanicalOptions).Stages["inspect"].Status=="failed","changed installed SDK retains failed attempt after passing-looking worker output");
+    File.WriteAllBytes(w.Resolve(sdkFile),sdkBefore);
+    var mechanicalPackage=State(mechanicalOptions).MechanicalPackage!;var packageBefore=File.ReadAllBytes(w.Resolve(mechanicalPackage));
+    fake.VersionObserved=()=>
+    {
+        File.AppendAllText(w.Resolve(sdkFile),"# synthetic changed SDK after version wait\n");
+        var changed=w.Load<JsonObject>(mechanicalPackage);changed["toolchain"]!["gltfFiles"]![0]!["sha256"]=w.HashProjectFile(sdkFile);changed["toolchain"]!["gltfFiles"]![0]!["bytes"]=new FileInfo(w.Resolve(sdkFile)).Length;w.Save(mechanicalPackage,changed);
+    };
+    var beforeVersionRebind=fake.Calls;
+    await Reject(()=>Run(mechanicalOptions,"inspect"),"changed copied package cannot refresh SDK expectations after version wait");
+    fake.VersionObserved=null;
+    Check(fake.Calls==beforeVersionRebind+1,"version-wait package/SDK mutation rejects before launching main worker");
+    File.WriteAllBytes(w.Resolve(mechanicalPackage),packageBefore);File.WriteAllBytes(w.Resolve(sdkFile),sdkBefore);
     var denied = Settings("denied");
     w.Save("denied-rights.json", new
     {
@@ -110,8 +148,9 @@ try
     Check(initial.Profile == "rigid" && initial.Originals.Count >= 4, "rigid profile registers immutable originals without fake combat bones");
     Check(!initial.Approvals.Any(), "initialization creates no human approval");
     Check(w.Load<JsonObject>(initial.Rights)["notes"]!.GetValue<string>().Contains("No Adobe"), "negative exclusion notes and ordinary material substance are not mistaken for vendor provenance");
+    var beforeSkippedPreparation = fake.Calls;
     await Reject(() => Run(options, "prepare"), "preparation cannot skip source inspection");
-    Check(fake.Calls == 0, "stage order rejects before native process launches");
+    Check(fake.Calls == beforeSkippedPreparation, "stage order rejects before native process launches");
     foreach (var command in new[] { "inspect", "prepare", "rig" })
         await Run(options, command);
     var calls = fake.Calls;
@@ -357,6 +396,7 @@ sealed class FakeEngine : IEngineResolver
 }
 sealed class FakeProcess(Workspace workspace) : INativeProcess
 {
+    public Action? VersionObserved { get; set; }
     public int Calls
     {
         get; private set;
@@ -373,7 +413,10 @@ sealed class FakeProcess(Workspace workspace) : INativeProcess
         File.WriteAllText(log, "stdout: SYNTHETIC Blender 4.5.10 protocol fixture; no executable launched\n");
         var args = arguments.ToArray();
         if (args.Contains("--version"))
+        {
+            VersionObserved?.Invoke();
             return Task.CompletedTask;
+        }
         var failureFlag = Array.IndexOf(args, "--python-exit-code");
         if (failureFlag < 0 || args[failureFlag + 1] != "1")
             throw new InvalidOperationException("Native authoring must propagate Python exception exit status");

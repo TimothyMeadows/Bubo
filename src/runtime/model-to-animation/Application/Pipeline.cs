@@ -52,6 +52,8 @@ public sealed partial class Pipeline(IWorkspace w, Dictionary<string, string> op
         foreach (var input in m.Originals.Keys)
             if (!Relative(w, input).StartsWith(m.Staging + "/original/", StringComparison.Ordinal))
                 throw new InvalidOperationException("Original ancestry escapes its asset");
+        if (m.Profile == "mechanical-assembly" && (m.MechanicalHandoff is null || m.MechanicalMetadata is null || m.MechanicalDesign is null || m.MechanicalPackage is null || !m.Originals.ContainsKey(m.MechanicalHandoff) || !m.Originals.ContainsKey(m.MechanicalMetadata) || !m.Originals.ContainsKey(m.MechanicalDesign) || !m.Originals.ContainsKey(m.MechanicalPackage)))
+            throw new InvalidOperationException("Mechanical state omitted immutable handoff ancestry");
         foreach (var pair in m.Stages)
             CheckStageLayout(pair.Key, pair.Value);
         if (m.LastSuccessfulMotion is not null)
@@ -92,6 +94,7 @@ public sealed partial class Pipeline(IWorkspace w, Dictionary<string, string> op
         VerifyHashes(m.Originals);
         VerifyHashes(m.SourceInputs);
         VerifyHashes(m.BaselineInputs, true);
+        if(m.Profile=="mechanical-assembly")_ = MechanicalSdk(cancellation);
         if (LoadObject(m.Rights)["authorized"]?.GetValue<bool>() != true)
             throw new InvalidOperationException("Current model rights are not authorized");
         if (!File.Exists(m.Blender) || w.HashFile(m.Blender) != m.BlenderSha256)
@@ -209,6 +212,14 @@ public sealed partial class Pipeline(IWorkspace w, Dictionary<string, string> op
         NoExcludedProviders(rights);
         var recipe = LoadObject(Relative(w, Need("recipe")));
         MotionValidation.Recipe(recipe);
+        JsonObject? mechanical = null;
+        Dictionary<string, string>? mechanicalSources = null;
+        if (Text(recipe, "profile") == "mechanical-assembly")
+        {
+            mechanical = LoadObject(Relative(w, Need("handoff")));
+            mechanicalSources = MechanicalAdmission.Validate(mechanical, MotionValidation.Glb(w.Resolve(model)), model, w);
+        }
+        else if (options.ContainsKey("handoff")) throw new InvalidOperationException("Mechanical handoff requires the mechanical-assembly profile");
         var engine = await engines.Resolve(cancellation);
         if (Text(engine, "effectiveEngine") == "PHASERJS")
             throw new InvalidOperationException("PHASERJS requires an explicitly selected 2D sprite/rendered-animation handoff; this native GLB workflow cannot claim skinned3D support");
@@ -217,6 +228,7 @@ public sealed partial class Pipeline(IWorkspace w, Dictionary<string, string> op
         var blender = Path.GetFullPath(Need("blender"));
         if (!Path.IsPathRooted(Need("blender")) || !File.Exists(blender))
             throw new InvalidOperationException("Configure an existing absolute Blender4.5 executable; no software is installed");
+        if(mechanical is not null)_=MechanicalAdmission.VerifyToolchain(LoadObject(Text(mechanical["package"]!.AsObject(),"path")),blender,w.HashFile(blender),cancellation);
         if (File.Exists(w.Resolve(path)))
             throw new InvalidOperationException("Asset version already exists");
         using var ownership = w.Lock(State + "/asset.lock");
@@ -251,6 +263,28 @@ public sealed partial class Pipeline(IWorkspace w, Dictionary<string, string> op
         m.Model = Copy(model, "model.glb");
         m.Rights = Copy(Need("rights"), "rights.json");
         m.Recipe = Copy(Need("recipe"), "recipe.json");
+        if (mechanical is not null)
+        {
+            m.MechanicalHandoff = Copy(Need("handoff"), "mechanical-handoff.json");
+            var ordinal = 0;
+            foreach (var reference in MechanicalAdmission.References.Where(name => name != "model"))
+            {
+                var source = Text(mechanical[reference]!.AsObject(), "path");
+                NoExcludedProviders(LoadObject(source));
+                var copied = Copy(source, "mechanical-" + ordinal++ + "-" + reference + ".json");
+                if (reference == "metadata") m.MechanicalMetadata = copied;
+                if (reference == "design") m.MechanicalDesign = copied;
+                if (reference == "package") m.MechanicalPackage = copied;
+            }
+            foreach (var name in new[] { "design", "parts", "assembly", "export" })
+            {
+                var source = Text(mechanical["sourceState"]![name]!.AsObject(), "path");
+                _ = LoadObject(source);
+                Copy(source, "mechanical-state-" + name + ".json");
+            }
+            VerifyHashes(mechanicalSources!);
+            foreach (var source in mechanicalSources!) m.SourceInputs[source.Key] = source.Value;
+        }
         m.EffectiveRecipe = m.Recipe;
         m.EffectiveRecipeSha256 = HashFile(m.Recipe);
         if (options.TryGetValue("editable-source", out var editable))
@@ -287,6 +321,20 @@ public sealed partial class Pipeline(IWorkspace w, Dictionary<string, string> op
         Directory.CreateDirectory(w.ResolveWrite(directory));
         await CheckBlender(directory, cancellation);
         Console.WriteLine("READY: Blender4.5 version/binary and canonical engine selection checked; no dependency installed");
+    }
+    JsonObject MechanicalSdk(CancellationToken cancellation)
+    {
+        cancellation.ThrowIfCancellationRequested();
+        var package=m.MechanicalPackage??throw new InvalidOperationException("Missing immutable mechanical package snapshot");
+        if(!m.Originals.TryGetValue(package,out var expected))throw new InvalidOperationException("Mechanical package lacks immutable expected ancestry");
+        using var file=new FileStream(w.Resolve(package),FileMode.Open,FileAccess.Read,FileShare.Read);
+        if(file.Length is <2 or >8*1024*1024)throw new InvalidOperationException("Missing/oversized immutable mechanical package");
+        var bytes=new byte[checked((int)file.Length)];file.ReadExactly(bytes);
+        if(file.Length!=bytes.Length||file.ReadByte()!=-1||Convert.ToHexStringLower(SHA256.HashData(bytes))!=expected)
+            throw new InvalidOperationException("Immutable mechanical package changed; SDK expectations cannot be refreshed");
+        cancellation.ThrowIfCancellationRequested();
+        var captured=JsonNode.Parse(bytes)?.AsObject()??throw new InvalidOperationException("Invalid immutable mechanical package");
+        return MechanicalAdmission.VerifyToolchain(captured,m.Blender,m.BlenderSha256,cancellation);
     }
     void Validate()
     {

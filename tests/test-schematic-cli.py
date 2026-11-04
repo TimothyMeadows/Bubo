@@ -46,13 +46,14 @@ def main():
     capability = invoke(['capabilities', '--api-version', '2'])
     check('schematic-to-model' in capability['workflows'], 'additive schematic workflow in execution API2')
     check(capability['schematic'] == {
-        'phase': 'assembly-readiness', 'operations': ['init', 'doctor', 'preview', 'validate', 'record', 'build-parts', 'assemble', 'prove-motion', 'status'],
-        'partConstructionAvailable': True, 'assemblyAvailable': True, 'motionProofAvailable': True, 'requiresApprovedAssemblyV2': True, 'modelExportAvailable': False},
-        'additive approved-v2 assembly capabilities keep canonical export separately gated')
+        'phase': 'portable-assembly-export', 'operations': ['init', 'doctor', 'preview', 'validate', 'record', 'build-parts', 'assemble', 'prove-motion', 'export', 'review', 'status'],
+        'partConstructionAvailable': True, 'assemblyAvailable': True, 'motionProofAvailable': True, 'requiresApprovedAssemblyV2': True, 'modelExportAvailable': True,
+        'motionHandoffProfile': 'mechanical-assembly', 'humanModelAcceptanceSeparate': True},
+        'additive approved-v2 export preserves a distinct mechanical motion handoff and human gate')
     invoke(['schematic-to-model', 'build-parts', '--api-version', '2'], 'Explicit --root required')
-    for operation in ['assemble', 'prove-motion']:
+    for operation in ['assemble', 'prove-motion', 'export', 'review']:
         invoke(['schematic-to-model', operation, '--api-version', '2'], 'Explicit --root required')
-    for operation in ['export', 'review', 'promote']:
+    for operation in ['promote']:
         invoke(['schematic-to-model', operation, '--api-version', '2'], 'Unsupported workflow/operation')
     invoke(['schematic-to-model', 'preview', '--api-version', '2', '--callback', 'untrusted.py'], 'Unknown or inapplicable option')
     policy = project/'policy.json'

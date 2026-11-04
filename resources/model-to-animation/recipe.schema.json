@@ -8,7 +8,8 @@
       "enum": [
         "skinned",
         "articulated",
-        "rigid"
+        "rigid",
+        "mechanical-assembly"
       ]
     },
     "fps": {
@@ -294,6 +295,15 @@
                       "required": [
                         "bone"
                       ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "rig": { "type": "string", "minLength": 1 },
+                        "bone": { "type": "string", "minLength": 1 }
+                      },
+                      "required": ["rig", "bone"],
                       "additionalProperties": false
                     }
                   ]
@@ -946,5 +956,16 @@
   "additionalProperties": false,
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://hephaera.local/schemas/motion/recipe-v1",
-  "title": "Explicit native skinned/articulated/rigid animation production recipe"
+  "allOf": [{
+    "if": { "properties": { "profile": { "const": "mechanical-assembly" } } },
+    "then": {
+      "properties": {
+        "rig": { "properties": { "mode": { "const": "preserve" } }, "required": ["mode", "rootNode"], "not": { "anyOf": [{ "required": ["bones"] }, { "required": ["skinning"] }, { "required": ["rootBone"] }, { "required": ["node"] }] } },
+        "parts": { "maxItems": 0 },
+        "anchors": { "maxItems": 0 },
+        "clips": { "items": { "properties": { "rootMotion": { "const": "in-place" }, "channels": { "items": { "properties": { "target": { "oneOf": [{ "required": ["node"] }, { "required": ["rig", "bone"] }] } } } } } } }
+      }
+    }
+  }],
+  "title": "Explicit native skinned/articulated/rigid or preserve-only mechanical assembly animation recipe"
 }

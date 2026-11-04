@@ -4,6 +4,11 @@ using Bubo.Schematic.Infrastructure;
 using Bubo.Schematic.Tests;
 using Bubo.Schematic.Application;
 
+if(args is ["--export-state-tests"])
+{
+    ExportSessionTests.Run();return Check.Failed==0?0:1;
+}
+
 if (args is ["--write-readiness-fixtures", var readinessDirectory])
 {
     Directory.CreateDirectory(readinessDirectory);
@@ -53,5 +58,8 @@ AssemblyTests.Run();
 ReadinessExamples.Run();
 AssemblyOutputTests.Run();
 AssemblySessionTests.Run();
+ExportContractTests.Run();
+ExportOutputTests.Run();
+ExportSessionTests.Run();
 Console.WriteLine($"Schematic design checks: {Check.Passed} passed, {Check.Failed} failed. Synthetic review fixtures grant no human asset acceptance.");
 return Check.Failed == 0 ? 0 : 1;

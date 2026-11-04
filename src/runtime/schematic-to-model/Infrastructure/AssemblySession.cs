@@ -52,6 +52,10 @@ public sealed class AssemblySession(IWorkspace workspace, DesignSession design, 
     }
     sealed record Compiled(DiagnosticPlan Plan, IReadOnlyList<FlexibleRigProgram> Rigs);
     sealed record CurrentAssembly(Attempt Attempt, AssemblyBuildJob Job, AssemblyNativeVerification Native, string Scene);
+    internal sealed record VerifiedAssemblyStage(string Directory, string Scene, string ToolPath, string ToolSha256,
+        string ApprovalSha256, string JobSha256, string ReportSha256, string VerificationSha256, string NativeVerificationSha256,
+        string SceneSha256, SortedDictionary<string, string> Bundle, AssemblyBuildJob Job, AssemblyNativeVerification Native);
+    internal sealed record VerifiedAssemblyInput(PartSession.VerifiedPartInput Parts, VerifiedAssemblyStage Assembly, VerifiedAssemblyStage Motion);
     static bool Hash(string? value) => SchematicNativeRunner.IsHash(value);
     static string Digest<T>(T value) => Convert.ToHexStringLower(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(value, StrictDesignJson.Options)));
     static byte[] Encode<T>(T value)
@@ -249,6 +253,26 @@ public sealed class AssemblySession(IWorkspace workspace, DesignSession design, 
     }
     public Task<object> Assemble(string manifest, string blender, CancellationToken cancellation = default) => Execute(manifest, blender, "assemble", cancellation);
     public Task<object> ProveMotion(string manifest, string blender, CancellationToken cancellation = default) => Execute(manifest, blender, "prove-motion", cancellation);
+    /// <summary>Read-only composition under the caller's existing asset lock; no older-success fallback or nested public-status lock.</summary>
+    internal VerifiedAssemblyInput InspectOwned(string manifest, CancellationToken cancellation = default)
+    {
+        var input = parts.InspectOwned(manifest, cancellation);
+        _ = RequireSpec(input.Input.Design, cancellation);
+        RequireParts(input, input.ToolSha256);
+        var state = Load(manifest, input.Input, cancellation);
+        var compiled = Compile(input.Input.Design, cancellation);
+        var source = InspectAssembly(manifest, state, input, compiled, cancellation);
+        var proof = Latest(state, "prove-motion");
+        if (proof is not { Status: "complete" } || proof.Identity != source.Attempt.Identity
+            || proof.ApprovalSha256 != source.Attempt.ApprovalSha256 || proof.SourceAssembly != source.Scene
+            || proof.SourceAssemblySha256 != source.Attempt.SceneSha256 || proof.SourceAssemblyEvidenceSha256 != SourceEvidence(source.Attempt))
+            throw new InvalidOperationException("Export requires the latest complete current assembly and diagnostic proof, bound to their exact source ancestry; no older-success fallback");
+        var motion = VerifyRetained(manifest, input, proof, compiled, cancellation);
+        VerifiedAssemblyStage Stage(Attempt attempt, AssemblyBuildJob job, AssemblyNativeVerification measured) => new(attempt.Directory,
+            ScenePath(attempt), attempt.ToolPath, attempt.Identity.ToolSha256, attempt.ApprovalSha256, attempt.JobSha256!, attempt.ReportSha256!,
+            attempt.VerificationSha256!, attempt.NativeVerificationSha256!, attempt.SceneSha256!, new(attempt.Bundle, StringComparer.Ordinal), job, measured);
+        return new(input, Stage(source.Attempt, source.Job, source.Native), Stage(proof, Job(input, proof, compiled, cancellation), motion));
+    }
     async Task<object> Execute(string manifest, string blender, string operation, CancellationToken cancellation)
     {
         runner.RequireBudget(); using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellation); deadline.CancelAfter(TimeSpan.FromSeconds(timeoutSeconds)); cancellation = deadline.Token;

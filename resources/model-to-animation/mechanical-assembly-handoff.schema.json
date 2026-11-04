@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bubo.local/schemas/mechanical-assembly-handoff-v1",
+  "title": "Reviewed mechanical assembly handoff; no inherited animation/runtime acceptance",
+  "type": "object",
+  "properties": {
+    "schemaVersion": { "const": "bubo-mechanical-assembly-handoff/v1" },
+    "package": { "$ref": "#/$defs/reference" },
+    "model": { "$ref": "#/$defs/reference" },
+    "design": { "$ref": "#/$defs/reference" },
+    "metadata": { "$ref": "#/$defs/reference" },
+    "provenance": { "$ref": "#/$defs/reference" },
+    "technicalReview": { "$ref": "#/$defs/reference" },
+    "independentReview": { "$ref": "#/$defs/reference" },
+    "humanAcceptance": { "type": "object" },
+    "sourceState": {
+      "type": "object",
+      "properties": { "design": { "$ref": "#/$defs/reference" }, "parts": { "$ref": "#/$defs/reference" }, "assembly": { "$ref": "#/$defs/reference" }, "export": { "$ref": "#/$defs/reference" } },
+      "required": ["design", "parts", "assembly", "export"],
+      "additionalProperties": false
+    },
+    "components": {
+      "type": "array", "minItems": 1, "maxItems": 4096,
+      "items": {
+        "type": "object",
+        "properties": { "instanceId": { "$ref": "#/$defs/id" }, "partId": { "$ref": "#/$defs/id" }, "node": { "type": "string", "minLength": 1 }, "kind": { "enum": ["rigid", "flexible"] }, "rigNode": { "type": ["string", "null"] } },
+        "required": ["instanceId", "partId", "node", "kind", "rigNode"],
+        "additionalProperties": false
+      }
+    },
+    "bindings": {
+      "type": "object",
+      "properties": { "nodes": { "type": "array", "minItems": 1, "maxItems": 65536 }, "skins": { "type": "array", "maxItems": 4096 } },
+      "required": ["nodes", "skins"], "additionalProperties": false
+    }
+  },
+  "required": ["schemaVersion", "package", "model", "design", "metadata", "provenance", "technicalReview", "independentReview", "sourceState", "components", "bindings"],
+  "additionalProperties": false,
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$" },
+    "reference": { "type": "object", "properties": { "path": { "type": "string", "minLength": 1 }, "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" } }, "required": ["path", "sha256"], "additionalProperties": false }
+  }
+}

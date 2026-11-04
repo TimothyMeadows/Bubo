@@ -12,11 +12,19 @@ import authoring
 
 def main():
     job,root,source,output,result,recipe=load_job()
+    if recipe["profile"]=="mechanical-assembly":
+        from mechanical import verify_sdk
+        verify_sdk(job)
     before=digest(source)
-    load_scene(source,recipe["fps"])
+    load_scene(source,recipe["fps"],recipe["profile"]=="mechanical-assembly")
     import bpy
     bpy.context.scene.render.fps=recipe["fps"]
     operation=job["operation"]
+    mechanical = None
+    if recipe["profile"] == "mechanical-assembly":
+        from mechanical import admit, validate_scene
+        mechanical = admit(job, root, source, recipe)
+        validate_scene(mechanical, recipe, establish=operation in ("inspect", "prepare", "review"))
     artifacts={}
     findings=[]
     clips=[]
@@ -44,13 +52,22 @@ def main():
         artifacts,clips,measured=review(job,root,source,output,recipe)
     else:raise ValueError("Unknown operation")
     if operation in ("prepare","rig","author","retarget","bake"):
+        if mechanical is not None:
+            validate_scene(mechanical, recipe, establish=operation == "prepare")
         artifacts["blend"]=save_blend(root,output)
     measured=inventory(recipe,recipe["profile"]=="skinned" and operation not in ("inspect","prepare"))
     if operation=="review":
         # Review helper cameras/lights are evidence, not runtime mesh/rig changes.
         measured["reviewFrames"]=len([key for key in artifacts if key.startswith("frame-")])
     if digest(source)!=before:raise ValueError("Native stage modified its immutable input")
-    report={"schemaVersion":"hephaera-motion-stage/v1","operation":operation,"profile":recipe["profile"],"inputSha256":before,"artifacts":artifacts,"metrics":measured,"findings":findings,"clips":clips,"blenderVersion":bpy.app.version_string,"rig":rig_identity(),"verification":{"human":"pending","independent":"pending","runtime":"not-run"}}
+    if recipe["profile"]=="mechanical-assembly":
+        verify_sdk(job)
+    if mechanical is not None:
+        from mechanical import scene_identity
+        stage_rig = scene_identity()
+    else:
+        stage_rig = rig_identity()
+    report={"schemaVersion":"hephaera-motion-stage/v1","operation":operation,"profile":recipe["profile"],"inputSha256":before,"artifacts":artifacts,"metrics":measured,"findings":findings,"clips":clips,"blenderVersion":bpy.app.version_string,"rig":stage_rig,"verification":{"human":"pending","independent":"pending","runtime":"not-run"}}
     report_path=output/"report.json"
     save_json(report_path,report)
     report["artifacts"]["report"]=relative(root,report_path)

@@ -15,6 +15,14 @@ public sealed class Manifest
     public string Profile { get; set; } = "";
     public string Staging { get; set; } = "";
     public string Model { get; set; } = "";
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public string? MechanicalHandoff { get; set; }
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public string? MechanicalMetadata { get; set; }
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public string? MechanicalDesign { get; set; }
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public string? MechanicalPackage { get; set; }
     public string Recipe { get; set; } = "";
     public string EffectiveRecipe { get; set; } = "";
     public string EffectiveRecipeSha256 { get; set; } = "";

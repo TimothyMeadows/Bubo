@@ -46,6 +46,11 @@ def clear_motion():
 def prepare(recipe):
     import bpy
     from mathutils import Matrix, Vector
+    if recipe["profile"] == "mechanical-assembly":
+        # Mechanical source already owns all pivots, parents and deformers.
+        node(recipe["rig"].get("rootNode"))
+        remember_rest()
+        return
     existing = {obj.name: obj for obj in objects()}
     root_name = recipe["rig"].get("rootNode", "MotionRoot")
     root = existing.get(root_name)
@@ -133,6 +138,11 @@ def build_rig(recipe):
     import bpy
     rig_spec = recipe["rig"]
     profile = recipe["profile"]
+    if profile == "mechanical-assembly":
+        from mechanical import scene_identity
+        if rig_spec.get("mode") != "preserve":
+            raise ValueError("Mechanical assembly cannot construct replacement rigs")
+        return scene_identity()
     if profile != "skinned":
         if armatures():
             raise ValueError("Rigid/articulated profile cannot silently carry an unrelated skin rig")
@@ -241,6 +251,11 @@ def quaternion_xyzw(values):
 
 def target_for(channel):
     target = channel.get("target")
+    if isinstance(target, dict) and set(target) == {"rig", "bone"}:
+        rig = node(target["rig"])
+        if rig.type != "ARMATURE" or target["bone"] not in rig.pose.bones:
+            raise ValueError("Channel references a missing explicitly owned bone")
+        return rig, rig.pose.bones[target["bone"]]
     if not isinstance(target, dict) or len(target) != 1:
         raise ValueError("Channel target must declare exactly one node or bone")
     if "bone" in target:
@@ -617,6 +632,11 @@ def bake(recipe):
 def export_package(job, root, source, output, recipe):
     import bpy
     clips = analyze_clips(recipe)
+    reset_pose()
+    mechanical_frames = None
+    if recipe["profile"] == "mechanical-assembly":
+        from mechanical import capture_export_frames
+        mechanical_frames = capture_export_frames(job["mechanicalHandoff"])
     for obj in objects():
         if obj.animation_data:
             obj.animation_data.action = None
@@ -638,9 +658,14 @@ def export_package(job, root, source, output, recipe):
     if glb.exists():
         raise ValueError("Immutable runtime export already exists")
     bpy.ops.object.select_all(action="SELECT")
-    bpy.ops.export_scene.gltf(filepath=str(glb), export_format="GLB", use_selection=True, export_animations=True,
+    raw_glb = output / "asset.raw.glb" if mechanical_frames is not None else glb
+    bpy.ops.export_scene.gltf(filepath=str(raw_glb), export_format="GLB", use_selection=True, export_animations=True,
                              export_animation_mode="ACTIONS", export_frame_range=False, export_force_sampling=True,
-                             export_def_bones=False, export_skins=True, export_apply=False, export_yup=True)
+                             export_def_bones=False, export_skins=True, export_apply=False, export_yup=True,
+                             **({"export_attributes":True,"export_optimize_animation_size":False} if mechanical_frames is not None else {}))
+    if mechanical_frames is not None:
+        from mechanical import normalize_export_frames
+        normalize_export_frames(raw_glb,glb,mechanical_frames,recipe)
     document = read_glb(glb, recipe["budgets"]["maxRuntimeBytes"])
     animations = document.get("animations", [])
     names = [value.get("name") for value in animations]
@@ -657,10 +682,23 @@ def export_package(job, root, source, output, recipe):
         clip["sourceBindings"] = clip["bindings"]
         properties = {"translation": "position", "rotation": "quaternion", "scale": "scale", "weights": "weights"}
         pairs = {(runtime_names[channel["target"]["node"]], properties[channel["target"]["path"]]) for channel in exported["channels"]}
+        if recipe["profile"] == "mechanical-assembly":
+            declared = next(value for value in recipe["clips"] if value["id"]==clip["id"])
+            requested_properties = {"location":"position","rotation_quaternion":"quaternion","scale":"scale"}
+            requested = {(channel["target"].get("node",channel["target"].get("bone")),requested_properties[channel["property"]]) for channel in declared["channels"]}
+            if not requested <= pairs:
+                raise ValueError("Mechanical export lost a requested component/bone property binding")
         clip["bindings"] = [{"node": name, "property": prop} for name, prop in sorted(pairs)]
     if recipe["profile"] == "skinned" and not any(skin.get("joints") for skin in document.get("skins", [])):
         raise ValueError("Actual GLB export lost the required skin")
-    runtime_rig=rig_identity() if recipe["profile"]=="skinned" else {"id":identity([(obj.name,obj.parent.name if obj.parent else None) for obj in objects()]),"kind":recipe["profile"],"boneCount":0}
+    if recipe["profile"] == "mechanical-assembly":
+        from mechanical import approved_numerics, compare_runtime, scene_identity, verify_portable_geometry
+        handoff = job["mechanicalHandoff"]
+        compare_runtime(handoff["bindings"], document, handoff["components"], approved_numerics(root,handoff,job["mechanicalMetadata"]))
+        verify_portable_geometry(root, glb, handoff, recipe)
+        runtime_rig = scene_identity()
+    else:
+        runtime_rig=rig_identity() if recipe["profile"]=="skinned" else {"id":identity([(obj.name,obj.parent.name if obj.parent else None) for obj in objects()]),"kind":recipe["profile"],"boneCount":0}
     runtime_rig["rootNode"]=recipe["rig"].get("rootNode","MotionRoot")
     if recipe["profile"]=="skinned":
         runtime_rig["rootBone"]=recipe["rig"]["rootBone"]
@@ -674,6 +712,9 @@ def export_package(job, root, source, output, recipe):
                "parameters": recipe["parameters"], "states": recipe["states"], "transitions": recipe["transitions"], "effects": recipe["effects"],
                "provenance": recipe.get("provenance", {"provider": "native-blender", "rights": "Caller must supply separate model/clip rights evidence; no rights inferred"}),
                "budgets": recipe["budgets"], "verification": {"status": "pending", "runtime": "not-run", "human": "pending", "independent": "pending"}}
+    if recipe["profile"] == "mechanical-assembly":
+        package["mechanicalHandoff"] = job["mechanicalHandoff"]
+        package["mechanicalMetadata"] = job["mechanicalMetadata"]
     destination = output / "motion-package.json"
     save_json(destination, package)
     return {"blend": blend, "glb": relative(root, glb), "package": relative(root, destination)}, clips

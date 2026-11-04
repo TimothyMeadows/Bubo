@@ -74,13 +74,31 @@ public static class MotionValidation
     public static void Recipe(JsonObject recipe)
     {
         Fields(recipe, "schemaVersion", "profile", "fps", "requiredClips", "rig", "parts", "anchors", "clips", "states", "transitions", "parameters", "effects", "budgets", "review", "provenance", "coordinateSystem", "preparation");
-        if (recipe["schemaVersion"]?.GetValue<int>() != 1 || Text(recipe, "profile") is not ("skinned" or "articulated" or "rigid"))
+        if (recipe["schemaVersion"]?.GetValue<int>() != 1 || Text(recipe, "profile") is not ("skinned" or "articulated" or "rigid" or "mechanical-assembly"))
             throw new InvalidOperationException("Unknown motion recipe/profile");
         Integer(recipe, "fps", 1, 120);
         if (recipe["rig"] is not JsonObject || recipe["budgets"] is not JsonObject budget || recipe["review"] is not JsonObject review)
             throw new InvalidOperationException("Rig, budgets and review objects required");
         foreach (var key in new[] { "requiredClips", "parts", "anchors", "clips", "states", "transitions", "parameters", "effects" })
             _ = Array(recipe, key);
+        if (Text(recipe, "profile") == "mechanical-assembly")
+        {
+            var rig = recipe["rig"]!.AsObject();
+            Fields(rig, "mode", "rootNode");
+            _ = Text(rig, "rootNode");
+            if (Text(rig, "mode") != "preserve" || new[] { "bones", "skinning", "rootBone", "node" }.Any(rig.ContainsKey) || Array(recipe, "parts").Count != 0 || Array(recipe, "anchors").Count != 0)
+                throw new InvalidOperationException("Mechanical assembly preserves its approved components, hierarchy, pivots and owned rigs");
+            foreach (var clip in Array(recipe, "clips").Select(value => value!.AsObject()))
+            {
+                if (Text(clip, "rootMotion") != "in-place") throw new InvalidOperationException("Mechanical assembly preserves its root");
+                foreach (var channel in Array(clip, "channels").Select(value => value!.AsObject()))
+                {
+                    var target = channel["target"]?.AsObject() ?? throw new InvalidOperationException("Missing mechanical channel target");
+                    if (!(target.Count == 1 && target["node"] is not null) && !(target.Count == 2 && target["rig"] is not null && target["bone"] is not null))
+                        throw new InvalidOperationException("Mechanical bone channel requires its exact owning rig");
+                }
+            }
+        }
         Unique(Array(recipe, "clips"), "id");
         Unique(Array(recipe, "anchors"), "id");
         Unique(Array(recipe, "states"), "id");
@@ -137,6 +155,8 @@ public static class MotionValidation
             if ((last - first) / (double)recipe["fps"]!.GetValue<int>() > budget["maxClipSeconds"]!.GetValue<double>())
                 throw new InvalidOperationException("Clip duration exceeds budget");
             _ = Array(clip, "channels");
+            if (Text(recipe, "profile") != "mechanical-assembly" && Array(clip, "channels").Any(channel => channel?["target"]?["rig"] is not null))
+                throw new InvalidOperationException("Qualified owned-rig targets require mechanical-assembly");
             _ = Array(clip, "markers");
         }
         _ = Text(review, "renderer");

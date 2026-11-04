@@ -28,6 +28,10 @@
       "type": "string",
       "minLength": 1
     },
+    "mechanicalHandoff": { "type": "string", "minLength": 1 },
+    "mechanicalMetadata": { "type": "string", "minLength": 1 },
+    "mechanicalDesign": { "type": "string", "minLength": 1 },
+    "mechanicalPackage": { "type": "string", "minLength": 1 },
     "recipe": {
       "type": "string",
       "minLength": 1
@@ -48,7 +52,8 @@
       "enum": [
         "skinned",
         "articulated",
-        "rigid"
+        "rigid",
+        "mechanical-assembly"
       ]
     },
     "blenderSha256": {

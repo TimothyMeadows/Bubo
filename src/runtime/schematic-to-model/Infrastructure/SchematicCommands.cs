@@ -15,18 +15,24 @@ public static class SchematicCommands
             host.TimeoutSeconds, host.MaxLogBytes, host.MaxPrivateBytes, Need("runtime-resource-catalog-sha256"));
         var assembly = new AssemblySession(workspace, session, parts, process, Path.Combine(AppContext.BaseDirectory, "resources/schematic-to-model/blender"),
             host.TimeoutSeconds, host.MaxLogBytes, host.MaxPrivateBytes, Need("runtime-resource-catalog-sha256"));
+        var exports = new AssemblyExportSession(workspace, session, assembly, process, Path.Combine(AppContext.BaseDirectory, "resources/schematic-to-model/blender"),
+            host.TimeoutSeconds, host.MaxLogBytes, host.MaxPrivateBytes, Need("runtime-resource-catalog-sha256"));
         object result = operation switch
         {
             "init" => session.Initialize(Need("design"), Need("asset"), Need("version"), options.GetValueOrDefault("parent-manifest"), cancellation),
             "preview" => session.Preview(Need("manifest"), cancellation),
             "validate" => session.Validate(Need("manifest"), cancellation),
-            "record" => session.Record(Need("manifest"), Need("kind"), Need("reviewer"), Need("evidence"), cancellation),
+            "record" => Need("kind") is "independent-model" or "human-model"
+                ? exports.Record(Need("manifest"), Need("kind"), Need("reviewer"), Need("evidence"), cancellation)
+                : session.Record(Need("manifest"), Need("kind"), Need("reviewer"), Need("evidence"), cancellation),
             "status" => Status(),
             "doctor" => await Doctor(),
             "build-parts" => await parts.BuildParts(Need("manifest"), Need("blender"), cancellation),
             "assemble" => await assembly.Assemble(Need("manifest"), Need("blender"), cancellation),
             "prove-motion" => await assembly.ProveMotion(Need("manifest"), Need("blender"), cancellation),
-            _ => throw new InvalidOperationException("Schematic canonical model export requires the later reviewed export delivery")
+            "export" => await exports.Export(Need("manifest"), Need("blender"), Need("author"), cancellation),
+            "review" => await exports.Review(Need("manifest"), Need("blender"), cancellation),
+            _ => throw new InvalidOperationException("Unknown schematic operation")
         };
         Console.WriteLine(JsonSerializer.Serialize(result, Workspace.Json));
         object Status()
@@ -34,12 +40,14 @@ public static class SchematicCommands
             var status = JsonSerializer.SerializeToNode(session.Status(Need("manifest"), cancellation), Workspace.Json)!.AsObject();
             status["parts"] = JsonSerializer.SerializeToNode(parts.Status(Need("manifest"), cancellation), Workspace.Json);
             status["assembly"] = JsonSerializer.SerializeToNode(assembly.Status(Need("manifest"), cancellation), Workspace.Json);
+            status["export"] = JsonSerializer.SerializeToNode(exports.Status(Need("manifest"), cancellation), Workspace.Json);
             return status;
         }
         async Task<object> Doctor()
         {
             var status = JsonSerializer.SerializeToNode(await parts.Doctor(Need("manifest"), options.GetValueOrDefault("blender"), cancellation), Workspace.Json)!.AsObject();
             status["assembly"] = JsonSerializer.SerializeToNode(assembly.Doctor(Need("manifest"), cancellation), Workspace.Json);
+            status["export"] = JsonSerializer.SerializeToNode(exports.Doctor(Need("manifest"), options.GetValueOrDefault("blender"), cancellation), Workspace.Json);
             return status;
         }
     }
