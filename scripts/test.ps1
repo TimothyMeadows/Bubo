@@ -27,6 +27,8 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Schematic public CLI contract checks failed.' }
     python -B -X utf8 tests/test-schematic-parts-admission.py
     if ($LASTEXITCODE -ne 0) { throw 'Schematic fixed part bundle admission checks failed.' }
+    python -B -X utf8 tests/test-schematic-assembly-admission.py
+    if ($LASTEXITCODE -ne 0) { throw 'Schematic fixed assembly bundle admission checks failed.' }
     python -X utf8 tests/test-media-provision.py
     if ($LASTEXITCODE -ne 0) { throw 'Fixed media provisioning contract checks failed.' }
     python -X utf8 tests/test-music-worker.py

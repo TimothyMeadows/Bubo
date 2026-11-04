@@ -1,0 +1,521 @@
+{
+  "schemaVersion": "bubo-assembly-design/v2",
+  "id": "vehicle-assembly-example",
+  "name": "vehicle-assembly-example",
+  "purpose": "Owned schematic design fixture for a mechanically coherent game asset",
+  "styleSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "coordinateSystem": "xy-metres-z-up",
+  "numerics": {
+    "linearTolerance": 1E-06,
+    "angularToleranceDegrees": 0.01,
+    "minimumFeatureSize": 0.0001,
+    "maxCoordinateMagnitude": 10000
+  },
+  "budgets": {
+    "maxPartDefinitions": 128,
+    "maxInstances": 1024,
+    "maxFeatures": 4096,
+    "maxRoutePoints": 4096,
+    "maxDrawings": 256,
+    "maxValidationChecks": 10000000,
+    "maxPreviewBytes": 16777216,
+    "maxExportBytes": 536870912,
+    "maxGeneratedTriangles": 500000,
+    "maxMotionSamples": 10000
+  },
+  "observations": [
+    {
+      "id": "design-assumption",
+      "kind": "assumed",
+      "description": "Dimensions and construction are authored fixture choices; references do not determine scale",
+      "source": "Owned engineering fixture"
+    },
+    {
+      "id": "design-simplification",
+      "kind": "simplified",
+      "description": "Bounded demonstration assembly; unlisted commercial systems are excluded from this explicit design, not silently omitted during construction",
+      "source": "Synthetic fixture scope"
+    },
+    {
+      "id": "readiness-example-scope",
+      "kind": "simplified",
+      "description": "Explicit toy engineering assembly for dimensional, articulation and clearance QA. No unlisted commercial systems, physics/manufacturing certification or human asset acceptance.",
+      "source": "Owned procedural example"
+    }
+  ],
+  "materials": [
+    {
+      "id": "steel",
+      "name": "Brushed steel",
+      "color": "#708090",
+      "roughness": 0.45,
+      "metallic": 0.8
+    }
+  ],
+  "parts": [
+    {
+      "id": "chassis-definition",
+      "name": "chassis-definition",
+      "purpose": "Independently authored mechanical fixture component",
+      "detail": "Chassis platform and fixed spindle supports; individually instanced bored wheels rotate around their actual bearing centres",
+      "materialId": "steel",
+      "kind": "rigid",
+      "size": {
+        "x": 4.2,
+        "y": 2.6,
+        "z": 0.45
+      },
+      "features": [
+        {
+          "id": "solid",
+          "kind": "box",
+          "operation": "add",
+          "frame": {
+            "origin": {
+              "x": 0,
+              "y": 0.4,
+              "z": 0
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          },
+          "parameters": {
+            "width": 4.2,
+            "depth": 1.8,
+            "height": 0.45
+          },
+          "profile": [],
+          "path": [],
+          "sections": []
+        },
+        {
+          "id": "front-fixed-spindle",
+          "kind": "cylinder",
+          "operation": "add",
+          "frame": {
+            "origin": {
+              "x": 0.7,
+              "y": 2.4,
+              "z": 0.15
+            },
+            "rotationDegrees": {
+              "x": 90,
+              "y": 0,
+              "z": 0
+            }
+          },
+          "parameters": {
+            "radius": 0.04,
+            "length": 2.2,
+            "segments": 24
+          },
+          "profile": [],
+          "path": [],
+          "sections": []
+        },
+        {
+          "id": "rear-fixed-spindle",
+          "kind": "cylinder",
+          "operation": "add",
+          "frame": {
+            "origin": {
+              "x": 3.5,
+              "y": 2.4,
+              "z": 0.15
+            },
+            "rotationDegrees": {
+              "x": 90,
+              "y": 0,
+              "z": 0
+            }
+          },
+          "parameters": {
+            "radius": 0.04,
+            "length": 2.2,
+            "segments": 24
+          },
+          "profile": [],
+          "path": [],
+          "sections": []
+        }
+      ],
+      "interfaces": [
+        {
+          "id": "front-left",
+          "name": "front-left",
+          "frame": {
+            "origin": {
+              "x": 0.7,
+              "y": 0.25,
+              "z": 0.15
+            },
+            "rotationDegrees": {
+              "x": 90,
+              "y": 0,
+              "z": 0
+            }
+          }
+        },
+        {
+          "id": "front-right",
+          "name": "front-right",
+          "frame": {
+            "origin": {
+              "x": 0.7,
+              "y": 2.35,
+              "z": 0.15
+            },
+            "rotationDegrees": {
+              "x": 90,
+              "y": 0,
+              "z": 0
+            }
+          }
+        },
+        {
+          "id": "rear-left",
+          "name": "rear-left",
+          "frame": {
+            "origin": {
+              "x": 3.5,
+              "y": 0.25,
+              "z": 0.15
+            },
+            "rotationDegrees": {
+              "x": 90,
+              "y": 0,
+              "z": 0
+            }
+          }
+        },
+        {
+          "id": "rear-right",
+          "name": "rear-right",
+          "frame": {
+            "origin": {
+              "x": 3.5,
+              "y": 2.35,
+              "z": 0.15
+            },
+            "rotationDegrees": {
+              "x": 90,
+              "y": 0,
+              "z": 0
+            }
+          }
+        }
+      ],
+      "terminals": [],
+      "flexible": null
+    },
+    {
+      "id": "wheel-definition",
+      "name": "wheel-definition",
+      "purpose": "Independently authored mechanical fixture component",
+      "detail": "Approved smooth surfaces and individually addressable hardware; explicit idealized design, no manufacturing certification",
+      "materialId": "steel",
+      "kind": "rigid",
+      "size": {
+        "x": 0.6,
+        "y": 0.6,
+        "z": 0.2
+      },
+      "features": [
+        {
+          "id": "turned-wheel",
+          "kind": "revolve",
+          "operation": "add",
+          "frame": {
+            "origin": {
+              "x": 0.3,
+              "y": 0.3,
+              "z": 0
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          },
+          "parameters": {
+            "angleDegrees": 360,
+            "segments": 48
+          },
+          "profile": [
+            {
+              "x": 0.08,
+              "y": 0
+            },
+            {
+              "x": 0.3,
+              "y": 0
+            },
+            {
+              "x": 0.3,
+              "y": 0.2
+            },
+            {
+              "x": 0.08,
+              "y": 0.2
+            }
+          ],
+          "path": [],
+          "sections": []
+        }
+      ],
+      "interfaces": [
+        {
+          "id": "axle",
+          "name": "axle",
+          "frame": {
+            "origin": {
+              "x": 0.3,
+              "y": 0.3,
+              "z": 0.1
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          }
+        }
+      ],
+      "terminals": [],
+      "flexible": null
+    }
+  ],
+  "subassemblies": [
+    {
+      "id": "assembly",
+      "name": "Complete assembly",
+      "parentId": null,
+      "frame": {
+        "origin": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "rotationDegrees": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        }
+      }
+    }
+  ],
+  "instances": [
+    {
+      "id": "chassis",
+      "partId": "chassis-definition",
+      "parentId": "assembly",
+      "frame": {
+        "origin": {
+          "x": 0,
+          "y": 0,
+          "z": 0.15
+        },
+        "rotationDegrees": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        }
+      },
+      "explodeOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "wheel-front-left",
+      "partId": "wheel-definition",
+      "parentId": "assembly",
+      "frame": {
+        "origin": {
+          "x": 0.39999999999999997,
+          "y": 0.35,
+          "z": 0
+        },
+        "rotationDegrees": {
+          "x": 90,
+          "y": 0,
+          "z": 0
+        }
+      },
+      "explodeOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "wheel-front-right",
+      "partId": "wheel-definition",
+      "parentId": "assembly",
+      "frame": {
+        "origin": {
+          "x": 0.39999999999999997,
+          "y": 2.45,
+          "z": 0
+        },
+        "rotationDegrees": {
+          "x": 90,
+          "y": 0,
+          "z": 0
+        }
+      },
+      "explodeOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "wheel-rear-left",
+      "partId": "wheel-definition",
+      "parentId": "assembly",
+      "frame": {
+        "origin": {
+          "x": 3.2,
+          "y": 0.35,
+          "z": 0
+        },
+        "rotationDegrees": {
+          "x": 90,
+          "y": 0,
+          "z": 0
+        }
+      },
+      "explodeOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "wheel-rear-right",
+      "partId": "wheel-definition",
+      "parentId": "assembly",
+      "frame": {
+        "origin": {
+          "x": 3.2,
+          "y": 2.45,
+          "z": 0
+        },
+        "rotationDegrees": {
+          "x": 90,
+          "y": 0,
+          "z": 0
+        }
+      },
+      "explodeOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      }
+    }
+  ],
+  "joints": [
+    {
+      "id": "front-left-bearing",
+      "kind": "rotary",
+      "parentInstanceId": "chassis",
+      "childInstanceId": "wheel-front-left",
+      "parentInterfaceId": "front-left",
+      "childInterfaceId": "axle",
+      "axis": {
+        "x": 0,
+        "y": 0,
+        "z": 1
+      },
+      "minimum": -180,
+      "maximum": 180,
+      "rest": 0,
+      "pitch": 0,
+      "clearance": 0.01
+    },
+    {
+      "id": "front-right-bearing",
+      "kind": "rotary",
+      "parentInstanceId": "chassis",
+      "childInstanceId": "wheel-front-right",
+      "parentInterfaceId": "front-right",
+      "childInterfaceId": "axle",
+      "axis": {
+        "x": 0,
+        "y": 0,
+        "z": 1
+      },
+      "minimum": -180,
+      "maximum": 180,
+      "rest": 0,
+      "pitch": 0,
+      "clearance": 0.01
+    },
+    {
+      "id": "rear-left-bearing",
+      "kind": "rotary",
+      "parentInstanceId": "chassis",
+      "childInstanceId": "wheel-rear-left",
+      "parentInterfaceId": "rear-left",
+      "childInterfaceId": "axle",
+      "axis": {
+        "x": 0,
+        "y": 0,
+        "z": 1
+      },
+      "minimum": -180,
+      "maximum": 180,
+      "rest": 0,
+      "pitch": 0,
+      "clearance": 0.01
+    },
+    {
+      "id": "rear-right-bearing",
+      "kind": "rotary",
+      "parentInstanceId": "chassis",
+      "childInstanceId": "wheel-rear-right",
+      "parentInterfaceId": "rear-right",
+      "childInterfaceId": "axle",
+      "axis": {
+        "x": 0,
+        "y": 0,
+        "z": 1
+      },
+      "minimum": -180,
+      "maximum": 180,
+      "rest": 0,
+      "pitch": 0,
+      "clearance": 0.01
+    }
+  ],
+  "mechanisms": [],
+  "routes": [],
+  "connections": [],
+  "sections": [
+    {
+      "id": "axle-section",
+      "axis": "x",
+      "offset": 0.7
+    },
+    {
+      "id": "longitudinal-section",
+      "axis": "y",
+      "offset": 1.3
+    }
+  ],
+  "assemblyProfile": {
+    "schemaVersion": "bubo-assembly-profile/v1",
+    "samplesPerRange": 5,
+    "samplesPerCycle": 17,
+    "maxGeometryChecks": 50000000,
+    "minimumSeparation": 0,
+    "contacts": [],
+    "flexibleRigs": [],
+    "couplingFits": []
+  }
+}

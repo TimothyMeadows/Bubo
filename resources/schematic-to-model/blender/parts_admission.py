@@ -258,8 +258,45 @@ def feature(value):
 
 
 def validate_design(design, limits):
-    closed(design, "schemaVersion id name purpose styleSha256 coordinateSystem numerics budgets observations materials parts subassemblies instances joints mechanisms routes connections sections", "design")
-    require(design["schemaVersion"] == "bubo-assembly-design/v1" and design["coordinateSystem"] == "xy-metres-z-up", "Unsupported design schema/coordinates")
+    keys = "schemaVersion id name purpose styleSha256 coordinateSystem numerics budgets observations materials parts subassemblies instances joints mechanisms routes connections sections"
+    version = design.get("schemaVersion") if isinstance(design, dict) else None
+    if version == "bubo-assembly-design/v2":
+        keys += " assemblyProfile"
+    closed(design, keys, "design")
+    require(version in ("bubo-assembly-design/v1", "bubo-assembly-design/v2") and design["coordinateSystem"] == "xy-metres-z-up", "Unsupported design schema/coordinates")
+    if version == "bubo-assembly-design/v2":
+        profile = closed(design["assemblyProfile"], "schemaVersion samplesPerRange samplesPerCycle maxGeometryChecks minimumSeparation contacts flexibleRigs couplingFits", "assembly profile")
+        require(profile["schemaVersion"] == "bubo-assembly-profile/v1", "Unsupported assembly profile")
+        integer(profile["samplesPerRange"], "minimum range samples", 3, 4097)
+        integer(profile["samplesPerCycle"], "minimum cycle samples", 9, 4097)
+        integer(profile["maxGeometryChecks"], "geometry proof budget", 1, 50000000)
+        number(profile["minimumSeparation"], "minimum separation", 0, 1000000)
+        for name in ("contacts", "flexibleRigs", "couplingFits"):
+            require(isinstance(profile[name], list) and len(profile[name]) <= 32768, "Bounded assembly profile records")
+        for contact in profile["contacts"]:
+            closed(contact, "id firstInstanceId secondInstanceId frame size reason", "contact region")
+            for key in ("id", "firstInstanceId", "secondInstanceId"):
+                identifier(contact[key])
+            frame(contact["frame"])
+            require(all(value > 0 for value in vector(contact["size"])) and isinstance(contact["reason"], str) and 0 < len(contact["reason"]) <= 2048, "Explicit bounded contact region required")
+        for rig in profile["flexibleRigs"]:
+            closed(rig, "routeId minimumSegmentRatio minimumEndpointDistance maximumEndpointDistance driverJointId travelMetresPerDegree", "flexible policy")
+            identifier(rig["routeId"])
+            require(number(rig["minimumSegmentRatio"], "minimum segment ratio", 0, 1) > 0, "Positive compression ratio required")
+            if rig["driverJointId"] is not None:
+                identifier(rig["driverJointId"])
+            for key in ("minimumEndpointDistance", "maximumEndpointDistance", "travelMetresPerDegree"):
+                if rig[key] is not None:
+                    number(rig[key], key, 0, 1000000)
+        for fit in profile["couplingFits"]:
+            closed(fit, "mechanismId driverPitchRadius followerPitchRadius driverToothCount followerToothCount", "coupling fit")
+            identifier(fit["mechanismId"])
+            require(number(fit["driverPitchRadius"], "driver pitch radius", 0, 1000000) > 0, "Positive pitch radius required")
+            if fit["followerPitchRadius"] is not None:
+                require(number(fit["followerPitchRadius"], "follower pitch radius", 0, 1000000) > 0, "Positive follower radius required")
+            for key in ("driverToothCount", "followerToothCount"):
+                if fit[key] is not None:
+                    integer(fit[key], key, 3, 1000000)
     identifier(design["id"])
     require(isinstance(design["styleSha256"], str) and HEX.fullmatch(design["styleSha256"]), "Style identity required")
     closed(design["numerics"], "linearTolerance angularToleranceDegrees minimumFeatureSize maxCoordinateMagnitude", "numerics")
@@ -343,7 +380,6 @@ def validate_design(design, limits):
         weighted_minimum += minimum_triangles[instance["partId"]]
     require(weighted_minimum <= min(limits["maxTriangles"], budgets["maxGeneratedTriangles"]), "Minimum weighted solid triangle budget")
     validate_non_geometry(design)
-    require(len(parts) * 2 + 2 <= limits["maxFiles"], "Output file count budget")
     return ids
 
 
@@ -358,7 +394,7 @@ def validate_non_geometry(design):
     enums = {"observations": {"observed", "assumed", "unresolved", "simplified"},
              "joints": {"fixed", "hinge", "rotary", "slider", "screw"},
              "mechanisms": {"spurGears", "rackAndPinion", "pulleyBelt", "sliderCrank", "fourBar"},
-             "connections": {"power", "signal", "ground"}}
+             "connections": {"power", "signal", "ground", "mechanical"}}
     for name, fields in shapes.items():
         require(isinstance(design[name], list) and len(design[name]) <= 131072, "Bounded design collection required")
         for value in design[name]:
@@ -424,6 +460,7 @@ def admit(job_path, job_sha, bundle_dir=None, verify=False):
         file = no_links(directory / name)
         require(file.is_file() and digest(file) == expected, "Fixed bundle SHA mismatch: " + name)
     ids = validate_design(job["design"], limits)
+    require(len(ids) * 2 + 2 <= limits["maxFiles"], "Output file count budget")
     require(isinstance(job["partIdentities"], dict) and set(job["partIdentities"]) == ids, "Exact part identity inventory required")
     require(all(isinstance(value, str) and HEX.fullmatch(value) for value in job["partIdentities"].values()), "Part identity hash required")
     allowed = {part + suffix for part in ids for suffix in (".blend", ".geometry.bin")}

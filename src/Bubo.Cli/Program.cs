@@ -25,7 +25,7 @@ try
 {
     if (args.Length == 0 || args is ["--help"] or ["help"])
     {
-        resultOutput.WriteLine("bubo <proof-to-model|model-to-animation|model-to-action|blender-inspection|media|floor-plan-to-model|schematic-to-model> <operation> --api-version 2 --root ROOT --host-context PROJECT_JSON [--manifest PROJECT_JSON] [operation options]\nbubo capabilities --api-version 2\nmedia: inspect [--load true], generate, setup [--execute]. Schematic: init --design JSON, doctor, preview, validate, record, build-parts --blender ABSOLUTE_EXE, status; assembly/motion/model export unavailable. Explicit build/setup precedes production. Host context supplies policy, permitted roots, rights/consent, tool hashes, budgets and reviews. Results are JSON on stdout; logs use stderr. No host instruction loading, implicit installation, provider fallback or automatic asset acceptance.");
+        resultOutput.WriteLine("bubo <proof-to-model|model-to-animation|model-to-action|blender-inspection|media|floor-plan-to-model|schematic-to-model> <operation> --api-version 2 --root ROOT --host-context PROJECT_JSON [--manifest PROJECT_JSON] [operation options]\nbubo capabilities --api-version 2\nmedia: inspect [--load true], generate, setup [--execute]. Schematic: init --design JSON, doctor, preview, validate, record, build-parts, assemble, prove-motion, status. Native steps use --blender ABSOLUTE_EXE. Assembly/readiness requires an approved explicit v2 design; canonical model export follows separately. Explicit build/setup precedes production. Host context supplies policy, permitted roots, rights/consent, tool hashes, budgets and reviews. Results are JSON on stdout; logs use stderr. No host instruction loading, implicit installation, provider fallback or automatic asset acceptance.");
         return 0;
     }
     var capability = workflow == "capabilities";
@@ -232,7 +232,7 @@ static void ValidateOperation(string workflow, string operation, Dictionary<stri
         ("floor-plan-to-model", "preview" or "validate" or "status") => [],
         ("schematic-to-model", "init") => ["task","asset","version","design","parent-manifest"],
         ("schematic-to-model", "record") => ["kind","reviewer","evidence"],
-        ("schematic-to-model", "doctor" or "build-parts") => ["blender"],
+        ("schematic-to-model", "doctor" or "build-parts" or "assemble" or "prove-motion") => ["blender"],
         ("schematic-to-model", "preview" or "validate" or "status") => [],
         ("media", "inspect") => ["load"],
         ("media", "generate") => [],
@@ -262,7 +262,7 @@ static JsonObject Capabilities()
     {
         ["schemaVersion"] = "bubo-capabilities/v1", ["apiVersions"] = new JsonArray(2),
         ["workflows"] = new JsonArray("proof-to-model","model-to-animation","model-to-action","blender-inspection","media","floor-plan-to-model","schematic-to-model"),
-        ["schematic"] = new JsonObject { ["phase"] = "part-construction", ["operations"] = new JsonArray("init","doctor","preview","validate","record","build-parts","status"), ["partConstructionAvailable"] = true, ["assemblyAvailable"] = false, ["motionProofAvailable"] = false, ["modelExportAvailable"] = false },
+        ["schematic"] = new JsonObject { ["phase"] = "assembly-readiness", ["operations"] = new JsonArray("init","doctor","preview","validate","record","build-parts","assemble","prove-motion","status"), ["partConstructionAvailable"] = true, ["assemblyAvailable"] = true, ["motionProofAvailable"] = true, ["requiresApprovedAssemblyV2"] = true, ["modelExportAvailable"] = false },
         ["floorPlan"] = new JsonObject { ["phase"] = "architectural-export", ["operations"] = new JsonArray("init","doctor","preview","validate","record","build","export","review","status"), ["modelingAvailable"] = true, ["requiresApprovedConstructionPlanV2"] = true, ["modelExportAvailable"] = true },
         ["modelRuntime"] = "pinned-native-tools", ["mediaBackends"] = JsonSerializer.SerializeToNode(Bubo.Media.Domain.MediaCapabilities.Implemented,Bubo.Media.Domain.MediaJson.Options),
         ["build"] = new JsonObject { ["cliSha256"] = Workspace.Hash(Assembly.GetExecutingAssembly().Location), ["resourceCatalogSha256"] = RuntimeCatalog.ExpectedSha256, ["assemblies"] = assemblies, ["launch"] = launch },

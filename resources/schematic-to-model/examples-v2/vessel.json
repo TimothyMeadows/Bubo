@@ -1,0 +1,980 @@
+{
+  "schemaVersion": "bubo-assembly-design/v2",
+  "id": "vessel-assembly-example",
+  "name": "Curved open hull with annular bearing and independently modeled rudder bracket",
+  "purpose": "Owned schematic design fixture for a mechanically coherent game asset",
+  "styleSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "coordinateSystem": "xy-metres-z-up",
+  "numerics": {
+    "linearTolerance": 4E-06,
+    "angularToleranceDegrees": 0.01,
+    "minimumFeatureSize": 0.0001,
+    "maxCoordinateMagnitude": 10000
+  },
+  "budgets": {
+    "maxPartDefinitions": 128,
+    "maxInstances": 1024,
+    "maxFeatures": 4096,
+    "maxRoutePoints": 4096,
+    "maxDrawings": 256,
+    "maxValidationChecks": 10000000,
+    "maxPreviewBytes": 16777216,
+    "maxExportBytes": 536870912,
+    "maxGeneratedTriangles": 500000,
+    "maxMotionSamples": 10000
+  },
+  "observations": [
+    {
+      "id": "design-assumption",
+      "kind": "assumed",
+      "description": "Dimensions and construction are authored fixture choices; references do not determine scale",
+      "source": "Owned engineering fixture"
+    },
+    {
+      "id": "design-simplification",
+      "kind": "simplified",
+      "description": "Bounded demonstration assembly; unlisted commercial systems are excluded from this explicit design, not silently omitted during construction",
+      "source": "Synthetic fixture scope"
+    },
+    {
+      "id": "vessel-precision-selection",
+      "kind": "assumed",
+      "description": "The twelve-metre vessel explicitly selects a four-micrometre linear tolerance for single-precision stored/evaluated Blender transforms. This resolves the declared 100-micrometre minimum feature by a factor of twenty-five; delivered geometry and ports must demonstrate that bound.",
+      "source": "Explicit asset precision choice before complete-package approval"
+    },
+    {
+      "id": "readiness-example-scope",
+      "kind": "simplified",
+      "description": "Explicit toy engineering assembly for dimensional, articulation and clearance QA. No unlisted commercial systems, physics/manufacturing certification or human asset acceptance.",
+      "source": "Owned procedural example"
+    }
+  ],
+  "materials": [
+    {
+      "id": "steel",
+      "name": "Brushed steel",
+      "color": "#708090",
+      "roughness": 0.45,
+      "metallic": 0.8
+    }
+  ],
+  "parts": [
+    {
+      "id": "hull-definition",
+      "name": "hull-definition",
+      "purpose": "Independently authored mechanical fixture component",
+      "detail": "Curved open cast hull with an integral 400 mm diameter annular bearing housing, 130 mm actual shaft bore and 100 mm retained hull floor. The annulus is authored before union, preserving the full bore above the floor without a late drilling operation through overlapping cast solids.",
+      "materialId": "steel",
+      "kind": "rigid",
+      "size": {
+        "x": 12,
+        "y": 3,
+        "z": 2
+      },
+      "features": [
+        {
+          "id": "hull-loft",
+          "kind": "loft",
+          "operation": "add",
+          "frame": {
+            "origin": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          },
+          "parameters": {},
+          "profile": [],
+          "path": [],
+          "sections": [
+            {
+              "frame": {
+                "origin": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 0
+                },
+                "rotationDegrees": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 0
+                }
+              },
+              "profile": [
+                {
+                  "x": 0,
+                  "y": 1.5
+                },
+                {
+                  "x": 0.5,
+                  "y": 1
+                },
+                {
+                  "x": 11.5,
+                  "y": 1
+                },
+                {
+                  "x": 12,
+                  "y": 1.5
+                },
+                {
+                  "x": 11.5,
+                  "y": 2
+                },
+                {
+                  "x": 0.5,
+                  "y": 2
+                }
+              ]
+            },
+            {
+              "frame": {
+                "origin": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 1
+                },
+                "rotationDegrees": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 0
+                }
+              },
+              "profile": [
+                {
+                  "x": 0,
+                  "y": 1.5
+                },
+                {
+                  "x": 0.5,
+                  "y": 0.25
+                },
+                {
+                  "x": 11.5,
+                  "y": 0.25
+                },
+                {
+                  "x": 12,
+                  "y": 1.5
+                },
+                {
+                  "x": 11.5,
+                  "y": 2.75
+                },
+                {
+                  "x": 0.5,
+                  "y": 2.75
+                }
+              ]
+            },
+            {
+              "frame": {
+                "origin": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 2
+                },
+                "rotationDegrees": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 0
+                }
+              },
+              "profile": [
+                {
+                  "x": 0,
+                  "y": 1.5
+                },
+                {
+                  "x": 0.5,
+                  "y": 0
+                },
+                {
+                  "x": 11.5,
+                  "y": 0
+                },
+                {
+                  "x": 12,
+                  "y": 1.5
+                },
+                {
+                  "x": 11.5,
+                  "y": 3
+                },
+                {
+                  "x": 0.5,
+                  "y": 3
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "open-hull-interior",
+          "kind": "loft",
+          "operation": "subtract",
+          "frame": {
+            "origin": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          },
+          "parameters": {},
+          "profile": [],
+          "path": [],
+          "sections": [
+            {
+              "frame": {
+                "origin": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 0.1
+                },
+                "rotationDegrees": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 0
+                }
+              },
+              "profile": [
+                {
+                  "x": 0.1,
+                  "y": 1.5
+                },
+                {
+                  "x": 0.6,
+                  "y": 1.1
+                },
+                {
+                  "x": 11.4,
+                  "y": 1.1
+                },
+                {
+                  "x": 11.9,
+                  "y": 1.5
+                },
+                {
+                  "x": 11.4,
+                  "y": 1.9
+                },
+                {
+                  "x": 0.6,
+                  "y": 1.9
+                }
+              ]
+            },
+            {
+              "frame": {
+                "origin": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 1
+                },
+                "rotationDegrees": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 0
+                }
+              },
+              "profile": [
+                {
+                  "x": 0.1,
+                  "y": 1.5
+                },
+                {
+                  "x": 0.6,
+                  "y": 0.3999999999999999
+                },
+                {
+                  "x": 11.4,
+                  "y": 0.3999999999999999
+                },
+                {
+                  "x": 11.9,
+                  "y": 1.5
+                },
+                {
+                  "x": 11.4,
+                  "y": 2.6
+                },
+                {
+                  "x": 0.6,
+                  "y": 2.6
+                }
+              ]
+            },
+            {
+              "frame": {
+                "origin": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 2.2
+                },
+                "rotationDegrees": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 0
+                }
+              },
+              "profile": [
+                {
+                  "x": 0.1,
+                  "y": 1.5
+                },
+                {
+                  "x": 0.6,
+                  "y": 0.10000000000000009
+                },
+                {
+                  "x": 11.4,
+                  "y": 0.10000000000000009
+                },
+                {
+                  "x": 11.9,
+                  "y": 1.5
+                },
+                {
+                  "x": 11.4,
+                  "y": 2.9
+                },
+                {
+                  "x": 0.6,
+                  "y": 2.9
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "annular-shaft-support",
+          "kind": "revolve",
+          "operation": "add",
+          "frame": {
+            "origin": {
+              "x": 10,
+              "y": 1.5,
+              "z": 0.05
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          },
+          "parameters": {
+            "angleDegrees": 360,
+            "segments": 32
+          },
+          "profile": [
+            {
+              "x": 0.065,
+              "y": 0
+            },
+            {
+              "x": 0.2,
+              "y": 0
+            },
+            {
+              "x": 0.2,
+              "y": 0.5
+            },
+            {
+              "x": 0.065,
+              "y": 0.5
+            }
+          ],
+          "path": [],
+          "sections": []
+        }
+      ],
+      "interfaces": [
+        {
+          "id": "shaft-bearing",
+          "name": "shaft-bearing",
+          "frame": {
+            "origin": {
+              "x": 10,
+              "y": 1.5,
+              "z": 0.5
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          }
+        },
+        {
+          "id": "bracket-foot",
+          "name": "bracket-foot",
+          "frame": {
+            "origin": {
+              "x": 11.2,
+              "y": 1.5,
+              "z": 0
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          }
+        }
+      ],
+      "terminals": [],
+      "flexible": null
+    },
+    {
+      "id": "deck-definition",
+      "name": "deck-definition",
+      "purpose": "Independently authored mechanical fixture component",
+      "detail": "Approved smooth surfaces and individually addressable hardware; explicit idealized design, no manufacturing certification",
+      "materialId": "steel",
+      "kind": "rigid",
+      "size": {
+        "x": 12,
+        "y": 3,
+        "z": 0.15
+      },
+      "features": [
+        {
+          "id": "deck-extrusion",
+          "kind": "extrude",
+          "operation": "add",
+          "frame": {
+            "origin": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          },
+          "parameters": {
+            "depth": 0.15
+          },
+          "profile": [
+            {
+              "x": 0,
+              "y": 1.5
+            },
+            {
+              "x": 0.5,
+              "y": 0
+            },
+            {
+              "x": 11.5,
+              "y": 0
+            },
+            {
+              "x": 12,
+              "y": 1.5
+            },
+            {
+              "x": 11.5,
+              "y": 3
+            },
+            {
+              "x": 0.5,
+              "y": 3
+            }
+          ],
+          "path": [],
+          "sections": []
+        }
+      ],
+      "interfaces": [
+        {
+          "id": "mount",
+          "name": "mount",
+          "frame": {
+            "origin": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          }
+        }
+      ],
+      "terminals": [],
+      "flexible": null
+    },
+    {
+      "id": "shaft-definition",
+      "name": "shaft-definition",
+      "purpose": "Independently authored mechanical fixture component",
+      "detail": "Approved smooth surfaces and individually addressable hardware; explicit idealized design, no manufacturing certification",
+      "materialId": "steel",
+      "kind": "rigid",
+      "size": {
+        "x": 0.1,
+        "y": 0.1,
+        "z": 1.5
+      },
+      "features": [
+        {
+          "id": "shaft-cylinder",
+          "kind": "cylinder",
+          "operation": "add",
+          "frame": {
+            "origin": {
+              "x": 0.05,
+              "y": 0.05,
+              "z": 0
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          },
+          "parameters": {
+            "radius": 0.05,
+            "length": 1.5,
+            "segments": 24
+          },
+          "profile": [],
+          "path": [],
+          "sections": []
+        }
+      ],
+      "interfaces": [
+        {
+          "id": "bearing",
+          "name": "bearing",
+          "frame": {
+            "origin": {
+              "x": 0.05,
+              "y": 0.05,
+              "z": 0.25
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          }
+        }
+      ],
+      "terminals": [],
+      "flexible": null
+    },
+    {
+      "id": "rudder-definition",
+      "name": "rudder-definition",
+      "purpose": "Independently authored mechanical fixture component",
+      "detail": "Approved smooth surfaces and individually addressable hardware; explicit idealized design, no manufacturing certification",
+      "materialId": "steel",
+      "kind": "rigid",
+      "size": {
+        "x": 0.8,
+        "y": 0.08,
+        "z": 0.9
+      },
+      "features": [
+        {
+          "id": "solid",
+          "kind": "box",
+          "operation": "add",
+          "frame": {
+            "origin": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          },
+          "parameters": {
+            "width": 0.8,
+            "depth": 0.08,
+            "height": 0.9
+          },
+          "profile": [],
+          "path": [],
+          "sections": []
+        }
+      ],
+      "interfaces": [
+        {
+          "id": "pivot",
+          "name": "pivot",
+          "frame": {
+            "origin": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          }
+        }
+      ],
+      "terminals": [],
+      "flexible": null
+    },
+    {
+      "id": "rudder-bracket-definition",
+      "name": "Under-keel rudder bracket",
+      "purpose": "Independently authored mechanical fixture component",
+      "detail": "Separate connected cast bracket: a welded foot meets the flat hull underside, the arm runs 100 mm below the keel, and the upright remains outside the pointed stern. It preserves the declared rudder pivot without overlapping the hull or omitting the structural connection. No fluid or structural certification.",
+      "materialId": "steel",
+      "kind": "rigid",
+      "size": {
+        "x": 1.2,
+        "y": 0.2,
+        "z": 0.8
+      },
+      "features": [
+        {
+          "id": "under-keel-arm",
+          "kind": "box",
+          "operation": "add",
+          "frame": {
+            "origin": {
+              "x": 0.1,
+              "y": 0,
+              "z": 0
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          },
+          "parameters": {
+            "width": 1.1,
+            "depth": 0.2,
+            "height": 0.1
+          },
+          "profile": [],
+          "path": [],
+          "sections": []
+        },
+        {
+          "id": "hull-foot",
+          "kind": "box",
+          "operation": "add",
+          "frame": {
+            "origin": {
+              "x": 0.1,
+              "y": 0,
+              "z": 0.08
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          },
+          "parameters": {
+            "width": 0.2,
+            "depth": 0.2,
+            "height": 0.12
+          },
+          "profile": [],
+          "path": [],
+          "sections": []
+        },
+        {
+          "id": "external-upright",
+          "kind": "box",
+          "operation": "add",
+          "frame": {
+            "origin": {
+              "x": 1.05,
+              "y": 0,
+              "z": 0
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          },
+          "parameters": {
+            "width": 0.15,
+            "depth": 0.2,
+            "height": 0.8
+          },
+          "profile": [],
+          "path": [],
+          "sections": []
+        }
+      ],
+      "interfaces": [
+        {
+          "id": "hull-mount",
+          "name": "hull-mount",
+          "frame": {
+            "origin": {
+              "x": 0.2,
+              "y": 0.1,
+              "z": 0.2
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          }
+        },
+        {
+          "id": "rudder-pivot",
+          "name": "rudder-pivot",
+          "frame": {
+            "origin": {
+              "x": 1.15,
+              "y": 0.1,
+              "z": 0.8
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          }
+        }
+      ],
+      "terminals": [],
+      "flexible": null
+    }
+  ],
+  "subassemblies": [
+    {
+      "id": "assembly",
+      "name": "Complete assembly",
+      "parentId": null,
+      "frame": {
+        "origin": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "rotationDegrees": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        }
+      }
+    }
+  ],
+  "instances": [
+    {
+      "id": "hull",
+      "partId": "hull-definition",
+      "parentId": "assembly",
+      "frame": {
+        "origin": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "rotationDegrees": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        }
+      },
+      "explodeOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "deck",
+      "partId": "deck-definition",
+      "parentId": "assembly",
+      "frame": {
+        "origin": {
+          "x": 0,
+          "y": 0,
+          "z": 2
+        },
+        "rotationDegrees": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        }
+      },
+      "explodeOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 2
+      }
+    },
+    {
+      "id": "propeller-shaft",
+      "partId": "shaft-definition",
+      "parentId": "assembly",
+      "frame": {
+        "origin": {
+          "x": 9.95,
+          "y": 1.45,
+          "z": 0.25
+        },
+        "rotationDegrees": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        }
+      },
+      "explodeOffset": {
+        "x": 0,
+        "y": 3,
+        "z": 0
+      }
+    },
+    {
+      "id": "rudder",
+      "partId": "rudder-definition",
+      "parentId": "assembly",
+      "frame": {
+        "origin": {
+          "x": 12.15,
+          "y": 1.5,
+          "z": 0.6
+        },
+        "rotationDegrees": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        }
+      },
+      "explodeOffset": {
+        "x": 2,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "rudder-bracket",
+      "partId": "rudder-bracket-definition",
+      "parentId": "assembly",
+      "frame": {
+        "origin": {
+          "x": 11,
+          "y": 1.4,
+          "z": -0.2
+        },
+        "rotationDegrees": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        }
+      },
+      "explodeOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      }
+    }
+  ],
+  "joints": [
+    {
+      "id": "shaft-bearing-joint",
+      "kind": "rotary",
+      "parentInstanceId": "hull",
+      "childInstanceId": "propeller-shaft",
+      "parentInterfaceId": "shaft-bearing",
+      "childInterfaceId": "bearing",
+      "axis": {
+        "x": 0,
+        "y": 0,
+        "z": 1
+      },
+      "minimum": -180,
+      "maximum": 180,
+      "rest": 0,
+      "pitch": 0,
+      "clearance": 0.001
+    },
+    {
+      "id": "rudder-joint",
+      "kind": "hinge",
+      "parentInstanceId": "rudder-bracket",
+      "childInstanceId": "rudder",
+      "parentInterfaceId": "rudder-pivot",
+      "childInterfaceId": "pivot",
+      "axis": {
+        "x": 0,
+        "y": 0,
+        "z": 1
+      },
+      "minimum": -35,
+      "maximum": 35,
+      "rest": 0,
+      "pitch": 0,
+      "clearance": 0
+    },
+    {
+      "id": "bracket-hull-weld",
+      "kind": "fixed",
+      "parentInstanceId": "hull",
+      "childInstanceId": "rudder-bracket",
+      "parentInterfaceId": "bracket-foot",
+      "childInterfaceId": "hull-mount",
+      "axis": {
+        "x": 0,
+        "y": 0,
+        "z": 1
+      },
+      "minimum": 0,
+      "maximum": 0,
+      "rest": 0,
+      "pitch": 0,
+      "clearance": 0
+    }
+  ],
+  "mechanisms": [],
+  "routes": [],
+  "connections": [],
+  "sections": [
+    {
+      "id": "vessel-longitudinal-section",
+      "axis": "y",
+      "offset": 1.5
+    },
+    {
+      "id": "vessel-cross-section",
+      "axis": "x",
+      "offset": 6
+    }
+  ],
+  "assemblyProfile": {
+    "schemaVersion": "bubo-assembly-profile/v1",
+    "samplesPerRange": 5,
+    "samplesPerCycle": 17,
+    "maxGeometryChecks": 50000000,
+    "minimumSeparation": 0,
+    "contacts": [],
+    "flexibleRigs": [],
+    "couplingFits": []
+  }
+}

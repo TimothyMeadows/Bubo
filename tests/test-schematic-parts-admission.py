@@ -141,6 +141,35 @@ class PartsAdmissionTests(unittest.TestCase):
             with self.subTest(resource=name):
                 self.rejected(job)
 
+    def test_all_declared_connection_kinds_cross_the_worker_data_boundary(self):
+        schema = json.loads((ROOT / "resources/schematic-to-model/assembly-design.schema.json").read_bytes())
+        kinds = schema["$defs"]["connection"]["properties"]["kind"]["enum"]
+        self.assertIn("mechanical", kinds, "hose and spring connections are declared native inputs")
+        # This checks the closed transport boundary. Native Domain validation still
+        # owns endpoint/route semantics and actual geometric compatibility.
+        design = json.loads((ROOT / "resources/schematic-to-model/examples/device.json").read_bytes())
+        self.assertTrue(design["connections"])
+        for kind in kinds:
+            with self.subTest(kind=kind):
+                design["connections"][0]["kind"] = kind
+                self.admission.validate_non_geometry(design)
+        design["connections"][0]["kind"] = "mechanical-callback"
+        with self.assertRaises(ValueError):
+            self.admission.validate_non_geometry(design)
+
+    def test_part_producer_retains_its_own_prototype_output_file_quota(self):
+        job = copy.deepcopy(self.job)
+        prototype = copy.deepcopy(job["design"]["parts"][0])
+        prototype["id"] = "second-prototype"
+        job["design"]["parts"].append(prototype)
+        occurrence = copy.deepcopy(job["design"]["instances"][0])
+        occurrence.update(id="second-occurrence", partId=prototype["id"])
+        job["design"]["instances"].append(occurrence)
+        job["partIdentities"][prototype["id"]] = "f" * 64
+        self.rejected(job)
+        job["limits"]["maxFiles"] = 6
+        self.admit(job)
+
     def test_unknown_missing_and_callback_resources_are_rejected(self):
         for removed in FIXED_BUNDLE:
             job = copy.deepcopy(self.job)
