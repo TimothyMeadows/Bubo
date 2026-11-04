@@ -9,6 +9,7 @@ public sealed partial class Pipeline
 {
     async Task CheckBlender(string directory, CancellationToken cancellation)
     {
+        if(m.Profile=="mechanical-assembly")_=MechanicalSdk(cancellation);
         var log = directory + "/blender-version.log";
         await native.Run(m.Blender, ["--version"], w.Root, w.Resolve(log), Math.Min(30, Budget["timeoutSeconds"]!.GetValue<int>()), cancellation, (long)Budget["maxLogBytes"]!.GetValue<double>());
         var version = File.ReadAllText(w.Resolve(log)).Replace("stdout: ", "").Replace("stderr: ", "");
@@ -16,6 +17,7 @@ public sealed partial class Pipeline
             throw new InvalidOperationException("Existing Blender4.5LTS required; no fallback or installation");
         if (w.HashFile(m.Blender) != m.BlenderSha256)
             throw new InvalidOperationException("Blender changed during version inspection");
+        if(m.Profile=="mechanical-assembly")_=MechanicalSdk(cancellation);
     }
     async Task RunStage(string name, string operation, CancellationToken cancellation)
     {
@@ -70,6 +72,7 @@ public sealed partial class Pipeline
                 stage.ExternalInputs[pair.Key] = pair.Value;
         if (operation == "retarget")
         {
+            if (m.Profile == "mechanical-assembly") throw new InvalidOperationException("Mechanical assembly does not admit single-target FK retargeting");
             var motion = Relative(w, Need("motion-source"));
             _ = MotionValidation.Glb(w.Resolve(motion));
             var mapping = Relative(w, Need("mapping"));
@@ -136,12 +139,27 @@ public sealed partial class Pipeline
                 mapping = LoadObject(mapped);
             }
             var job = new JsonObject { ["schemaVersion"] = 1, ["root"] = w.Root, ["operation"] = operation, ["input"] = input, ["outputDir"] = stage.Attempt, ["result"] = stage.Attempt + "/result.json", ["asset"] = m.Asset, ["version"] = m.Version, ["profile"] = m.Profile, ["recipe"] = effectiveRecipe, ["motionSource"] = motionSource, ["mapping"] = mapping };
+            if (m.Profile == "mechanical-assembly")
+            {
+                job["mechanicalHandoff"] = LoadObject(m.MechanicalHandoff!);
+                job["mechanicalMetadata"] = LoadObject(m.MechanicalMetadata!);
+                job["mechanicalToolchain"] = MechanicalSdk(cancellation);
+            }
             if (revision is not null)
                 job["revisionClip"] = Text(revision, "clip");
             var jobPath = stage.Attempt + "/job.json";
-            w.Save(jobPath, job);
+            if (m.Profile == "mechanical-assembly")
+            {
+                var bytes = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(job, new System.Text.Json.JsonSerializerOptions(Workspace.Json) { WriteIndented = false });
+                if (bytes.Length > 8 * 1024 * 1024) throw new InvalidOperationException("Complete mechanical motion job exceeds the finite 8MiB JSON ceiling");
+                using var output = new FileStream(w.ResolveWrite(jobPath), FileMode.CreateNew, FileAccess.Write, FileShare.None);
+                output.Write(bytes); output.Flush(true);
+            }
+            else w.Save(jobPath, job);
             stage.Inputs[jobPath] = HashFile(jobPath);
+            if(m.Profile=="mechanical-assembly")_=MechanicalSdk(cancellation);
             await native.Run(m.Blender, ["--factory-startup", "--background", "--disable-autoexec", "--python-exit-code", "1", "--python", w.Resolve(bundle + "/motion.py"), "--", "--job", w.Resolve(jobPath)], w.Root, w.Resolve(stage.Attempt + "/process.log"), Budget["timeoutSeconds"]!.GetValue<int>(), cancellation, (long)Budget["maxLogBytes"]!.GetValue<double>());
+            if(m.Profile=="mechanical-assembly")_=MechanicalSdk(cancellation);
             var result = LoadObject(stage.Attempt + "/result.json");
             if (Text(result, "schemaVersion") != "hephaera-motion-stage/v1" || Text(result, "operation") != operation || Text(result, "profile") != m.Profile || Text(result, "inputSha256") != HashFile(input))
                 throw new InvalidOperationException("Native stage report does not match invocation/input");
@@ -333,6 +351,14 @@ public sealed partial class Pipeline
         var glb = MotionValidation.Glb(w.Resolve(stage.Artifacts["glb"]), (long)Budget["maxRuntimeBytes"]!.GetValue<double>());
         if (m.Profile == "skinned" && (glb["skins"] is not JsonArray skins || !skins.Any(skin => skin?["joints"] is JsonArray joints && joints.Count > 0)))
             throw new InvalidOperationException("Skinned package has no actual exported skin");
+        if (m.Profile == "mechanical-assembly")
+        {
+            var handoff = LoadObject(m.MechanicalHandoff!);
+            MechanicalAdmission.ValidateComponents(handoff, glb);
+            MechanicalAdmission.ValidateRestBindings(handoff, glb, LoadObject(m.MechanicalDesign!), LoadObject(m.MechanicalMetadata!));
+            if (!JsonNode.DeepEquals(package["mechanicalHandoff"], handoff) || !JsonNode.DeepEquals(package["mechanicalMetadata"], LoadObject(m.MechanicalMetadata!)) || package["rig"]?["kind"]?.GetValue<string>() != "mechanical-assembly")
+                throw new InvalidOperationException("Motion export changed mechanical relationships or source admission");
+        }
         var exported = (glb["animations"]?.AsArray() ?? []).Select(node => node!.AsObject()).ToArray();
         var clips = Array(package, "clips").Select(node => node!.AsObject()).ToArray();
         var ids = clips.Select(clip => Text(clip, "id")).ToArray();
@@ -348,6 +374,17 @@ public sealed partial class Pipeline
             var matches = exported.Where(item => item["name"]?.GetValue<string>() == action || item["name"]?.GetValue<string>() == Text(clip, "id")).ToArray();
             if (matches.Length != 1 || matches[0]["channels"] is not JsonArray channels || channels.Count == 0 || matches[0]["samplers"] is not JsonArray samplers || samplers.Count == 0)
                 throw new InvalidOperationException("Declared clip is not a real uniquely bound GLB animation: " + action);
+            if (m.Profile == "mechanical-assembly")
+            {
+                var names = Array(glb,"nodes").Select(node=>Text(node!.AsObject(),"name")).ToArray();
+                var actual = channels.Select(channel=>(names[channel!["target"]!["node"]!.GetValue<int>()],channel["target"]!["path"]!.GetValue<string>())).ToHashSet();
+                foreach(var channel in Array(declared,"channels").Select(node=>node!.AsObject()))
+                {
+                    var target = channel["target"]!.AsObject();
+                    var property = Text(channel,"property") switch {"location"=>"translation","rotation_quaternion"=>"rotation","scale"=>"scale",_=>throw new InvalidOperationException("Unsupported mechanical channel property")};
+                    if(!actual.Contains((target["node"]?.GetValue<string>()??Text(target,"bone"),property)))throw new InvalidOperationException("Mechanical export lost a requested property binding");
+                }
+            }
         }
         var anchors = Array(package, "anchors").Select(node => node!.AsObject()).ToArray();
         var prescribed = Array(Recipe, "anchors").Select(node => node!.AsObject()).ToArray();

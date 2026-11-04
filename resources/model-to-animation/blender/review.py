@@ -65,6 +65,10 @@ def review(job, root, source, output, recipe):
     if source.suffix.lower() != ".glb":
         raise ValueError("Review requires independent import of the actual runtime GLB")
     document = read_glb(source, recipe["budgets"]["maxRuntimeBytes"])
+    if recipe["profile"] == "mechanical-assembly":
+        from mechanical import approved_numerics, compare_runtime, verify_portable_geometry
+        compare_runtime(job["mechanicalHandoff"]["bindings"], document, job["mechanicalHandoff"]["components"], approved_numerics(root,job["mechanicalHandoff"],job["mechanicalMetadata"]))
+        verify_portable_geometry(root, source, job["mechanicalHandoff"], recipe)
     restore_imported_actions(recipe)
     clips = analyze_clips(recipe)
     measured = inventory(recipe, recipe["profile"] == "skinned")
