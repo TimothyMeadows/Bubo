@@ -1,0 +1,1783 @@
+{
+  "schemaVersion": "bubo-assembly-design/v2",
+  "id": "device-assembly-example",
+  "name": "Opening electronic device with independently modeled threaded hardware",
+  "purpose": "Owned schematic design fixture for a mechanically coherent game asset",
+  "styleSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "coordinateSystem": "xy-metres-z-up",
+  "numerics": {
+    "linearTolerance": 1E-06,
+    "angularToleranceDegrees": 0.01,
+    "minimumFeatureSize": 0.0001,
+    "maxCoordinateMagnitude": 10000
+  },
+  "budgets": {
+    "maxPartDefinitions": 128,
+    "maxInstances": 1024,
+    "maxFeatures": 4096,
+    "maxRoutePoints": 4096,
+    "maxDrawings": 256,
+    "maxValidationChecks": 10000000,
+    "maxPreviewBytes": 16777216,
+    "maxExportBytes": 536870912,
+    "maxGeneratedTriangles": 500000,
+    "maxMotionSamples": 10000
+  },
+  "observations": [
+    {
+      "id": "design-assumption",
+      "kind": "assumed",
+      "description": "Dimensions and construction are authored fixture choices; references do not determine scale",
+      "source": "Owned engineering fixture"
+    },
+    {
+      "id": "design-simplification",
+      "kind": "simplified",
+      "description": "Bounded demonstration assembly; unlisted commercial systems are excluded from this explicit design, not silently omitted during construction",
+      "source": "Synthetic fixture scope"
+    },
+    {
+      "id": "readiness-example-scope",
+      "kind": "simplified",
+      "description": "Explicit toy engineering assembly for dimensional, articulation and clearance QA. No unlisted commercial systems, physics/manufacturing certification or human asset acceptance.",
+      "source": "Owned procedural example"
+    }
+  ],
+  "materials": [
+    {
+      "id": "steel",
+      "name": "Brushed steel",
+      "color": "#708090",
+      "roughness": 0.45,
+      "metallic": 0.8
+    }
+  ],
+  "parts": [
+    {
+      "id": "shell-definition",
+      "name": "shell-definition",
+      "purpose": "Independently authored mechanical fixture component",
+      "detail": "Approved smooth surfaces and individually addressable hardware; explicit idealized design, no manufacturing certification",
+      "materialId": "steel",
+      "kind": "rigid",
+      "size": {
+        "x": 0.8,
+        "y": 0.5,
+        "z": 0.2
+      },
+      "features": [
+        {
+          "id": "solid",
+          "kind": "box",
+          "operation": "add",
+          "frame": {
+            "origin": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          },
+          "parameters": {
+            "width": 0.8,
+            "depth": 0.5,
+            "height": 0.2
+          },
+          "profile": [],
+          "path": [],
+          "sections": []
+        },
+        {
+          "id": "cavity",
+          "kind": "box",
+          "operation": "subtract",
+          "frame": {
+            "origin": {
+              "x": 0.03,
+              "y": 0.03,
+              "z": 0.02
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          },
+          "parameters": {
+            "width": 0.74,
+            "depth": 0.44,
+            "height": 0.2
+          },
+          "profile": [],
+          "path": [],
+          "sections": []
+        },
+        {
+          "id": "left-shaft-bore",
+          "kind": "cylinder",
+          "operation": "subtract",
+          "frame": {
+            "origin": {
+              "x": 0.021,
+              "y": 0.021,
+              "z": 0.12
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          },
+          "parameters": {
+            "radius": 0.007,
+            "length": 0.13,
+            "segments": 24
+          },
+          "profile": [],
+          "path": [],
+          "sections": []
+        },
+        {
+          "id": "left-head-counterbore",
+          "kind": "cylinder",
+          "operation": "subtract",
+          "frame": {
+            "origin": {
+              "x": 0.021,
+              "y": 0.021,
+              "z": 0.1695
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          },
+          "parameters": {
+            "radius": 0.01,
+            "length": 0.081,
+            "segments": 24
+          },
+          "profile": [],
+          "path": [],
+          "sections": []
+        },
+        {
+          "id": "right-shaft-bore",
+          "kind": "cylinder",
+          "operation": "subtract",
+          "frame": {
+            "origin": {
+              "x": 0.779,
+              "y": 0.021,
+              "z": 0.12
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          },
+          "parameters": {
+            "radius": 0.007,
+            "length": 0.13,
+            "segments": 24
+          },
+          "profile": [],
+          "path": [],
+          "sections": []
+        },
+        {
+          "id": "right-head-counterbore",
+          "kind": "cylinder",
+          "operation": "subtract",
+          "frame": {
+            "origin": {
+              "x": 0.779,
+              "y": 0.021,
+              "z": 0.1695
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          },
+          "parameters": {
+            "radius": 0.01,
+            "length": 0.081,
+            "segments": 24
+          },
+          "profile": [],
+          "path": [],
+          "sections": []
+        }
+      ],
+      "interfaces": [
+        {
+          "id": "lid-hinge",
+          "name": "lid-hinge",
+          "frame": {
+            "origin": {
+              "x": 0,
+              "y": 0,
+              "z": 0.2
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          }
+        },
+        {
+          "id": "fastener-left",
+          "name": "fastener-left",
+          "frame": {
+            "origin": {
+              "x": 0.021,
+              "y": 0.021,
+              "z": 0.14
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          }
+        },
+        {
+          "id": "fastener-right",
+          "name": "fastener-right",
+          "frame": {
+            "origin": {
+              "x": 0.779,
+              "y": 0.021,
+              "z": 0.14
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          }
+        }
+      ],
+      "terminals": [],
+      "flexible": null
+    },
+    {
+      "id": "lid-definition",
+      "name": "lid-definition",
+      "purpose": "Independently authored mechanical fixture component",
+      "detail": "Approved smooth surfaces and individually addressable hardware; explicit idealized design, no manufacturing certification",
+      "materialId": "steel",
+      "kind": "rigid",
+      "size": {
+        "x": 0.8,
+        "y": 0.5,
+        "z": 0.03
+      },
+      "features": [
+        {
+          "id": "lid-extrusion",
+          "kind": "extrude",
+          "operation": "add",
+          "frame": {
+            "origin": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          },
+          "parameters": {
+            "depth": 0.03
+          },
+          "profile": [
+            {
+              "x": 0,
+              "y": 0
+            },
+            {
+              "x": 0.8,
+              "y": 0
+            },
+            {
+              "x": 0.8,
+              "y": 0.5
+            },
+            {
+              "x": 0,
+              "y": 0.5
+            }
+          ],
+          "path": [],
+          "sections": []
+        }
+      ],
+      "interfaces": [
+        {
+          "id": "hinge",
+          "name": "hinge",
+          "frame": {
+            "origin": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          }
+        }
+      ],
+      "terminals": [],
+      "flexible": null
+    },
+    {
+      "id": "battery-definition",
+      "name": "battery-definition",
+      "purpose": "Independently authored mechanical fixture component",
+      "detail": "Approved smooth surfaces and individually addressable hardware; explicit idealized design, no manufacturing certification",
+      "materialId": "steel",
+      "kind": "rigid",
+      "size": {
+        "x": 0.1,
+        "y": 0.1,
+        "z": 0.05
+      },
+      "features": [
+        {
+          "id": "solid",
+          "kind": "box",
+          "operation": "add",
+          "frame": {
+            "origin": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          },
+          "parameters": {
+            "width": 0.1,
+            "depth": 0.1,
+            "height": 0.05
+          },
+          "profile": [],
+          "path": [],
+          "sections": []
+        }
+      ],
+      "interfaces": [
+        {
+          "id": "mount",
+          "name": "mount",
+          "frame": {
+            "origin": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          }
+        }
+      ],
+      "terminals": [
+        {
+          "id": "positive",
+          "name": "External power terminal",
+          "kind": "power",
+          "frame": {
+            "origin": {
+              "x": 0.1,
+              "y": 0.05,
+              "z": 0.025
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          }
+        }
+      ],
+      "flexible": null
+    },
+    {
+      "id": "motor-definition",
+      "name": "motor-definition",
+      "purpose": "Independently authored mechanical fixture component",
+      "detail": "Approved smooth surfaces and individually addressable hardware; explicit idealized design, no manufacturing certification",
+      "materialId": "steel",
+      "kind": "rigid",
+      "size": {
+        "x": 0.1,
+        "y": 0.1,
+        "z": 0.08
+      },
+      "features": [
+        {
+          "id": "motor-cylinder",
+          "kind": "cylinder",
+          "operation": "add",
+          "frame": {
+            "origin": {
+              "x": 0.05,
+              "y": 0.05,
+              "z": 0
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          },
+          "parameters": {
+            "radius": 0.05,
+            "length": 0.08,
+            "segments": 32
+          },
+          "profile": [],
+          "path": [],
+          "sections": []
+        }
+      ],
+      "interfaces": [
+        {
+          "id": "mount",
+          "name": "mount",
+          "frame": {
+            "origin": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          }
+        }
+      ],
+      "terminals": [
+        {
+          "id": "power",
+          "name": "External motor power",
+          "kind": "power",
+          "frame": {
+            "origin": {
+              "x": 0,
+              "y": 0.05,
+              "z": 0.025
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          }
+        }
+      ],
+      "flexible": null
+    },
+    {
+      "id": "screw-definition",
+      "name": "screw-definition",
+      "purpose": "Independently authored mechanical fixture component",
+      "detail": "Separate coarse threaded fastener: shaft, twelve-turn 2 mm pitch tube thread and hex head; no manufacturing certification",
+      "materialId": "steel",
+      "kind": "rigid",
+      "size": {
+        "x": 0.018,
+        "y": 0.018,
+        "z": 0.035
+      },
+      "features": [
+        {
+          "id": "shaft",
+          "kind": "cylinder",
+          "operation": "add",
+          "frame": {
+            "origin": {
+              "x": 0.009,
+              "y": 0.009,
+              "z": 0
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          },
+          "parameters": {
+            "radius": 0.0055,
+            "length": 0.03,
+            "segments": 24
+          },
+          "profile": [],
+          "path": [],
+          "sections": []
+        },
+        {
+          "id": "authored-thread",
+          "kind": "sweep",
+          "operation": "add",
+          "frame": {
+            "origin": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          },
+          "parameters": {
+            "radius": 0.0005,
+            "segments": 8
+          },
+          "profile": [],
+          "path": [
+            {
+              "x": 0.014499999999999999,
+              "y": 0.009,
+              "z": 0.002
+            },
+            {
+              "x": 0.01288908729652601,
+              "y": 0.01288908729652601,
+              "z": 0.0022500000000000003
+            },
+            {
+              "x": 0.009,
+              "y": 0.014499999999999999,
+              "z": 0.0025
+            },
+            {
+              "x": 0.005110912703473989,
+              "y": 0.01288908729652601,
+              "z": 0.0027500000000000003
+            },
+            {
+              "x": 0.0034999999999999996,
+              "y": 0.009,
+              "z": 0.003
+            },
+            {
+              "x": 0.005110912703473988,
+              "y": 0.005110912703473989,
+              "z": 0.0032500000000000003
+            },
+            {
+              "x": 0.008999999999999998,
+              "y": 0.0034999999999999996,
+              "z": 0.0035000000000000005
+            },
+            {
+              "x": 0.012889087296526009,
+              "y": 0.005110912703473988,
+              "z": 0.00375
+            },
+            {
+              "x": 0.014499999999999999,
+              "y": 0.008999999999999998,
+              "z": 0.004
+            },
+            {
+              "x": 0.01288908729652601,
+              "y": 0.012889087296526009,
+              "z": 0.00425
+            },
+            {
+              "x": 0.009000000000000001,
+              "y": 0.014499999999999999,
+              "z": 0.0045000000000000005
+            },
+            {
+              "x": 0.005110912703473993,
+              "y": 0.012889087296526016,
+              "z": 0.004750000000000001
+            },
+            {
+              "x": 0.0034999999999999996,
+              "y": 0.009000000000000001,
+              "z": 0.005000000000000001
+            },
+            {
+              "x": 0.0051109127034739904,
+              "y": 0.005110912703473986,
+              "z": 0.0052499999999999995
+            },
+            {
+              "x": 0.008999999999999998,
+              "y": 0.0034999999999999996,
+              "z": 0.0055
+            },
+            {
+              "x": 0.012889087296526006,
+              "y": 0.005110912703473983,
+              "z": 0.00575
+            },
+            {
+              "x": 0.014499999999999999,
+              "y": 0.008999999999999996,
+              "z": 0.006
+            },
+            {
+              "x": 0.012889087296526009,
+              "y": 0.012889087296526013,
+              "z": 0.00625
+            },
+            {
+              "x": 0.009000000000000003,
+              "y": 0.014499999999999999,
+              "z": 0.0065
+            },
+            {
+              "x": 0.005110912703473994,
+              "y": 0.012889087296526016,
+              "z": 0.00675
+            },
+            {
+              "x": 0.0034999999999999996,
+              "y": 0.009000000000000003,
+              "z": 0.007
+            },
+            {
+              "x": 0.00511091270347399,
+              "y": 0.005110912703473988,
+              "z": 0.00725
+            },
+            {
+              "x": 0.008999999999999985,
+              "y": 0.0034999999999999996,
+              "z": 0.007500000000000001
+            },
+            {
+              "x": 0.012889087296526004,
+              "y": 0.005110912703473982,
+              "z": 0.007750000000000001
+            },
+            {
+              "x": 0.014499999999999999,
+              "y": 0.008999999999999996,
+              "z": 0.008
+            },
+            {
+              "x": 0.012889087296526009,
+              "y": 0.01288908729652601,
+              "z": 0.00825
+            },
+            {
+              "x": 0.008999999999999994,
+              "y": 0.014499999999999999,
+              "z": 0.0085
+            },
+            {
+              "x": 0.005110912703473995,
+              "y": 0.012889087296526018,
+              "z": 0.00875
+            },
+            {
+              "x": 0.0034999999999999996,
+              "y": 0.009000000000000005,
+              "z": 0.009000000000000001
+            },
+            {
+              "x": 0.005110912703473988,
+              "y": 0.005110912703473988,
+              "z": 0.009250000000000001
+            },
+            {
+              "x": 0.008999999999999984,
+              "y": 0.0034999999999999996,
+              "z": 0.0095
+            },
+            {
+              "x": 0.012889087296526004,
+              "y": 0.005110912703473981,
+              "z": 0.00975
+            },
+            {
+              "x": 0.014499999999999999,
+              "y": 0.008999999999999994,
+              "z": 0.01
+            },
+            {
+              "x": 0.01288908729652601,
+              "y": 0.012889087296526009,
+              "z": 0.01025
+            },
+            {
+              "x": 0.008999999999999996,
+              "y": 0.014499999999999999,
+              "z": 0.0105
+            },
+            {
+              "x": 0.005110912703473996,
+              "y": 0.012889087296526018,
+              "z": 0.01075
+            },
+            {
+              "x": 0.0034999999999999996,
+              "y": 0.009000000000000005,
+              "z": 0.011
+            },
+            {
+              "x": 0.005110912703473988,
+              "y": 0.00511091270347399,
+              "z": 0.01125
+            },
+            {
+              "x": 0.008999999999999984,
+              "y": 0.0034999999999999996,
+              "z": 0.0115
+            },
+            {
+              "x": 0.012889087296526002,
+              "y": 0.00511091270347398,
+              "z": 0.01175
+            },
+            {
+              "x": 0.014499999999999999,
+              "y": 0.008999999999999992,
+              "z": 0.012
+            },
+            {
+              "x": 0.012889087296526026,
+              "y": 0.012889087296525995,
+              "z": 0.01225
+            },
+            {
+              "x": 0.008999999999999996,
+              "y": 0.014499999999999999,
+              "z": 0.0125
+            },
+            {
+              "x": 0.0051109127034739965,
+              "y": 0.01288908729652602,
+              "z": 0.012750000000000001
+            },
+            {
+              "x": 0.0034999999999999996,
+              "y": 0.009000000000000027,
+              "z": 0.013000000000000001
+            },
+            {
+              "x": 0.005110912703473986,
+              "y": 0.0051109127034739904,
+              "z": 0.013250000000000001
+            },
+            {
+              "x": 0.008999999999999982,
+              "y": 0.0034999999999999996,
+              "z": 0.013500000000000002
+            },
+            {
+              "x": 0.012889087296526016,
+              "y": 0.005110912703473993,
+              "z": 0.013750000000000002
+            },
+            {
+              "x": 0.014499999999999999,
+              "y": 0.00899999999999999,
+              "z": 0.014000000000000002
+            },
+            {
+              "x": 0.012889087296526026,
+              "y": 0.012889087296525995,
+              "z": 0.014249999999999999
+            },
+            {
+              "x": 0.008999999999999998,
+              "y": 0.014499999999999999,
+              "z": 0.014499999999999999
+            },
+            {
+              "x": 0.005110912703473998,
+              "y": 0.01288908729652602,
+              "z": 0.01475
+            },
+            {
+              "x": 0.0034999999999999996,
+              "y": 0.008999999999999989,
+              "z": 0.015
+            },
+            {
+              "x": 0.005110912703473986,
+              "y": 0.005110912703473991,
+              "z": 0.01525
+            },
+            {
+              "x": 0.00899999999999998,
+              "y": 0.0034999999999999996,
+              "z": 0.0155
+            },
+            {
+              "x": 0.012889087296526014,
+              "y": 0.005110912703473992,
+              "z": 0.01575
+            },
+            {
+              "x": 0.014499999999999999,
+              "y": 0.00899999999999999,
+              "z": 0.016
+            },
+            {
+              "x": 0.012889087296526028,
+              "y": 0.012889087296525993,
+              "z": 0.01625
+            },
+            {
+              "x": 0.009,
+              "y": 0.014499999999999999,
+              "z": 0.0165
+            },
+            {
+              "x": 0.005110912703473998,
+              "y": 0.012889087296526021,
+              "z": 0.01675
+            },
+            {
+              "x": 0.0034999999999999996,
+              "y": 0.009000000000000029,
+              "z": 0.017
+            },
+            {
+              "x": 0.005110912703473984,
+              "y": 0.005110912703473992,
+              "z": 0.01725
+            },
+            {
+              "x": 0.008999999999999979,
+              "y": 0.0034999999999999996,
+              "z": 0.0175
+            },
+            {
+              "x": 0.012889087296526013,
+              "y": 0.005110912703473991,
+              "z": 0.017750000000000002
+            },
+            {
+              "x": 0.014499999999999999,
+              "y": 0.008999999999999989,
+              "z": 0.018000000000000002
+            },
+            {
+              "x": 0.012889087296526028,
+              "y": 0.012889087296525992,
+              "z": 0.018250000000000002
+            },
+            {
+              "x": 0.009000000000000001,
+              "y": 0.014499999999999999,
+              "z": 0.018500000000000003
+            },
+            {
+              "x": 0.005110912703474,
+              "y": 0.012889087296526021,
+              "z": 0.018750000000000003
+            },
+            {
+              "x": 0.0034999999999999996,
+              "y": 0.00899999999999999,
+              "z": 0.019000000000000003
+            },
+            {
+              "x": 0.0051109127034739835,
+              "y": 0.005110912703473993,
+              "z": 0.019250000000000003
+            },
+            {
+              "x": 0.008999999999999979,
+              "y": 0.0034999999999999996,
+              "z": 0.019499999999999997
+            },
+            {
+              "x": 0.012889087296526013,
+              "y": 0.0051109127034739904,
+              "z": 0.019749999999999997
+            },
+            {
+              "x": 0.014499999999999999,
+              "y": 0.008999999999999987,
+              "z": 0.019999999999999997
+            },
+            {
+              "x": 0.01288908729652603,
+              "y": 0.012889087296525992,
+              "z": 0.020249999999999997
+            },
+            {
+              "x": 0.009000000000000003,
+              "y": 0.014499999999999999,
+              "z": 0.020499999999999997
+            },
+            {
+              "x": 0.005110912703474001,
+              "y": 0.012889087296526023,
+              "z": 0.020749999999999998
+            },
+            {
+              "x": 0.0034999999999999996,
+              "y": 0.009000000000000032,
+              "z": 0.020999999999999998
+            },
+            {
+              "x": 0.005110912703473983,
+              "y": 0.005110912703473994,
+              "z": 0.021249999999999998
+            },
+            {
+              "x": 0.008999999999999977,
+              "y": 0.0034999999999999996,
+              "z": 0.0215
+            },
+            {
+              "x": 0.01288908729652601,
+              "y": 0.00511091270347399,
+              "z": 0.02175
+            },
+            {
+              "x": 0.014499999999999999,
+              "y": 0.008999999999999985,
+              "z": 0.022
+            },
+            {
+              "x": 0.01288908729652603,
+              "y": 0.01288908729652599,
+              "z": 0.02225
+            },
+            {
+              "x": 0.009000000000000043,
+              "y": 0.014499999999999999,
+              "z": 0.0225
+            },
+            {
+              "x": 0.005110912703473974,
+              "y": 0.012889087296525995,
+              "z": 0.02275
+            },
+            {
+              "x": 0.0034999999999999996,
+              "y": 0.008999999999999994,
+              "z": 0.023
+            },
+            {
+              "x": 0.005110912703473981,
+              "y": 0.005110912703473995,
+              "z": 0.02325
+            },
+            {
+              "x": 0.008999999999999975,
+              "y": 0.0034999999999999996,
+              "z": 0.0235
+            },
+            {
+              "x": 0.012889087296525983,
+              "y": 0.00511091270347396,
+              "z": 0.02375
+            },
+            {
+              "x": 0.014499999999999999,
+              "y": 0.008999999999999946,
+              "z": 0.024
+            },
+            {
+              "x": 0.012889087296526004,
+              "y": 0.012889087296526018,
+              "z": 0.02425
+            },
+            {
+              "x": 0.009000000000000005,
+              "y": 0.014499999999999999,
+              "z": 0.0245
+            },
+            {
+              "x": 0.005110912703474003,
+              "y": 0.012889087296526025,
+              "z": 0.02475
+            },
+            {
+              "x": 0.0034999999999999996,
+              "y": 0.009000000000000034,
+              "z": 0.025
+            },
+            {
+              "x": 0.005110912703473953,
+              "y": 0.005110912703474023,
+              "z": 0.02525
+            },
+            {
+              "x": 0.009000000000000013,
+              "y": 0.0034999999999999996,
+              "z": 0.025500000000000002
+            },
+            {
+              "x": 0.012889087296526009,
+              "y": 0.005110912703473988,
+              "z": 0.025750000000000002
+            },
+            {
+              "x": 0.014499999999999999,
+              "y": 0.008999999999999984,
+              "z": 0.026000000000000002
+            }
+          ],
+          "sections": []
+        },
+        {
+          "id": "hex-head",
+          "kind": "extrude",
+          "operation": "add",
+          "frame": {
+            "origin": {
+              "x": 0,
+              "y": 0,
+              "z": 0.03
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          },
+          "parameters": {
+            "depth": 0.005
+          },
+          "profile": [
+            {
+              "x": 0.018,
+              "y": 0.009
+            },
+            {
+              "x": 0.0135,
+              "y": 0.016794228634059945
+            },
+            {
+              "x": 0.004500000000000001,
+              "y": 0.016794228634059948
+            },
+            {
+              "x": 0,
+              "y": 0.009000000000000001
+            },
+            {
+              "x": 0.004499999999999995,
+              "y": 0.0012057713659400539
+            },
+            {
+              "x": 0.0135,
+              "y": 0.0012057713659400521
+            }
+          ],
+          "path": [],
+          "sections": []
+        }
+      ],
+      "interfaces": [
+        {
+          "id": "bearing",
+          "name": "bearing",
+          "frame": {
+            "origin": {
+              "x": 0.009,
+              "y": 0.009,
+              "z": 0
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          }
+        }
+      ],
+      "terminals": [],
+      "flexible": null
+    },
+    {
+      "id": "wire-definition",
+      "name": "wire-definition",
+      "purpose": "Independently authored mechanical fixture component",
+      "detail": "Approved smooth surfaces and individually addressable hardware; explicit idealized design, no manufacturing certification",
+      "materialId": "steel",
+      "kind": "wire",
+      "size": {
+        "x": 0.124,
+        "y": 0.008,
+        "z": 0.008
+      },
+      "features": [
+        {
+          "id": "original-wire-rings",
+          "kind": "sweep",
+          "operation": "add",
+          "frame": {
+            "origin": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "rotationDegrees": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          },
+          "parameters": {
+            "radius": 0.0015,
+            "segments": 8
+          },
+          "profile": [],
+          "path": [
+            {
+              "x": 0.002,
+              "y": 0.004,
+              "z": 0.004
+            },
+            {
+              "x": 0.007,
+              "y": 0.004,
+              "z": 0.004
+            },
+            {
+              "x": 0.012,
+              "y": 0.004,
+              "z": 0.004
+            },
+            {
+              "x": 0.017,
+              "y": 0.004,
+              "z": 0.004
+            },
+            {
+              "x": 0.022,
+              "y": 0.004,
+              "z": 0.004
+            },
+            {
+              "x": 0.026999999999999996,
+              "y": 0.004,
+              "z": 0.004
+            },
+            {
+              "x": 0.032,
+              "y": 0.004,
+              "z": 0.004
+            },
+            {
+              "x": 0.037,
+              "y": 0.004,
+              "z": 0.004
+            },
+            {
+              "x": 0.042,
+              "y": 0.004,
+              "z": 0.004
+            },
+            {
+              "x": 0.04700000000000001,
+              "y": 0.004,
+              "z": 0.004
+            },
+            {
+              "x": 0.052,
+              "y": 0.004,
+              "z": 0.004
+            },
+            {
+              "x": 0.056999999999999995,
+              "y": 0.004,
+              "z": 0.004
+            },
+            {
+              "x": 0.062,
+              "y": 0.004,
+              "z": 0.004
+            },
+            {
+              "x": 0.067,
+              "y": 0.004,
+              "z": 0.004
+            },
+            {
+              "x": 0.072,
+              "y": 0.004,
+              "z": 0.004
+            },
+            {
+              "x": 0.077,
+              "y": 0.004,
+              "z": 0.004
+            },
+            {
+              "x": 0.082,
+              "y": 0.004,
+              "z": 0.004
+            },
+            {
+              "x": 0.08700000000000001,
+              "y": 0.004,
+              "z": 0.004
+            },
+            {
+              "x": 0.09200000000000001,
+              "y": 0.004,
+              "z": 0.004
+            },
+            {
+              "x": 0.09699999999999999,
+              "y": 0.004,
+              "z": 0.004
+            },
+            {
+              "x": 0.102,
+              "y": 0.004,
+              "z": 0.004
+            },
+            {
+              "x": 0.107,
+              "y": 0.004,
+              "z": 0.004
+            },
+            {
+              "x": 0.11199999999999999,
+              "y": 0.004,
+              "z": 0.004
+            },
+            {
+              "x": 0.11699999999999999,
+              "y": 0.004,
+              "z": 0.004
+            },
+            {
+              "x": 0.122,
+              "y": 0.004,
+              "z": 0.004
+            }
+          ],
+          "sections": []
+        }
+      ],
+      "interfaces": [],
+      "terminals": [],
+      "flexible": {
+        "restLength": 0.12,
+        "minimumLength": 0.119,
+        "maximumLength": 0.122,
+        "minimumBendRadius": 0.01,
+        "maximumStretchRatio": 1.02,
+        "skinSegments": 24
+      }
+    }
+  ],
+  "subassemblies": [
+    {
+      "id": "assembly",
+      "name": "Complete assembly",
+      "parentId": null,
+      "frame": {
+        "origin": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "rotationDegrees": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        }
+      }
+    }
+  ],
+  "instances": [
+    {
+      "id": "shell",
+      "partId": "shell-definition",
+      "parentId": "assembly",
+      "frame": {
+        "origin": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "rotationDegrees": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        }
+      },
+      "explodeOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "lid",
+      "partId": "lid-definition",
+      "parentId": "assembly",
+      "frame": {
+        "origin": {
+          "x": 0,
+          "y": 0,
+          "z": 0.2
+        },
+        "rotationDegrees": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        }
+      },
+      "explodeOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0.6
+      }
+    },
+    {
+      "id": "battery",
+      "partId": "battery-definition",
+      "parentId": "assembly",
+      "frame": {
+        "origin": {
+          "x": 0.1,
+          "y": 0.1,
+          "z": 0.05
+        },
+        "rotationDegrees": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        }
+      },
+      "explodeOffset": {
+        "x": -0.3,
+        "y": 0,
+        "z": 0.25
+      }
+    },
+    {
+      "id": "motor",
+      "partId": "motor-definition",
+      "parentId": "assembly",
+      "frame": {
+        "origin": {
+          "x": 0.32,
+          "y": 0.1,
+          "z": 0.05
+        },
+        "rotationDegrees": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        }
+      },
+      "explodeOffset": {
+        "x": 0.3,
+        "y": 0,
+        "z": 0.25
+      }
+    },
+    {
+      "id": "screw-left",
+      "partId": "screw-definition",
+      "parentId": "assembly",
+      "frame": {
+        "origin": {
+          "x": 0.012,
+          "y": 0.012,
+          "z": 0.14
+        },
+        "rotationDegrees": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        }
+      },
+      "explodeOffset": {
+        "x": -0.15,
+        "y": -0.2,
+        "z": 0.45
+      }
+    },
+    {
+      "id": "screw-right",
+      "partId": "screw-definition",
+      "parentId": "assembly",
+      "frame": {
+        "origin": {
+          "x": 0.77,
+          "y": 0.012,
+          "z": 0.14
+        },
+        "rotationDegrees": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        }
+      },
+      "explodeOffset": {
+        "x": 0.15,
+        "y": -0.2,
+        "z": 0.45
+      }
+    },
+    {
+      "id": "power-wire",
+      "partId": "wire-definition",
+      "parentId": "assembly",
+      "frame": {
+        "origin": {
+          "x": 0.198,
+          "y": 0.146,
+          "z": 0.071
+        },
+        "rotationDegrees": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        }
+      },
+      "explodeOffset": {
+        "x": 0,
+        "y": -0.3,
+        "z": 0.25
+      }
+    }
+  ],
+  "joints": [
+    {
+      "id": "lid-joint",
+      "kind": "hinge",
+      "parentInstanceId": "shell",
+      "childInstanceId": "lid",
+      "parentInterfaceId": "lid-hinge",
+      "childInterfaceId": "hinge",
+      "axis": {
+        "x": 1,
+        "y": 0,
+        "z": 0
+      },
+      "minimum": 0,
+      "maximum": 110,
+      "rest": 0,
+      "pitch": 0,
+      "clearance": 0
+    },
+    {
+      "id": "left-fastener-joint",
+      "kind": "screw",
+      "parentInstanceId": "shell",
+      "childInstanceId": "screw-left",
+      "parentInterfaceId": "fastener-left",
+      "childInterfaceId": "bearing",
+      "axis": {
+        "x": 0,
+        "y": 0,
+        "z": 1
+      },
+      "minimum": 0,
+      "maximum": 720,
+      "rest": 0,
+      "pitch": 0.002,
+      "clearance": 0.0002
+    },
+    {
+      "id": "right-fastener-joint",
+      "kind": "screw",
+      "parentInstanceId": "shell",
+      "childInstanceId": "screw-right",
+      "parentInterfaceId": "fastener-right",
+      "childInterfaceId": "bearing",
+      "axis": {
+        "x": 0,
+        "y": 0,
+        "z": 1
+      },
+      "minimum": 0,
+      "maximum": 720,
+      "rest": 0,
+      "pitch": 0.002,
+      "clearance": 0.0002
+    }
+  ],
+  "mechanisms": [],
+  "routes": [
+    {
+      "id": "power-route",
+      "instanceId": "power-wire",
+      "points": [
+        {
+          "x": 0.2,
+          "y": 0.15,
+          "z": 0.075
+        },
+        {
+          "x": 0.20500000000000002,
+          "y": 0.15,
+          "z": 0.075
+        },
+        {
+          "x": 0.21000000000000002,
+          "y": 0.15,
+          "z": 0.075
+        },
+        {
+          "x": 0.21500000000000002,
+          "y": 0.15,
+          "z": 0.075
+        },
+        {
+          "x": 0.22,
+          "y": 0.15,
+          "z": 0.075
+        },
+        {
+          "x": 0.225,
+          "y": 0.15,
+          "z": 0.075
+        },
+        {
+          "x": 0.23,
+          "y": 0.15,
+          "z": 0.075
+        },
+        {
+          "x": 0.23500000000000001,
+          "y": 0.15,
+          "z": 0.075
+        },
+        {
+          "x": 0.24000000000000002,
+          "y": 0.15,
+          "z": 0.075
+        },
+        {
+          "x": 0.24500000000000002,
+          "y": 0.15,
+          "z": 0.075
+        },
+        {
+          "x": 0.25,
+          "y": 0.15,
+          "z": 0.075
+        },
+        {
+          "x": 0.255,
+          "y": 0.15,
+          "z": 0.075
+        },
+        {
+          "x": 0.26,
+          "y": 0.15,
+          "z": 0.075
+        },
+        {
+          "x": 0.265,
+          "y": 0.15,
+          "z": 0.075
+        },
+        {
+          "x": 0.27,
+          "y": 0.15,
+          "z": 0.075
+        },
+        {
+          "x": 0.275,
+          "y": 0.15,
+          "z": 0.075
+        },
+        {
+          "x": 0.28,
+          "y": 0.15,
+          "z": 0.075
+        },
+        {
+          "x": 0.28500000000000003,
+          "y": 0.15,
+          "z": 0.075
+        },
+        {
+          "x": 0.29000000000000004,
+          "y": 0.15,
+          "z": 0.075
+        },
+        {
+          "x": 0.295,
+          "y": 0.15,
+          "z": 0.075
+        },
+        {
+          "x": 0.3,
+          "y": 0.15,
+          "z": 0.075
+        },
+        {
+          "x": 0.305,
+          "y": 0.15,
+          "z": 0.075
+        },
+        {
+          "x": 0.31,
+          "y": 0.15,
+          "z": 0.075
+        },
+        {
+          "x": 0.315,
+          "y": 0.15,
+          "z": 0.075
+        },
+        {
+          "x": 0.32,
+          "y": 0.15,
+          "z": 0.075
+        }
+      ],
+      "closed": false,
+      "from": {
+        "instanceId": "battery",
+        "portId": "positive"
+      },
+      "to": {
+        "instanceId": "motor",
+        "portId": "power"
+      }
+    }
+  ],
+  "connections": [
+    {
+      "id": "motor-power-connection",
+      "kind": "power",
+      "from": {
+        "instanceId": "battery",
+        "portId": "positive"
+      },
+      "to": {
+        "instanceId": "motor",
+        "portId": "power"
+      },
+      "routeId": "power-route"
+    }
+  ],
+  "sections": [
+    {
+      "id": "device-internal-section",
+      "axis": "z",
+      "offset": 0.1
+    }
+  ],
+  "assemblyProfile": {
+    "schemaVersion": "bubo-assembly-profile/v1",
+    "samplesPerRange": 5,
+    "samplesPerCycle": 17,
+    "maxGeometryChecks": 50000000,
+    "minimumSeparation": 0,
+    "contacts": [
+      {
+        "id": "battery-wire-terminal",
+        "firstInstanceId": "battery",
+        "secondInstanceId": "power-wire",
+        "frame": {
+          "origin": {
+            "x": 0.098,
+            "y": 0.048,
+            "z": 0.023
+          },
+          "rotationDegrees": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          }
+        },
+        "size": {
+          "x": 0.004,
+          "y": 0.004,
+          "z": 0.004
+        },
+        "reason": "Only the wire end-cap mating with this owned external power terminal; no battery-body exemption"
+      },
+      {
+        "id": "motor-wire-terminal",
+        "firstInstanceId": "motor",
+        "secondInstanceId": "power-wire",
+        "frame": {
+          "origin": {
+            "x": -0.002,
+            "y": 0.048,
+            "z": 0.023
+          },
+          "rotationDegrees": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          }
+        },
+        "size": {
+          "x": 0.004,
+          "y": 0.004,
+          "z": 0.004
+        },
+        "reason": "Only the wire end-cap mating with this owned external motor terminal; no motor-body exemption"
+      },
+      {
+        "id": "lid-hinge-contact",
+        "firstInstanceId": "shell",
+        "secondInstanceId": "lid",
+        "frame": {
+          "origin": {
+            "x": -0.001,
+            "y": -0.001,
+            "z": 0.199
+          },
+          "rotationDegrees": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          }
+        },
+        "size": {
+          "x": 0.802,
+          "y": 0.002,
+          "z": 0.002
+        },
+        "reason": "Only the declared lid hinge-axis contact line, bounded within a 2 mm strip; no shell or lid body exemption"
+      }
+    ],
+    "flexibleRigs": [
+      {
+        "routeId": "power-route",
+        "minimumSegmentRatio": 0.98,
+        "minimumEndpointDistance": 0.119,
+        "maximumEndpointDistance": 0.122,
+        "driverJointId": null,
+        "travelMetresPerDegree": null
+      }
+    ],
+    "couplingFits": []
+  }
+}

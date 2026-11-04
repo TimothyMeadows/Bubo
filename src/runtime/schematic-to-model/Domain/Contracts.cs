@@ -21,6 +21,8 @@ public sealed record AssemblyDesign
     public required List<RouteSpec> Routes { get; init; }
     public required List<ConnectionSpec> Connections { get; init; }
     public required List<SectionSpec> Sections { get; init; }
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public AssemblyProfile? AssemblyProfile { get; init; }
 }
 
 public sealed record Vec2

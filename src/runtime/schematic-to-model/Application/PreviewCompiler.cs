@@ -20,6 +20,7 @@ public sealed class PreviewCompiler(IAssemblyDesignValidator validator, ISchemat
         }
         .Concat(design.Sections.Select(section => $"section-{section.Id}.svg"))
         .Concat(design.Parts.Select(part => $"part-{part.Id}.svg"))
+        .Concat(design.AssemblyProfile is null ? [] : new[] { "assembly-details.svg", "flex-rigs.svg" })
         .ToHashSet(StringComparer.Ordinal);
 
     public IReadOnlyDictionary<string, string> Compile(AssemblyDesign design, CancellationToken cancellation = default)

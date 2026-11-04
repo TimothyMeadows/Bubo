@@ -16,6 +16,7 @@ python3 tests/test-floor-plan-export-blender.py
 python3 tests/test-floor-plan-cli.py --cli "src/Bubo.Cli/bin/$configuration/net10.0/bubo.dll"
 python3 tests/test-schematic-cli.py --cli "src/Bubo.Cli/bin/$configuration/net10.0/bubo.dll"
 python3 -B tests/test-schematic-parts-admission.py
+python3 -B tests/test-schematic-assembly-admission.py
 python3 tests/test-media-provision.py
 python3 tests/test-music-worker.py
 python3 tests/test-voice-worker.py

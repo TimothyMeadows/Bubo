@@ -49,6 +49,11 @@ public sealed class SvgSchematicRenderer : ISchematicPreviewRenderer
         Add("connections.svg", ConnectionSheet(design, parts, budget, world));
         Add("bom.svg", BomSheet(design, parts, budget));
         AddText("bom.json", BomJson(design, world));
+        if (design.AssemblyProfile is not null)
+        {
+            Add("assembly-details.svg", AssemblyPolicySheet(design, budget));
+            Add("flex-rigs.svg", FlexiblePolicySheet(design, budget));
+        }
         return files;
     }
 
@@ -338,6 +343,40 @@ public sealed class SvgSchematicRenderer : ISchematicPreviewRenderer
         return sheet;
     }
 
+    static Sheet AssemblyPolicySheet(AssemblyDesign design, PreviewBudget budget)
+    {
+        var profile = design.AssemblyProfile!;
+        var sheet = new Sheet(design, "assembly-policy", "Assembly fit, permitted contact and diagnostic coverage", budget, true);
+        sheet.Note("These explicit v2 choices are reviewed with the whole design. Declared fits do not establish manufacturing or physics certification.");
+        sheet.TableRow("diagnostic-policy", "Minimum samples per range " + profile.SamplesPerRange + "; per cycle " + profile.SamplesPerCycle + "; total sample budget " + design.Budgets.MaxMotionSamples + "; geometry checks " + profile.MaxGeometryChecks);
+        sheet.TableRow("separation-policy", "Minimum surface separation " + sheet.Length(profile.MinimumSeparation) + " m. Applicable joint clearances also apply; only the listed local contact boxes permit material contact.");
+        foreach (var zone in profile.Contacts.OrderBy(z => z.Id, StringComparer.Ordinal))
+            sheet.TableRow("contact-zone", zone.Id + ": " + zone.FirstInstanceId + " / " + zone.SecondInstanceId + "; FIRST-instance local origin " + sheet.DisplayVector(zone.Frame.Origin) + " m; XYZ " + sheet.DisplayVector(zone.Frame.RotationDegrees, true) + " deg; size " + sheet.DisplayVector(zone.Size) + " m; reason: " + zone.Reason,
+                ("data-contact-id", zone.Id), ("data-first-instance", zone.FirstInstanceId), ("data-second-instance", zone.SecondInstanceId));
+        if (profile.Contacts.Count == 0) sheet.TableRow("contact-zone-none", "No material-interference exemptions are declared.");
+        foreach (var fit in profile.CouplingFits.OrderBy(f => f.MechanismId, StringComparer.Ordinal))
+            sheet.TableRow("coupling-fit", fit.MechanismId + ": driver pitch radius " + sheet.Length(fit.DriverPitchRadius) + " m; follower " + (fit.FollowerPitchRadius is { } radius ? sheet.Length(radius) + " m" : "not applicable")
+                + "; driver teeth " + (fit.DriverToothCount?.ToString(CultureInfo.InvariantCulture) ?? "not applicable") + "; follower teeth " + (fit.FollowerToothCount?.ToString(CultureInfo.InvariantCulture) ?? "not applicable"), ("data-mechanism-id", fit.MechanismId));
+        sheet.TableRow("diagnostic-limits", "Coverage is finite sampled readiness, with refined keys where required. Rigid pose-return cycles and belt material travel are separate observations. Complete review and finished animation remain later operations.");
+        return sheet;
+    }
+    static Sheet FlexiblePolicySheet(AssemblyDesign design, PreviewBudget budget)
+    {
+        var sheet = new Sheet(design, "flexible-policy", "Owned flexible geometry, rigging and travel", budget, true);
+        sheet.Note("Each original source ring receives an owned skin bone. Rigging does not replace or resample the approved component geometry.");
+        var parts = design.Parts.ToDictionary(p => p.Id, StringComparer.Ordinal);
+        var instances = design.Instances.ToDictionary(i => i.Id, StringComparer.Ordinal);
+        foreach (var policy in design.AssemblyProfile!.FlexibleRigs.OrderBy(p => p.RouteId, StringComparer.Ordinal))
+        {
+            var route = design.Routes.Single(r => r.Id == policy.RouteId); var part = parts[instances[route.InstanceId].PartId]; var limits = part.Flexible!;
+            sheet.TableRow("flexible-rig", route.Id + " / " + route.InstanceId + " / " + part.Kind + ": " + limits.SkinSegments + " original source segments; " + (route.Closed ? "closed" : "open") + "; rest arc " + sheet.Length(limits.RestLength) + " m; arc limits " + sheet.Length(limits.MinimumLength) + ".." + sheet.Length(limits.MaximumLength) + " m", ("data-route-id", route.Id), ("data-instance-id", route.InstanceId));
+            sheet.TableRow("flexible-limits", "Minimum segment ratio " + FormatPolicy(policy.MinimumSegmentRatio) + "; maximum stretch " + FormatPolicy(limits.MaximumStretchRatio) + "; minimum bend radius " + sheet.Length(limits.MinimumBendRadius) + " m; endpoint distance "
+                + (policy.MinimumEndpointDistance is { } minimum && policy.MaximumEndpointDistance is { } maximum ? sheet.Length(minimum) + ".." + sheet.Length(maximum) + " m" : "not applicable to a closed belt"));
+            sheet.TableRow("flexible-ownership", route.Closed ? "Material phase driver " + policy.DriverJointId + "; travel " + FormatPolicy(policy.TravelMetresPerDegree!.Value) + " metres per degree" : "Owned attachments: " + EndpointText(route.From!) + " -> " + EndpointText(route.To!));
+        }
+        if (design.AssemblyProfile.FlexibleRigs.Count == 0) sheet.TableRow("flexible-none", "This design declares no flexible physical components.");
+        return sheet;
+    }
     static string BomJson(AssemblyDesign design, Func<string, Vec3, Vec3> world)
     {
         var instancesByPart = design.Instances.GroupBy(instance => instance.PartId).ToDictionary(group => group.Key, group => group.Select(instance => instance.Id).Order(StringComparer.Ordinal).ToArray(), StringComparer.Ordinal);

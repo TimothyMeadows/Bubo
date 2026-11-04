@@ -50,17 +50,17 @@ public sealed class PartSession(IWorkspace workspace, DesignSession design, INat
     SortedDictionary<string, string> Bundle()
     {
         var catalog = Path.Combine(Directory.GetParent(bundleDirectory)?.Parent?.FullName ?? throw new InvalidOperationException("Invalid schematic bundle layout"), "catalog.json");
-        if (!Hash(resourceCatalogSha256) || !File.Exists(catalog) || (File.GetAttributes(catalog) & FileAttributes.ReparsePoint) != 0
-            || new FileInfo(catalog).Length > 1_048_576 || workspace.HashFile(catalog) != resourceCatalogSha256)
+        var catalogBytes = SchematicNativeRunner.Capture(catalog, 1_048_576);
+        if (!Hash(resourceCatalogSha256) || Convert.ToHexStringLower(SHA256.HashData(catalogBytes)) != resourceCatalogSha256)
             throw new InvalidOperationException("Schematic resource catalog differs from its compiled reviewed identity");
-        using var document = JsonDocument.Parse(File.ReadAllBytes(catalog));
+        using var document = JsonDocument.Parse(catalogBytes);
         var files = document.RootElement.GetProperty("files"); var result = new SortedDictionary<string, string>(StringComparer.Ordinal);
         foreach (var name in Scripts)
         {
             var path = Path.Combine(bundleDirectory, name);
             if (!File.Exists(path) || (File.GetAttributes(path) & FileAttributes.ReparsePoint) != 0 || (File.GetAttributes(bundleDirectory) & FileAttributes.ReparsePoint) != 0)
                 throw new InvalidOperationException("Fixed schematic part bundle is missing or linked");
-            var hash = workspace.HashFile(path);
+            var hash = Convert.ToHexStringLower(SHA256.HashData(SchematicNativeRunner.Capture(path, 2_097_152)));
             if (!files.TryGetProperty("resources/schematic-to-model/blender/" + name, out var expected) || expected.GetString() != hash)
                 throw new InvalidOperationException("Schematic script differs from the exact reviewed resource catalog");
             result.Add(name, hash);
@@ -209,7 +209,9 @@ public sealed class PartSession(IWorkspace workspace, DesignSession design, INat
         {
             var path = Path.Combine(bundleDirectory, name);
             if (new FileInfo(path).Length is <= 0 or > 2_097_152) throw new InvalidOperationException("Part script exceeds bounded immutable-copy bytes");
-            WriteNew(attempt.Directory + "/bundle/" + name, File.ReadAllBytes(path));
+            var bytes = SchematicNativeRunner.Capture(path, 2_097_152);
+            if (Convert.ToHexStringLower(SHA256.HashData(bytes)) != hash) throw new InvalidOperationException("Part script changed during immutable capture");
+            WriteNew(attempt.Directory + "/bundle/" + name, bytes);
         }
         FreshBundle(attempt.Bundle); FreshCopy(attempt);
     }
@@ -270,6 +272,34 @@ public sealed class PartSession(IWorkspace workspace, DesignSession design, INat
             || input.Manifest.Reviews[^1].Sha256 != attempt.ApprovalSha256 || ToolHash(attempt.ToolPath) != attempt.ToolSha256)
             throw new InvalidOperationException("Schematic input, approval or selected tool changed during part construction");
         FreshBundle(attempt.Bundle); FreshCopy(attempt);
+    }
+    /// <summary>Internal composition under the caller's existing shared asset lock, never a second lock.</summary>
+    internal sealed record VerifiedPartInput(DesignSession.PartInput Input, string Directory, string ToolPath, string ToolSha256,
+        string JobSha256, string ReportSha256, string VerificationSha256, PartBuildJob Job, PartsReport Report);
+    internal VerifiedPartInput? TryInspectOwned(string manifest, CancellationToken cancellation = default)
+    {
+        var input = design.InspectParts(manifest, cancellation);
+        var state = Load(manifest, input);
+        if (state.Attempts.LastOrDefault() is not { Status: "complete" }) return null;
+        return InspectOwned(manifest, cancellation);
+    }
+    internal VerifiedPartInput InspectOwned(string manifest, CancellationToken cancellation = default)
+    {
+        var input = design.InspectParts(manifest, cancellation, requireApproved: true);
+        var state = Load(manifest, input);
+        var attempt = state.Attempts.LastOrDefault();
+        if (attempt is not { Status: "complete" }) throw new InvalidOperationException("Assembly requires the latest completed independently verified part build; failed or interrupted attempts remain authoritative");
+        Refresh(manifest, attempt, cancellation);
+        var expected = Job(input, attempt); var path = attempt.Directory + "/job.json";
+        if (PartOutputVerifier.FileHash(workspace, path, cancellation, PartConstructionReadiness.MaximumJobBytes) != attempt.JobSha256
+            || PartOutputVerifier.FileHash(workspace, attempt.Directory + "/output/parts-report.json", cancellation, StrictDesignJson.MaximumInputBytes) != attempt.ReportSha256
+            || PartOutputVerifier.FileHash(workspace, attempt.Directory + "/output/parts-verification.json", cancellation, StrictDesignJson.MaximumInputBytes) != attempt.VerificationSha256)
+            throw new InvalidOperationException("Retained part job or independent report identity changed");
+        var job = StrictDesignJson.Read<PartBuildJob>(workspace.Resolve(path));
+        if (Digest(job) != Digest(expected)) throw new InvalidOperationException("Retained part job differs from current approved inputs/budgets");
+        var report = PartOutputVerifier.Verify(workspace, attempt.Directory + "/output", job, attempt.JobSha256!, cancellation);
+        Refresh(manifest, attempt, cancellation);
+        return new(input, attempt.Directory + "/output", attempt.ToolPath, attempt.ToolSha256, attempt.JobSha256!, attempt.ReportSha256!, attempt.VerificationSha256!, job, report);
     }
     public object Status(string manifest, CancellationToken cancellation = default)
     {

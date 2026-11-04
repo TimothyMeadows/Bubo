@@ -37,7 +37,7 @@ public sealed class AssemblyDesignValidator : IAssemblyDesignValidator
         {
             Check();
             if (design is null) { Error("null", "$", "An assembly design is required"); return new(issues, checks); }
-            Test(design.SchemaVersion == "bubo-assembly-design/v1", "schema", "schemaVersion", "Expected bubo-assembly-design/v1");
+            Test(design.SchemaVersion is "bubo-assembly-design/v1" or "bubo-assembly-design/v2", "schema", "schemaVersion", "Expected bubo-assembly-design/v1 or explicitly authored v2");
             Identifier(design.Id, "id"); Text(design.Name, "name"); Text(design.Purpose, "purpose");
             Test(design.StyleSha256 is not null && Regex.IsMatch(design.StyleSha256, "^[a-f0-9]{64}$", RegexOptions.CultureInvariant), "style", "styleSha256", "Exact selected host style SHA-256 is required");
             Test(design.CoordinateSystem == "xy-metres-z-up", "coordinates", "coordinateSystem", "Use shared right-handed XY metres and Z up");
@@ -305,7 +305,13 @@ public sealed class AssemblyDesignValidator : IAssemblyDesignValidator
             var connectionCounts=connections.Where(c=>c.Kind!=ConnectionKind.Mechanical).GroupBy(c=>c.RouteId ?? "",StringComparer.Ordinal).ToDictionary(g=>g.Key,g=>g.Count(),StringComparer.Ordinal);
             foreach(var r in routes) if(instanceMap.TryGetValue(r.InstanceId ?? "",out var carrier) && partMap.TryGetValue(carrier.PartId ?? "",out var carrierPart) && carrierPart.Kind==PartKind.Wire) Test(connectionCounts.GetValueOrDefault(r.Id ?? "")==1,"connection",r.Id ?? "routes","Each wire route requires one explicit electrical connection");
             foreach (var s in sections) { Id(s.Id, "sections.id"); EnumValue(s.Axis, s.Id + ".axis"); Test(double.IsFinite(s.Offset) && Math.Abs(s.Offset) <= bound, "section", s.Id, "Section offset exceeds declared coordinates"); }
-            Test(6L + sections.Count + parts.Count + 3 <= b.MaxDrawings, "budget", "budgets.maxDrawings", "Budget must cover six orthographic views, sections, independent part sheets, exploded, BOM and connections");
+            Test(6L + sections.Count + parts.Count + 3 + (design.AssemblyProfile is null ? 0 : 2) <= b.MaxDrawings, "budget", "budgets.maxDrawings", "Budget must cover six orthographic views, sections, independent part sheets, exploded, BOM, connections and applicable assembly/rig policy sheets");
+            if (issues.Count == 0)
+            {
+                var profile = new AssemblyProfileValidator().Validate(design, cancellationToken);
+                foreach (var issue in profile.Issues) Error(issue.Code, issue.Path, issue.Message);
+                checks = checked(checks + profile.Checks);
+            }
             return new(issues, checks);
 
             PartDefinition? EndpointPart(Endpoint? endpoint, string path, bool? electrical)

@@ -1,13 +1,16 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:bubo:assembly-design:v1",
-  "title": "Bubo schematic assembly design",
-  "description": "Closed declaration shape. The native validator additionally checks numerical coherence, identities, references, geometry declarations, connectivity and budgets; this schema does not certify actual construction or motion.",
+  "title": "Bubo dimension-driven mechanical assembly design v1/v2",
+  "description": "Legacy v1 design/parts and explicit v2 assembly/readiness profiles. Native validation additionally enforces dimensions, references, fitted mechanisms, original flexible rings and finite execution prerequisites.",
   "type": "object",
   "additionalProperties": false,
   "properties": {
     "schemaVersion": {
-      "const": "bubo-assembly-design/v1"
+      "enum": [
+        "bubo-assembly-design/v1",
+        "bubo-assembly-design/v2"
+      ]
     },
     "id": {
       "type": "string",
@@ -120,6 +123,16 @@
       },
       "maxItems": 128,
       "minItems": 1
+    },
+    "assemblyProfile": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/assemblyProfile"
+        },
+        {
+          "type": "null"
+        }
+      ]
     }
   },
   "required": [
@@ -1392,6 +1405,260 @@
         "axis",
         "offset"
       ]
+    },
+    "contactZone": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$"
+        },
+        "firstInstanceId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$"
+        },
+        "secondInstanceId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$"
+        },
+        "frame": {
+          "$ref": "#/$defs/frame"
+        },
+        "size": {
+          "$ref": "#/$defs/vec3"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048
+        }
+      },
+      "required": [
+        "id",
+        "firstInstanceId",
+        "secondInstanceId",
+        "frame",
+        "size",
+        "reason"
+      ]
+    },
+    "flexibleRigPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "routeId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$"
+        },
+        "minimumSegmentRatio": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1
+        },
+        "minimumEndpointDistance": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "maximumEndpointDistance": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "driverJointId": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "travelMetresPerDegree": {
+          "anyOf": [
+            {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 1000000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "routeId",
+        "minimumSegmentRatio",
+        "minimumEndpointDistance",
+        "maximumEndpointDistance",
+        "driverJointId",
+        "travelMetresPerDegree"
+      ]
+    },
+    "couplingFit": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mechanismId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$"
+        },
+        "driverPitchRadius": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1000000
+        },
+        "followerPitchRadius": {
+          "anyOf": [
+            {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 1000000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "driverToothCount": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 3,
+              "maximum": 1000000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "followerToothCount": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 3,
+              "maximum": 1000000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "mechanismId",
+        "driverPitchRadius",
+        "followerPitchRadius",
+        "driverToothCount",
+        "followerToothCount"
+      ]
+    },
+    "assemblyProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schemaVersion": {
+          "const": "bubo-assembly-profile/v1"
+        },
+        "samplesPerRange": {
+          "type": "integer",
+          "minimum": 3,
+          "maximum": 4097
+        },
+        "samplesPerCycle": {
+          "type": "integer",
+          "minimum": 9,
+          "maximum": 4097
+        },
+        "maxGeometryChecks": {
+          "description": "Cumulative work for one complete output certificate, including rest and every diagnostic pose; source-certificate revalidation is separate and the linked command deadline bounds total execution.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50000000
+        },
+        "minimumSeparation": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000
+        },
+        "contacts": {
+          "type": "array",
+          "maxItems": 32768,
+          "items": {
+            "$ref": "#/$defs/contactZone"
+          }
+        },
+        "flexibleRigs": {
+          "type": "array",
+          "maxItems": 32768,
+          "items": {
+            "$ref": "#/$defs/flexibleRigPolicy"
+          }
+        },
+        "couplingFits": {
+          "type": "array",
+          "maxItems": 32768,
+          "items": {
+            "$ref": "#/$defs/couplingFit"
+          }
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "samplesPerRange",
+        "samplesPerCycle",
+        "maxGeometryChecks",
+        "minimumSeparation",
+        "contacts",
+        "flexibleRigs",
+        "couplingFits"
+      ]
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "schemaVersion": {
+            "const": "bubo-assembly-design/v2"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "assemblyProfile"
+        ],
+        "properties": {
+          "assemblyProfile": {
+            "$ref": "#/$defs/assemblyProfile"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "assemblyProfile": {
+            "type": "null"
+          }
+        }
+      }
+    }
+  ]
 }
