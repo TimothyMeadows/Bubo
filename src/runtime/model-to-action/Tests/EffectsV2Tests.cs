@@ -40,6 +40,9 @@ static class EffectsV2Tests
         JsonObject Compile(JsonObject? input = null, JsonObject? motion = null) =>
             ActionCompiler.Compile(input ?? recipe, motion ?? fixture.Motion, "owned-action", "v2", catalog);
         var plan = Compile();
+        fixture.Workspace.Save("fx-seed-recipe.json", recipe);
+        fixture.Workspace.Save("fx-seed-plan.json", plan);
+        fixture.Workspace.Save("fx-seed-source.json", fixture.Source);
         var allocations = catalog.Sources.Single().LayerAllocations;
         Check(allocations.Count == 9, "native allocation facts cover every selected layer");
         Check(allocations["trail"] == new ActionEffectAllocation(20000, 60000, 1600152, 4),
@@ -75,14 +78,13 @@ static class EffectsV2Tests
         overlappingBuffers["actions"]![0]!["cues"]!.AsArray().Add(duplicateBuffers);
         Reject(() => ActionCompiler.Compile(overlappingBuffers, bufferBound.Motion, "buffers", "v2", bufferCatalog),
             "overlapping cues and tails reserve their full buffer union", "aggregate");
-        var exampleRoot = Path.Combine(Directory.GetCurrentDirectory(), "resources/model-to-action/recipes");
+        var nativeSourceRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../../../"));
+        if (!File.Exists(Path.Combine(nativeSourceRoot, "Bubo.slnx"))) throw new InvalidOperationException("Expected native test source root is unavailable");
+        var exampleRoot = Path.Combine(nativeSourceRoot, "resources/model-to-action/recipes");
         var exampleRecipe = JsonNode.Parse(File.ReadAllBytes(Path.Combine(exampleRoot, "cast-vfx-v2.example.json")))!.AsObject();
         Check(ActionCompilerV2.Sources(exampleRecipe).Count == 3, "illustrative recipe template passes strict typed three-source parsing without resource acceptance");
         Check(EffectProfileV2.Parse(File.ReadAllBytes(Path.Combine(exampleRoot, "cast-vfx-v2.profile.example.json"))).Layers.Count == 4,
             "illustrative production profile template passes strict four-layer parsing without resource acceptance");
-        fixture.Workspace.Save("fx-seed-recipe.json", recipe);
-        fixture.Workspace.Save("fx-seed-plan.json", plan);
-        fixture.Workspace.Save("fx-seed-source.json", fixture.Source);
         var cue = plan["actions"]![0]!["cues"]![0]!;
         Check(plan["schemaVersion"]!.GetValue<string>() == "hephaera-action-package/v2", "explicit v2 produces an independently versioned action package");
         Check(catalog.Sources.Single().SourceInventory.Files.Count == 9, "native inspection includes all nine private source-closure files");
@@ -929,7 +931,8 @@ sealed class OwnedEffectFixture
         if (!selected.Contains("trail")) Recipe["actions"]![0]!["cues"]![0]!.AsObject().Remove("trail");
         Motion = Fixture.Motion(Workspace.Hash(Full(mesh))); Motion["engine"] = EngineIdentity();
         Context = new(EngineIdentity(), new string('a', 64), new string('b', 64), Recipe["budgets"]!.AsObject());
-        var files = new List<ActionEffectFile> { Row("native-package", packagePath), Row("resource", png, "spark"), Row("resource", mesh, "triangle"), Row("production-profile", profilePath), Row("rights", rightsPath), Row("production-evidence", evidencePath) };
+        var files = new List<ActionEffectFile> { Row("native-package", packagePath), Row("production-profile", profilePath), Row("rights", rightsPath), Row("production-evidence", evidencePath) };
+        files.AddRange(resources.Select(resource => Row("resource", resource.Item3, resource.Item1)));
         files.AddRange(correspondences.Select(c => Row("source-correspondence", c.Report.Path, c.ResourceId)));
         var reviewHash = Save(reviewPath, Node(new ActionEffectProductionReview
         {
