@@ -14,7 +14,7 @@ import math
 from pathlib import Path
 import sys
 
-from core import confined, digest, finite, relative
+from core import action_v2, confined, digest, finite, positive_uniform_matrix, relative
 
 DEFAULT_MAX_BYTES = 8 * 1024**3
 MAX_BYTES = 64 * 1024**3
@@ -137,6 +137,8 @@ def write_spool(root, directory, plan, plan_hash, samples):
                 pending = None
                 if identifier != action['id'] or index != frame:
                     raise ValueError('Expected verification samples are out of order or incomplete')
+                if action_v2(plan):
+                    for values in sample['anchors'].values():positive_uniform_matrix(values)
                 offset, frame_hash = binary.tell(), hashlib.sha256()
                 for values in _chunks(sample, metadata):
                     if not all(math.isfinite(value) for value in values):
@@ -229,6 +231,8 @@ def read_spool(root, directory, plan, plan_hash):
                             sample[group][name] = values
                     if frame_hash.hexdigest() != record['sha256']:
                         raise ValueError('Verification frame payload checksum mismatch')
+                    if action_v2(plan):
+                        for values in sample['anchors'].values():positive_uniform_matrix(values)
                     yield action['id'], frame, sample
             if records.read(1) or binary.read(1) or total_hash.hexdigest() != metadata.get('dataSha256'):
                 raise ValueError('Extended or corrupt verification evidence')

@@ -1,0 +1,190 @@
+{
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "const": 2
+    },
+    "fps": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 120
+    },
+    "actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$"
+          },
+          "role": {
+            "type": "string",
+            "minLength": 1
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$"
+                },
+                "clip": {
+                  "type": "string",
+                  "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$"
+                },
+                "from": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 3600
+                },
+                "to": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 3600
+                },
+                "rate": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 4
+                },
+                "repeat": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 16
+                },
+                "blendIn": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 30
+                }
+              },
+              "required": [
+                "id",
+                "clip",
+                "from",
+                "to",
+                "rate",
+                "repeat",
+                "blendIn"
+              ],
+              "additionalProperties": false
+            },
+            "minItems": 1,
+            "maxItems": 256
+          },
+          "cues": {
+            "type": "array",
+            "items": {
+              "$ref": "action-effects-v2.schema.json#/$defs/cue"
+            },
+            "minItems": 1,
+            "maxItems": 256
+          }
+        },
+        "required": [
+          "id",
+          "role",
+          "steps",
+          "cues"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 1,
+      "maxItems": 64
+    },
+    "targets": {
+      "type": "array",
+      "items": {
+        "$ref": "action-effects-v2.schema.json#/$defs/target"
+      },
+      "minItems": 0,
+      "maxItems": 64
+    },
+    "budgets": {
+      "$ref": "action-effects-v2.schema.json#/$defs/budgets"
+    },
+    "review": {
+      "type": "object",
+      "properties": {
+        "fps": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 60
+        },
+        "resolution": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 32,
+            "maximum": 2048
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "cameras": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "front",
+              "three-quarter",
+              "right",
+              "left",
+              "back"
+            ]
+          },
+          "minItems": 1,
+          "maxItems": 5,
+          "uniqueItems": true
+        },
+        "targets": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "number",
+              "minimum": -1000000,
+              "maximum": 1000000
+            },
+            "minItems": 3,
+            "maxItems": 3
+          }
+        }
+      },
+      "required": [
+        "fps",
+        "resolution",
+        "cameras",
+        "targets"
+      ],
+      "additionalProperties": false
+    },
+    "provenance": {
+      "type": "object"
+    },
+    "effectSources": {
+      "type": "array",
+      "items": {
+        "$ref": "action-effects-v2.schema.json#/$defs/source"
+      },
+      "minItems": 1,
+      "maxItems": 64
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "fps",
+    "actions",
+    "targets",
+    "budgets",
+    "review",
+    "effectSources"
+  ],
+  "additionalProperties": false,
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "action-recipe-v2.schema.json",
+  "title": "Bounded ordered action composition recipe",
+  "description": "Explicit v2 recipe. Legacy cue kinds remain on recipe1; effect source files are admitted natively before compilation."
+}

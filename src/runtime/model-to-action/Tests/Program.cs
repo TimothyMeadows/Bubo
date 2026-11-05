@@ -320,11 +320,14 @@ try
     var escaped = Settings("escape");
     escaped["motion-package"] = "../outside.json";
     await Reject(() => Run(escaped, "init"), "source path escape fails");
+    var effectsV2Assertions = EffectsV2Tests.Run(Path.Combine(root, "effects-v2"));
     Console.WriteLine("PASS " + passed + " action orchestration/compiler assertions; Blender, engine resolver, approvals and promotion are SIMULATED");
+    passed += PreparationContextTests.Run(root);
     File.WriteAllText(Path.Combine(root, "verification.json"), JsonSerializer.Serialize(new
     {
         status = "pass",
         assertions = passed,
+        effectsV2Assertions,
         simulatedProcesses = true,
         actualBlender = false,
         actualRuntime = false,

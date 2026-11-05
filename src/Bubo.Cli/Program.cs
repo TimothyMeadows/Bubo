@@ -128,6 +128,7 @@ try
     pipelineOptions["staging-root"] = context.StagingRoot;
     var runtimeBuildSha256 = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(capabilities["build"]!.ToJsonString())));
     pipelineOptions["runtime-build-sha256"] = runtimeBuildSha256;
+    if (workflow == "model-to-action") pipelineOptions["host-style-sha256"] = context.StyleSha256;
     if (workflow is "floor-plan-to-model" or "schematic-to-model") pipelineOptions["runtime-resource-catalog-sha256"] = RuntimeCatalog.ExpectedSha256;
     foreach (var name in new[] { "rights", "recipe", "toolchain", "selection", "library-search", "evidence", "proof-set", "classification", "finish-settings", "finish-budget", "revision", "source-review", "sources", "proof", "model", "motion-package", "motion-source", "mapping", "brief", "proof-metadata", "source-metadata", "editable-source", "artifact", "source", "plan", "design", "parent-manifest", "handoff" })
         if (pipelineOptions.TryGetValue(name, out var value)) context.RequireReference(value);
@@ -143,7 +144,7 @@ try
         pipelineOptions.TryAdd("manifest", canonicalManifest);
         context.EnsureWriteAllowed(pipelineOptions["manifest"]);
     }
-    else if (workflow != "blender-inspection")
+    else if (workflow != "blender-inspection" && !(workflow == "model-to-action" && operation == "inspect-effects"))
     {
         var manifest = pipelineOptions.GetValueOrDefault("manifest") ?? throw new InvalidOperationException("--manifest required");
         var state = workspace.Load<JsonObject>(manifest);
@@ -181,7 +182,8 @@ try
                 break;
             case "model-to-action":
                 await new ActionApplication.Pipeline(workspace, pipelineOptions, process,
-                    new ActionInfrastructure.EngineResolver(workspace, AppContext.BaseDirectory, process, context.TaskId)).Execute(operation, cancellation.Token);
+                    new ActionInfrastructure.EngineResolver(workspace, AppContext.BaseDirectory, process, context.TaskId),
+                    new ActionInfrastructure.EffectDependencyInspector()).Execute(operation, cancellation.Token);
                 break;
             case "floor-plan-to-model":
                 await Bubo.FloorPlan.Infrastructure.FloorPlanCommands.Execute(workspace, process, pipelineOptions, operation, cancellation.Token);
@@ -265,6 +267,7 @@ static void ValidateOperation(string workflow, string operation, Dictionary<stri
         ("model-to-animation", "record") => ["kind","reviewer","evidence"],
         ("model-to-animation", "doctor" or "inspect" or "prepare" or "rig" or "bake" or "export" or "review" or "validate" or "status") => [],
         ("model-to-action", "init") => ["task","asset","version","actor","motion-package","recipe","source-review","blender"],
+        ("model-to-action", "inspect-effects") => ["recipe"],
         ("model-to-action", "record") => ["kind","reviewer","evidence"],
         ("model-to-action", "doctor" or "inspect" or "compose" or "export" or "review" or "validate" or "status") => [],
         ("proof-to-model" or "model-to-animation" or "model-to-action", "promote") => ["destination"],
@@ -308,6 +311,7 @@ static JsonObject Capabilities()
     {
         ["schemaVersion"] = "bubo-capabilities/v1", ["apiVersions"] = new JsonArray(2),
         ["workflows"] = new JsonArray("proof-to-model","model-to-animation","model-to-action","blender-inspection","media","floor-plan-to-model","schematic-to-model","vfx-assets"),
+        ["actions"] = new JsonObject { ["recipeVersions"] = new JsonArray(1,2), ["packageSchemas"] = new JsonArray("hephaera-action-package/v1","hephaera-action-package/v2"), ["effectSubjectInspection"] = true, ["effectSources"] = "complete-native-package-profile-closure", ["effectRuntimeReview"] = "selected-engine-evidence-required", ["mechanicalAssemblyActionsAvailable"] = false },
         ["vfx"] = new JsonObject { ["phase"] = "fixed-input-preparation", ["operations"] = new JsonArray("validate","inspect","prepare","verify-preparation"), ["packageSchema"] = "bubo-vfx-package/v1", ["packageSchemas"] = new JsonArray("bubo-vfx-package/v1","bubo-vfx-package/v2"), ["preparationSchema"] = "bubo-vfx-preparation/v1", ["processingProfiles"] = new JsonArray("sheet","sequence","math-mask"), ["processingAvailable"] = true, ["videoDecodingAvailable"] = false, ["hardProcessingMemoryAvailable"] = false, ["renderingAvailable"] = false, ["runtimeAcceptanceAvailable"] = false },
         ["schematic"] = new JsonObject { ["phase"] = "portable-assembly-export", ["operations"] = new JsonArray("init","doctor","preview","validate","record","build-parts","assemble","prove-motion","export","review","status"), ["partConstructionAvailable"] = true, ["assemblyAvailable"] = true, ["motionProofAvailable"] = true, ["requiresApprovedAssemblyV2"] = true, ["modelExportAvailable"] = true, ["motionHandoffProfile"] = "mechanical-assembly", ["humanModelAcceptanceSeparate"] = true },
         ["floorPlan"] = new JsonObject { ["phase"] = "architectural-export", ["operations"] = new JsonArray("init","doctor","preview","validate","record","build","export","review","status"), ["modelingAvailable"] = true, ["requiresApprovedConstructionPlanV2"] = true, ["modelExportAvailable"] = true },

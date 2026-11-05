@@ -1,0 +1,2442 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "action-effects-v2.schema.json",
+  "title": "Original Bubo action v2 data contracts",
+  "description": "Structural data checks only. Native code verifies current bytes, complete dependency graphs, finite cumulative work, exact review subjects and receiving coverage. Assertions do not authenticate reviewers, establish visual quality, select an engine or authorize promotion.",
+  "$defs": {
+    "fileReference": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024,
+          "pattern": "^(?!/)(?!.*//)(?!.*\\\\)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*[:<>\"|?*\\u0000-\\u001f]).+$",
+          "description": "Canonical project-relative path. Native admission additionally rejects reserved names, Git metadata, case aliases and reparse points."
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "additionalProperties": false
+    },
+    "jsonReference": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024,
+          "pattern": "^(?!/)(?!.*//)(?!.*\\\\)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*[:<>\"|?*\\u0000-\\u001f]).+$",
+          "description": "Canonical project-relative path. Native admission additionally rejects reserved names, Git metadata, case aliases and reparse points.",
+          "allOf": [
+            {
+              "pattern": "\\.[jJ][sS][oO][nN]$"
+            }
+          ]
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "additionalProperties": false
+    },
+    "sizedFileReference": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024,
+          "pattern": "^(?!/)(?!.*//)(?!.*\\\\)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*[:<>\"|?*\\u0000-\\u001f]).+$",
+          "description": "Canonical project-relative path. Native admission additionally rejects reserved names, Git metadata, case aliases and reparse points."
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1073741824
+        }
+      },
+      "required": [
+        "path",
+        "sha256",
+        "bytes"
+      ],
+      "additionalProperties": false
+    },
+    "sizedJsonReference": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024,
+          "pattern": "^(?!/)(?!.*//)(?!.*\\\\)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*[:<>\"|?*\\u0000-\\u001f]).+$",
+          "description": "Canonical project-relative path. Native admission additionally rejects reserved names, Git metadata, case aliases and reparse points.",
+          "allOf": [
+            {
+              "pattern": "\\.[jJ][sS][oO][nN]$"
+            }
+          ]
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 1048576
+        }
+      },
+      "required": [
+        "path",
+        "sha256",
+        "bytes"
+      ],
+      "additionalProperties": false
+    },
+    "captureReference": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024,
+          "pattern": "^(?!/)(?!.*//)(?!.*\\\\)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*[:<>\"|?*\\u0000-\\u001f]).+$",
+          "description": "Canonical project-relative path. Native admission additionally rejects reserved names, Git metadata, case aliases and reparse points.",
+          "allOf": [
+            {
+              "pattern": "\\.[pP][nN][gG]$"
+            }
+          ]
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1073741824
+        }
+      },
+      "required": [
+        "path",
+        "sha256",
+        "bytes"
+      ],
+      "additionalProperties": false
+    },
+    "videoReference": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024,
+          "pattern": "^(?!/)(?!.*//)(?!.*\\\\)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*[:<>\"|?*\\u0000-\\u001f]).+$",
+          "description": "Canonical project-relative path. Native admission additionally rejects reserved names, Git metadata, case aliases and reparse points.",
+          "allOf": [
+            {
+              "pattern": "\\.(?:[mM][pP]4|[wW][eE][bB][mM])$"
+            }
+          ]
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1073741824
+        }
+      },
+      "required": [
+        "path",
+        "sha256",
+        "bytes"
+      ],
+      "additionalProperties": false
+    },
+    "profileReference": {
+      "type": "object",
+      "properties": {
+        "schemaVersion": {
+          "const": "hephaera-three-vfx-profile/v1"
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024,
+          "pattern": "^(?!/)(?!.*//)(?!.*\\\\)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*[:<>\"|?*\\u0000-\\u001f]).+$",
+          "description": "Canonical project-relative path. Native admission additionally rejects reserved names, Git metadata, case aliases and reparse points.",
+          "allOf": [
+            {
+              "pattern": "\\.[jJ][sS][oO][nN]$"
+            }
+          ]
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "path",
+        "sha256"
+      ],
+      "additionalProperties": false
+    },
+    "correspondence": {
+      "type": "object",
+      "properties": {
+        "resourceId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$"
+        },
+        "resourceSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "kind": {
+          "enum": [
+            "texture",
+            "geometry"
+          ]
+        },
+        "decodedSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "report": {
+          "$ref": "#/$defs/sizedJsonReference"
+        }
+      },
+      "required": [
+        "resourceId",
+        "resourceSha256",
+        "kind",
+        "decodedSha256",
+        "report"
+      ],
+      "additionalProperties": false
+    },
+    "source": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$"
+        },
+        "package": {
+          "$ref": "#/$defs/jsonReference"
+        },
+        "effectId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$"
+        },
+        "profile": {
+          "$ref": "#/$defs/profileReference"
+        },
+        "preparation": {
+          "$ref": "#/$defs/jsonReference"
+        },
+        "preparationContext": {
+          "$ref": "#/$defs/fileReference"
+        },
+        "correspondences": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/correspondence"
+          },
+          "minItems": 1,
+          "maxItems": 1024
+        },
+        "productionReview": {
+          "$ref": "#/$defs/jsonReference"
+        },
+        "rights": {
+          "$ref": "#/$defs/jsonReference"
+        }
+      },
+      "required": [
+        "id",
+        "package",
+        "effectId",
+        "profile",
+        "correspondences",
+        "productionReview",
+        "rights"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "required": [
+              "preparationContext"
+            ]
+          },
+          "then": {
+            "required": [
+              "preparation"
+            ]
+          }
+        }
+      ]
+    },
+    "resource": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$"
+        },
+        "kind": {
+          "enum": [
+            "texture-png",
+            "mesh-glb"
+          ]
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024,
+          "pattern": "^(?!/)(?!.*//)(?!.*\\\\)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*[:<>\"|?*\\u0000-\\u001f]).+$",
+          "description": "Canonical project-relative path. Native admission additionally rejects reserved names, Git metadata, case aliases and reparse points."
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1073741824
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "path",
+        "sha256",
+        "bytes"
+      ],
+      "additionalProperties": false
+    },
+    "ancestry": {
+      "type": "object",
+      "properties": {
+        "sourceClosureSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "productionReviewSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "rightsSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "nativePreparationSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "sourceClosureSha256",
+        "productionReviewSha256",
+        "rightsSha256"
+      ],
+      "additionalProperties": false
+    },
+    "runtimeSource": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$"
+        },
+        "effectId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$"
+        },
+        "package": {
+          "$ref": "#/$defs/jsonReference"
+        },
+        "profile": {
+          "$ref": "#/$defs/profileReference"
+        },
+        "resources": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/resource"
+          },
+          "minItems": 1,
+          "maxItems": 1024
+        },
+        "correspondences": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/correspondence"
+          },
+          "minItems": 1,
+          "maxItems": 1024
+        },
+        "ancestry": {
+          "$ref": "#/$defs/ancestry"
+        }
+      },
+      "required": [
+        "id",
+        "effectId",
+        "package",
+        "profile",
+        "resources",
+        "correspondences",
+        "ancestry"
+      ],
+      "additionalProperties": false
+    },
+    "sourceFile": {
+      "type": "object",
+      "properties": {
+        "role": {
+          "enum": [
+            "native-package",
+            "production-profile",
+            "resource",
+            "source-correspondence",
+            "rights",
+            "rights-input",
+            "production-review",
+            "production-evidence",
+            "native-preparation-seal",
+            "native-preparation-file",
+            "native-preparation-request",
+            "native-preparation-source",
+            "native-preparation-claim",
+            "native-preparation-context",
+            "native-preparation-context-reference"
+          ]
+        },
+        "sourceId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$"
+        },
+        "resourceId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$"
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024,
+          "pattern": "^(?!/)(?!.*//)(?!.*\\\\)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*[:<>\"|?*\\u0000-\\u001f]).+$",
+          "description": "Canonical project-relative path. Native admission additionally rejects reserved names, Git metadata, case aliases and reparse points."
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1073741824
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "role",
+        "sourceId",
+        "path",
+        "bytes",
+        "sha256"
+      ],
+      "additionalProperties": false
+    },
+    "sourceInventory": {
+      "type": "object",
+      "properties": {
+        "sourceClosureSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "files": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/sourceFile"
+          },
+          "minItems": 1,
+          "maxItems": 16384
+        }
+      },
+      "required": [
+        "sourceClosureSha256",
+        "files"
+      ],
+      "additionalProperties": false
+    },
+    "rights": {
+      "type": "object",
+      "properties": {
+        "schemaVersion": {
+          "const": "bubo-vfx-source-rights/v1"
+        },
+        "authorized": {
+          "const": true
+        },
+        "license": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "owner": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 4096
+        },
+        "inputs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/sizedFileReference"
+          },
+          "minItems": 0,
+          "maxItems": 1024
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "authorized",
+        "license",
+        "owner",
+        "reason",
+        "inputs"
+      ],
+      "additionalProperties": false
+    },
+    "productionReview": {
+      "type": "object",
+      "properties": {
+        "schemaVersion": {
+          "const": "bubo-vfx-source-production-review/v1"
+        },
+        "decision": {
+          "enum": [
+            "pending",
+            "approved"
+          ]
+        },
+        "independent": {
+          "type": "boolean"
+        },
+        "reviewer": {
+          "type": "string",
+          "maxLength": 4096
+        },
+        "author": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "subjectSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 4096
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/sizedFileReference"
+          },
+          "minItems": 1,
+          "maxItems": 1024
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "decision",
+        "independent",
+        "reviewer",
+        "author",
+        "subjectSha256",
+        "reason",
+        "evidence"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "decision": {
+                "const": "approved"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "independent": {
+                "const": true
+              },
+              "reviewer": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4096
+              }
+            }
+          }
+        }
+      ]
+    },
+    "correspondenceReport": {
+      "type": "object",
+      "properties": {
+        "schemaVersion": {
+          "const": "bubo-vfx-resource-correspondence/v1"
+        },
+        "resourceId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$"
+        },
+        "resourceSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "kind": {
+          "enum": [
+            "texture",
+            "geometry"
+          ]
+        },
+        "decodedSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "independent": {
+          "const": true
+        },
+        "measurements": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "bytes": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 268435456
+                },
+                "width": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 8192
+                },
+                "height": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 8192
+                }
+              },
+              "required": [
+                "bytes",
+                "width",
+                "height"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "bytes": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 268435456
+                },
+                "vertices": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 1048576
+                },
+                "indices": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 3145728
+                }
+              },
+              "required": [
+                "bytes",
+                "vertices",
+                "indices"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        },
+        "sourceEvidenceSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "resourceId",
+        "resourceSha256",
+        "kind",
+        "decodedSha256",
+        "independent",
+        "measurements",
+        "sourceEvidenceSha256"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "texture"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "measurements": {
+                "type": "object",
+                "properties": {
+                  "bytes": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 268435456
+                  },
+                  "width": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 8192
+                  },
+                  "height": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 8192
+                  }
+                },
+                "required": [
+                  "bytes",
+                  "width",
+                  "height"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "measurements": {
+                "type": "object",
+                "properties": {
+                  "bytes": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 268435456
+                  },
+                  "vertices": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 1048576
+                  },
+                  "indices": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 3145728
+                  }
+                },
+                "required": [
+                  "bytes",
+                  "vertices",
+                  "indices"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      ]
+    },
+    "profileBudgets": {
+      "type": "object",
+      "properties": {
+        "maxSystems": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 128
+        },
+        "maxParticles": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65536
+        },
+        "maxTrailPoints": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65536
+        },
+        "maxVertices": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 16777216
+        },
+        "maxIndices": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 50331648
+        },
+        "maxDrawCalls": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 128
+        },
+        "maxTextureBytes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 268435456
+        },
+        "maxBufferBytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 268435456
+        },
+        "maxDurationSeconds": {
+          "type": "number",
+          "minimum": 0.000001,
+          "maximum": 3600
+        },
+        "maxUpdateSeconds": {
+          "type": "number",
+          "minimum": 0.001,
+          "maximum": 0.1
+        }
+      },
+      "required": [
+        "maxSystems",
+        "maxParticles",
+        "maxTrailPoints",
+        "maxVertices",
+        "maxIndices",
+        "maxDrawCalls",
+        "maxTextureBytes",
+        "maxBufferBytes",
+        "maxDurationSeconds",
+        "maxUpdateSeconds"
+      ],
+      "additionalProperties": false
+    },
+    "emission": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "enum": [
+            "burst",
+            "rate"
+          ]
+        },
+        "capacity": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65536
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65536
+        },
+        "rate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "lifetimeSeconds": {
+          "type": "number",
+          "minimum": 0.001,
+          "maximum": 60
+        },
+        "durationSeconds": {
+          "type": "number",
+          "minimum": 0.001,
+          "maximum": 3600
+        }
+      },
+      "required": [
+        "kind",
+        "capacity",
+        "count",
+        "rate",
+        "lifetimeSeconds",
+        "durationSeconds"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "burst"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "rate": {
+                "const": 0
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "count": {
+                "const": 0
+              }
+            }
+          }
+        }
+      ]
+    },
+    "geometry": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "plane"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "ring"
+            },
+            "innerRadius": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000
+            },
+            "outerRadius": {
+              "type": "number",
+              "minimum": 0.0001,
+              "maximum": 1000
+            },
+            "segments": {
+              "type": "integer",
+              "minimum": 3,
+              "maximum": 128
+            }
+          },
+          "required": [
+            "kind",
+            "innerRadius",
+            "outerRadius",
+            "segments"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "binding"
+            },
+            "resourceId": {
+              "type": "string",
+              "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$"
+            }
+          },
+          "required": [
+            "kind",
+            "resourceId"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "profileLayer": {
+      "type": "object",
+      "properties": {
+        "effectId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$"
+        },
+        "layerId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$"
+        },
+        "family": {
+          "enum": [
+            "sprite",
+            "burst",
+            "ring",
+            "mesh",
+            "projectile",
+            "trail",
+            "impact",
+            "ground-indicator",
+            "beam"
+          ]
+        },
+        "emission": {
+          "$ref": "#/$defs/emission"
+        },
+        "size": {
+          "type": "number",
+          "minimum": 0.0001,
+          "maximum": 1000
+        },
+        "speed": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "color": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "minItems": 4,
+          "maxItems": 4
+        },
+        "space": {
+          "enum": [
+            "local",
+            "world"
+          ]
+        },
+        "maxTailSeconds": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 60
+        },
+        "resourceId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$"
+        },
+        "geometry": {
+          "$ref": "#/$defs/geometry"
+        },
+        "trail": {
+          "type": "object",
+          "properties": {
+            "historyPoints": {
+              "type": "integer",
+              "minimum": 2,
+              "maximum": 256
+            }
+          },
+          "required": [
+            "historyPoints"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "effectId",
+        "layerId",
+        "family",
+        "emission",
+        "size",
+        "speed",
+        "color",
+        "space",
+        "maxTailSeconds"
+      ],
+      "additionalProperties": false
+    },
+    "profile": {
+      "type": "object",
+      "properties": {
+        "schemaVersion": {
+          "const": "hephaera-three-vfx-profile/v1"
+        },
+        "nativePackageSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "preparationSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "budgets": {
+          "$ref": "#/$defs/profileBudgets"
+        },
+        "layers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/profileLayer"
+          },
+          "minItems": 1,
+          "maxItems": 128
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "nativePackageSha256",
+        "budgets",
+        "layers"
+      ],
+      "additionalProperties": false
+    },
+    "address": {
+      "type": "object",
+      "properties": {
+        "step": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$"
+        },
+        "occurrence": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 15
+        },
+        "offset": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 3600
+        },
+        "marker": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        }
+      },
+      "required": [
+        "step",
+        "occurrence"
+      ],
+      "additionalProperties": false,
+      "oneOf": [
+        {
+          "required": [
+            "offset"
+          ],
+          "not": {
+            "required": [
+              "marker"
+            ]
+          }
+        },
+        {
+          "required": [
+            "marker"
+          ],
+          "not": {
+            "required": [
+              "offset"
+            ]
+          }
+        }
+      ]
+    },
+    "transform": {
+      "type": "object",
+      "properties": {
+        "units": {
+          "const": "meters"
+        },
+        "up": {
+          "const": "+Y"
+        },
+        "forward": {
+          "const": "+Z"
+        },
+        "handedness": {
+          "const": "right"
+        },
+        "position": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": -1000000,
+            "maximum": 1000000
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "orientation": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": -1,
+            "maximum": 1
+          },
+          "minItems": 4,
+          "maxItems": 4
+        },
+        "scale": {
+          "type": "number",
+          "minimum": 0.0001,
+          "maximum": 1000
+        },
+        "parentScale": {
+          "const": "positive-uniform"
+        }
+      },
+      "required": [
+        "units",
+        "up",
+        "forward",
+        "handedness",
+        "position",
+        "orientation",
+        "scale",
+        "parentScale"
+      ],
+      "additionalProperties": false
+    },
+    "lifetime": {
+      "type": "object",
+      "properties": {
+        "tailSeconds": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 60
+        },
+        "pause": {
+          "enum": [
+            "follow-action",
+            "continue-on-scene"
+          ]
+        },
+        "tailAttachment": {
+          "enum": [
+            "follow-anchor",
+            "capture-world-on-stop"
+          ]
+        },
+        "cancel": {
+          "const": "retire-generation"
+        }
+      },
+      "required": [
+        "tailSeconds",
+        "pause",
+        "tailAttachment",
+        "cancel"
+      ],
+      "additionalProperties": false
+    },
+    "override": {
+      "type": "object",
+      "properties": {
+        "layer": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$"
+        },
+        "sizeMultiplier": {
+          "type": "number",
+          "minimum": 0.0001,
+          "maximum": 1
+        },
+        "colorMultiplier": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "minItems": 4,
+          "maxItems": 4
+        },
+        "emissionMultiplier": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "required": [
+        "layer"
+      ],
+      "additionalProperties": false,
+      "anyOf": [
+        {
+          "required": [
+            "sizeMultiplier"
+          ]
+        },
+        {
+          "required": [
+            "colorMultiplier"
+          ]
+        },
+        {
+          "required": [
+            "emissionMultiplier"
+          ]
+        }
+      ]
+    },
+    "trail": {
+      "type": "object",
+      "properties": {
+        "reset": {
+          "const": "teleport-or-discontinuity"
+        },
+        "maxSamples": {
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 256
+        },
+        "distanceMeters": {
+          "type": "number",
+          "minimum": 0.0001,
+          "maximum": 100000
+        }
+      },
+      "required": [
+        "reset",
+        "maxSamples",
+        "distanceMeters"
+      ],
+      "additionalProperties": false
+    },
+    "cue": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$"
+        },
+        "type": {
+          "const": "effect"
+        },
+        "source": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$"
+        },
+        "anchor": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$"
+        },
+        "start": {
+          "$ref": "#/$defs/address"
+        },
+        "end": {
+          "$ref": "#/$defs/address"
+        },
+        "placement": {
+          "enum": [
+            "anchor-follow",
+            "captured-world",
+            "fixed-target-projectile",
+            "fixed-target",
+            "beam"
+          ]
+        },
+        "target": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$"
+        },
+        "transform": {
+          "$ref": "#/$defs/transform"
+        },
+        "lifetime": {
+          "$ref": "#/$defs/lifetime"
+        },
+        "overrides": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/override"
+          },
+          "minItems": 0,
+          "maxItems": 128
+        },
+        "trail": {
+          "$ref": "#/$defs/trail"
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "source",
+        "anchor",
+        "start",
+        "end",
+        "placement",
+        "transform",
+        "lifetime"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "placement": {
+                "enum": [
+                  "fixed-target-projectile",
+                  "fixed-target",
+                  "beam"
+                ]
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "target"
+            ]
+          },
+          "else": {
+            "not": {
+              "required": [
+                "target"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "compiledCue": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$"
+        },
+        "type": {
+          "const": "effect"
+        },
+        "source": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$"
+        },
+        "anchor": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$"
+        },
+        "start": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 3600
+        },
+        "end": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 3600
+        },
+        "placement": {
+          "enum": [
+            "anchor-follow",
+            "captured-world",
+            "fixed-target-projectile",
+            "fixed-target",
+            "beam"
+          ]
+        },
+        "target": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$"
+        },
+        "transform": {
+          "$ref": "#/$defs/transform"
+        },
+        "lifetime": {
+          "$ref": "#/$defs/lifetime"
+        },
+        "overrides": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/override"
+          },
+          "minItems": 0,
+          "maxItems": 128
+        },
+        "trail": {
+          "$ref": "#/$defs/trail"
+        },
+        "retireAt": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 3660
+        },
+        "layers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$"
+              },
+              "family": {
+                "enum": [
+                  "sprite",
+                  "burst",
+                  "ring",
+                  "mesh",
+                  "projectile",
+                  "trail",
+                  "impact",
+                  "ground-indicator",
+                  "beam"
+                ]
+              },
+              "space": {
+                "enum": [
+                  "local",
+                  "world"
+                ]
+              },
+              "start": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 3600
+              },
+              "stopAt": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 3600
+              },
+              "retireAt": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 3660
+              },
+              "emissionDurationSeconds": {
+                "type": "number",
+                "minimum": 0.001,
+                "maximum": 3600
+              },
+              "particleLifetimeSeconds": {
+                "type": "number",
+                "minimum": 0.001,
+                "maximum": 60
+              },
+              "tailSeconds": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 60
+              }
+            },
+            "required": [
+              "id",
+              "family",
+              "space",
+              "start",
+              "stopAt",
+              "retireAt",
+              "emissionDurationSeconds",
+              "particleLifetimeSeconds",
+              "tailSeconds"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1,
+          "maxItems": 128
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "source",
+        "anchor",
+        "start",
+        "end",
+        "placement",
+        "transform",
+        "lifetime",
+        "retireAt",
+        "layers"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "placement": {
+                "enum": [
+                  "fixed-target-projectile",
+                  "fixed-target",
+                  "beam"
+                ]
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "target"
+            ]
+          },
+          "else": {
+            "not": {
+              "required": [
+                "target"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "target": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$"
+            },
+            "mode": {
+              "const": "fixed-world-point"
+            },
+            "maxDistance": {
+              "type": "number",
+              "minimum": 0.001,
+              "maximum": 100000
+            }
+          },
+          "required": [
+            "id",
+            "mode",
+            "maxDistance"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$"
+            },
+            "mode": {
+              "const": "continuous-world-point"
+            },
+            "maxDistance": {
+              "type": "number",
+              "minimum": 0.001,
+              "maximum": 100000
+            },
+            "maxAgeSeconds": {
+              "type": "number",
+              "minimum": 0.001,
+              "maximum": 1
+            },
+            "maxUpdatesPerSecond": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000
+            },
+            "clock": {
+              "const": "presentation-seconds"
+            },
+            "generation": {
+              "const": "match-action"
+            },
+            "sampleAt": {
+              "const": "interval-end-before-fx"
+            },
+            "onInvalid": {
+              "const": "retire-effect"
+            }
+          },
+          "required": [
+            "id",
+            "mode",
+            "maxDistance",
+            "maxAgeSeconds",
+            "maxUpdatesPerSecond",
+            "clock",
+            "generation",
+            "sampleAt",
+            "onInvalid"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "budgets": {
+      "type": "object",
+      "properties": {
+        "maxActions": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 64
+        },
+        "maxStepsPerAction": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 256
+        },
+        "maxExpandedSteps": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2048
+        },
+        "maxActionSeconds": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 3600
+        },
+        "maxEffects": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 256
+        },
+        "maxParticles": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65536
+        },
+        "maxFrames": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000000
+        },
+        "maxReviewFrames": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10000
+        },
+        "maxRuntimeBytes": {
+          "type": "integer",
+          "minimum": 1024,
+          "maximum": 1073741824,
+          "description": "Bounds delivered model plus complete effect packages/resources/profiles/correspondences and the serialized outer action descriptor together. Private editable/source evidence has separate bounds."
+        },
+        "timeoutSeconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 86400
+        },
+        "maxLogBytes": {
+          "type": "integer",
+          "minimum": 1024,
+          "maximum": 1073741824
+        },
+        "maxAttempts": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "maxVerificationBytes": {
+          "type": "integer",
+          "minimum": 1024,
+          "maximum": 68719476736,
+          "default": 8589934592,
+          "description": "Maximum total bytes of immutable independent-reimport pose verification spool; omitted recipes use8GiB."
+        },
+        "maxEffectSources": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 64
+        },
+        "maxEffectFiles": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 16384
+        },
+        "maxEffectDependencyBytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4294967296
+        },
+        "maxEffectJsonBytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 268435456
+        },
+        "maxTailSeconds": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 60
+        },
+        "maxTrailSamples": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65536
+        }
+      },
+      "required": [
+        "maxActions",
+        "maxStepsPerAction",
+        "maxExpandedSteps",
+        "maxActionSeconds",
+        "maxEffects",
+        "maxParticles",
+        "maxFrames",
+        "maxReviewFrames",
+        "maxRuntimeBytes",
+        "timeoutSeconds",
+        "maxLogBytes",
+        "maxAttempts",
+        "maxEffectSources",
+        "maxEffectFiles",
+        "maxEffectDependencyBytes",
+        "maxEffectJsonBytes",
+        "maxTailSeconds",
+        "maxTrailSamples"
+      ],
+      "additionalProperties": false
+    },
+    "engine": {
+      "type": "object",
+      "properties": {
+        "effectiveEngine": {
+          "const": "THREEJS"
+        },
+        "contractSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "definitionSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "registrySha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "effectiveEngine",
+        "contractSha256",
+        "definitionSha256",
+        "registrySha256"
+      ],
+      "additionalProperties": true
+    },
+    "sourceAssertion": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$"
+        },
+        "effectId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$"
+        },
+        "packageSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "profileSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "nativePreparationSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "sourceClosureSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "productionReviewSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "rightsSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "id",
+        "effectId",
+        "packageSha256",
+        "profileSha256",
+        "sourceClosureSha256",
+        "productionReviewSha256",
+        "rightsSha256"
+      ],
+      "additionalProperties": false
+    },
+    "resourceBinding": {
+      "type": "object",
+      "properties": {
+        "sourceId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$"
+        },
+        "resourceId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$"
+        },
+        "resourceSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "decodedSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "correspondenceSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "sourceEvidenceSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "sourceId",
+        "resourceId",
+        "resourceSha256",
+        "decodedSha256",
+        "correspondenceSha256",
+        "sourceEvidenceSha256"
+      ],
+      "additionalProperties": false
+    },
+    "engineInput": {
+      "type": "object",
+      "properties": {
+        "role": {
+          "enum": [
+            "action-driver",
+            "scene-scheduler",
+            "particle-runtime",
+            "vfx-runtime",
+            "postprocessing-runtime",
+            "library-inventory",
+            "scene",
+            "camera",
+            "capture-settings",
+            "target-device"
+          ]
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024,
+          "pattern": "^(?!/)(?!.*//)(?!.*\\\\)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*[:<>\"|?*\\u0000-\\u001f]).+$",
+          "description": "Canonical project-relative path. Native admission additionally rejects reserved names, Git metadata, case aliases and reparse points."
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1073741824
+        }
+      },
+      "required": [
+        "role",
+        "path",
+        "sha256",
+        "bytes"
+      ],
+      "additionalProperties": false
+    },
+    "sample": {
+      "type": "object",
+      "properties": {
+        "time": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 3660
+        },
+        "artifact": {
+          "$ref": "#/$defs/captureReference"
+        },
+        "maximumOccupancy": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "time",
+        "artifact"
+      ],
+      "additionalProperties": false
+    },
+    "coverage": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$"
+        },
+        "start": {
+          "const": 0
+        },
+        "end": {
+          "type": "number",
+          "minimum": 0.000001,
+          "maximum": 3660
+        },
+        "fps": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 120
+        },
+        "normalSpeed": {
+          "$ref": "#/$defs/videoReference"
+        },
+        "samples": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/sample"
+          },
+          "minItems": 1,
+          "maxItems": 10000
+        },
+        "cleanup": {
+          "type": "object",
+          "properties": {
+            "ownedEffects": {
+              "const": 0
+            },
+            "resourceLeases": {
+              "const": 0
+            },
+            "rigWrites": {
+              "const": 0
+            }
+          },
+          "required": [
+            "ownedEffects",
+            "resourceLeases",
+            "rigWrites"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "action",
+        "start",
+        "end",
+        "fps",
+        "normalSpeed",
+        "samples",
+        "cleanup"
+      ],
+      "additionalProperties": false
+    },
+    "layerCoverage": {
+      "type": "object",
+      "properties": {
+        "sourceId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$"
+        },
+        "effectId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$"
+        },
+        "layerId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$"
+        },
+        "family": {
+          "enum": [
+            "sprite",
+            "burst",
+            "ring",
+            "mesh",
+            "projectile",
+            "trail",
+            "impact",
+            "ground-indicator",
+            "beam"
+          ]
+        },
+        "isolated": {
+          "$ref": "#/$defs/captureReference"
+        },
+        "dark": {
+          "$ref": "#/$defs/captureReference"
+        },
+        "light": {
+          "$ref": "#/$defs/captureReference"
+        },
+        "combinedSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "sourceId",
+        "effectId",
+        "layerId",
+        "family",
+        "isolated",
+        "dark",
+        "light",
+        "combinedSha256"
+      ],
+      "additionalProperties": false
+    },
+    "lifecycleTest": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "enum": [
+            "exact-release",
+            "fixed-target-snapshot",
+            "normal-drain",
+            "hard-cancel",
+            "pause-resume",
+            "replace-restart",
+            "reentrant-callback",
+            "actor-removal",
+            "aggregate-scene-ownership",
+            "concurrent-actors-and-ambient",
+            "resource-disposal",
+            "context-restoration",
+            "isolated-layer-families",
+            "contrasting-backgrounds",
+            "continuous-target-freshness",
+            "invalid-target-retirement",
+            "trail-discontinuity-reset"
+          ]
+        },
+        "status": {
+          "const": "passed"
+        },
+        "evidenceSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "id",
+        "status",
+        "evidenceSha256"
+      ],
+      "additionalProperties": false
+    },
+    "performance": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "const": "passed"
+        },
+        "baselineRuns": {
+          "type": "integer",
+          "minimum": 5,
+          "maximum": 1000
+        },
+        "candidateRuns": {
+          "type": "integer",
+          "minimum": 5,
+          "maximum": 1000
+        },
+        "measurement": {
+          "enum": [
+            "gpu",
+            "cpu-submission"
+          ]
+        },
+        "maxConcurrentActors": {
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 1024
+        },
+        "artifactSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "status",
+        "baselineRuns",
+        "candidateRuns",
+        "measurement",
+        "maxConcurrentActors",
+        "artifactSha256"
+      ],
+      "additionalProperties": false
+    },
+    "receiving": {
+      "type": "object",
+      "properties": {
+        "schemaVersion": {
+          "const": "bubo-action-effect-receiving/v1"
+        },
+        "status": {
+          "const": "passed"
+        },
+        "actualEngine": {
+          "const": true
+        },
+        "evidenceKind": {
+          "const": "selected-engine-render"
+        },
+        "engine": {
+          "$ref": "#/$defs/engine"
+        },
+        "runtimeBuildSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "modelSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "packageSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "effectClosureSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "effectSources": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/sourceAssertion"
+          },
+          "minItems": 1,
+          "maxItems": 64
+        },
+        "resourceBindings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/resourceBinding"
+          },
+          "minItems": 1,
+          "maxItems": 16384
+        },
+        "engineInputs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/engineInput"
+          },
+          "minItems": 10,
+          "maxItems": 10
+        },
+        "coverage": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/coverage"
+          },
+          "minItems": 1,
+          "maxItems": 64
+        },
+        "layerCoverage": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/layerCoverage"
+          },
+          "minItems": 1,
+          "maxItems": 8192
+        },
+        "tests": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/lifecycleTest"
+          },
+          "minItems": 13,
+          "maxItems": 17
+        },
+        "performance": {
+          "$ref": "#/$defs/performance"
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "status",
+        "actualEngine",
+        "evidenceKind",
+        "engine",
+        "runtimeBuildSha256",
+        "modelSha256",
+        "packageSha256",
+        "effectClosureSha256",
+        "effectSources",
+        "resourceBindings",
+        "engineInputs",
+        "coverage",
+        "layerCoverage",
+        "tests",
+        "performance"
+      ],
+      "additionalProperties": false
+    },
+    "runtimeEvidence": {
+      "type": "object",
+      "properties": {
+        "schemaVersion": {
+          "const": "bubo-action-runtime-evidence/v2"
+        },
+        "status": {
+          "const": "passed"
+        },
+        "engine": {
+          "const": "THREEJS"
+        },
+        "engineIdentity": {
+          "$ref": "#/$defs/engine"
+        },
+        "modelSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "packageSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "runtimeBuildSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "effectClosureSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "receiving": {
+          "allOf": [
+            { "$ref": "#/$defs/sizedFileReference" },
+            { "properties": { "path": { "pattern": "\\.[jJ][sS][oO][nN]$" }, "bytes": { "minimum": 2, "maximum": 4194304 } } }
+          ]
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "enum": [
+                  "runtime-test",
+                  "runtime-capture",
+                  "performance-profile"
+                ]
+              },
+              "path": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1024,
+                "pattern": "^(?!/)(?!.*//)(?!.*\\\\)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*[:<>\"|?*\\u0000-\\u001f]).+$",
+                "description": "Canonical project-relative path. Native admission additionally rejects reserved names, Git metadata, case aliases and reparse points."
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "bytes": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 1073741824
+              }
+            },
+            "required": [
+              "kind",
+              "path",
+              "sha256",
+              "bytes"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 3,
+          "maxItems": 3
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "status",
+        "engine",
+        "engineIdentity",
+        "modelSha256",
+        "packageSha256",
+        "runtimeBuildSha256",
+        "effectClosureSha256",
+        "receiving",
+        "evidence"
+      ],
+      "additionalProperties": false
+    },
+    "reviewReceipt": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "enum": [
+            "independent",
+            "human"
+          ]
+        },
+        "reviewer": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "decision": {
+          "const": "approved"
+        },
+        "human": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 4096
+        },
+        "fingerprint": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "runtime": {
+          "$ref": "#/$defs/runtimeEvidence"
+        }
+      },
+      "required": [
+        "kind",
+        "reviewer",
+        "decision",
+        "reason",
+        "fingerprint",
+        "runtime"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "human"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "human"
+            ],
+            "properties": {
+              "human": {
+                "const": true
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

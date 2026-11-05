@@ -1,0 +1,5 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "action-runtime-review-v2.schema.json",
+  "$ref": "action-effects-v2.schema.json#/$defs/reviewReceipt"
+}

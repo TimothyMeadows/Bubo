@@ -184,7 +184,7 @@ public static class VfxPreparation
         if (!manifestPath.EndsWith("/preparation.json", StringComparison.Ordinal))
             throw new InvalidOperationException("Preparation verification requires the canonical sealed preparation.json");
         var outputPath = manifestPath[..^"/preparation.json".Length];
-        var output = Output(workspace, outputPath);
+        var output = Output(workspace, outputPath, write: false);
         var manifestBytes = Read(Resolve(workspace, manifestPath), JsonLimit, cancellation);
         var seal = Parse<VfxPreparationSeal>(manifestBytes);
         var requestBytes = Read(Resolve(workspace, outputPath + "/request.json"), PreparationJson.MaximumRequestBytes, cancellation);
@@ -284,9 +284,9 @@ public static class VfxPreparation
         var state = workspace.HostContext?.StateRoot ?? ".bubo/state";
         return state + "/vfx-preparation/" + request.Id + "/" + request.Version + ".json";
     }
-    static string Output(IWorkspace workspace, string path)
+    static string Output(IWorkspace workspace, string path, bool write = true)
     {
-        var output = Resolve(workspace, path, true);
+        var output = Resolve(workspace, path, write);
         var staging = Path.GetFullPath(workspace.HostContext?.StagingRoot ?? ".art-staging", workspace.Root);
         if (!Within(output, staging)) throw new InvalidOperationException("Preparation output must be a child of the declared non-runtime staging root");
         return output;
