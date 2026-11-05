@@ -26,7 +26,8 @@ public sealed partial class Pipeline
         if (kind is not ("action" or "independent" or "human") || string.IsNullOrWhiteSpace(reviewer)) throw new InvalidOperationException("Select action, independent or human review with a reviewer");
         var evidence = Relative(w, Need("evidence")); RequireEvidence(evidence);
         var receipt = m.SchemaVersion == "hephaera-model-action/v2"
-            ? ActionEffectDependencies.ParseRuntimeData<JsonObject>(ActionEffectDependencies.Read(w, evidence, ActionEffectDependencies.MaximumJsonBytes, cancellation))
+            ? ActionEffectDependencies.ParseRuntimeData<JsonObject>(ActionEffectDependencies.Read(w, evidence, ActionEffectDependencies.MaximumJsonBytes, cancellation),
+                kind == "action" ? ActionRuntimeDataKind.ActionReceipt : ActionRuntimeDataKind.RuntimeAcceptanceReceipt)
             : LoadObject(evidence);
         Require("review"); Validate(cancellation);
         if (Text(receipt, "kind") != kind || Text(receipt, "reviewer") != reviewer || Text(receipt, "decision") != "approved" || Text(receipt, "reason").Length < 8 || Text(receipt, "fingerprint") != Fingerprint()) throw new InvalidOperationException("Review receipt must bind current kind/reviewer/fingerprint/reason");

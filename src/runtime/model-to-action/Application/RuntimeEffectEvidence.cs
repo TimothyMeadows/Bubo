@@ -54,7 +54,7 @@ public static class RuntimeEffectEvidence
         Reference(receivingReference, true, ActionEffectDependencies.MaximumJsonBytes);
         // Receiving manifests may cover the complete 10,000-frame allowance;
         // their separate finite envelope is larger than one source profile.
-        var receiving = ActionEffectDependencies.ParseRuntimeData<JsonObject>(ActionEffectDependencies.Read(workspace, Text(receivingReference, "path"), ActionEffectDependencies.MaximumJsonBytes, cancellation));
+        var receiving = ActionEffectDependencies.ParseRuntimeData<JsonObject>(ActionEffectDependencies.Read(workspace, Text(receivingReference, "path"), ActionEffectDependencies.MaximumJsonBytes, cancellation), ActionRuntimeDataKind.ReceivingPacket);
         Fields(receiving, "schemaVersion", "status", "actualEngine", "evidenceKind", "engine", "runtimeBuildSha256", "modelSha256", "packageSha256", "effectClosureSha256", "effectSources", "resourceBindings", "engineInputs", "coverage", "layerCoverage", "tests", "performance");
         if (Text(receiving, "schemaVersion") != "bubo-action-effect-receiving/v1" || Text(receiving, "status") != "passed" || receiving["actualEngine"]?.GetValue<bool>() != true || Text(receiving, "evidenceKind") != "selected-engine-render" || !JsonNode.DeepEquals(receiving["engine"], engine) || Text(receiving, "runtimeBuildSha256") != runtimeBuildSha256 || Text(receiving, "modelSha256") != modelSha256 || Text(receiving, "packageSha256") != packageSha256 || Text(receiving, "effectClosureSha256") != Text(package, "effectClosureSha256"))
             throw new InvalidOperationException("Motion-only or proxy review cannot establish current selected-engine V2 FX receiving evidence");
