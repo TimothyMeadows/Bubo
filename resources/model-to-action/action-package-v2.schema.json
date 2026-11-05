@@ -1,0 +1,429 @@
+{
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "const": "hephaera-action-package/v2"
+    },
+    "asset": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$"
+    },
+    "profile": {
+      "enum": [
+        "skinned",
+        "articulated",
+        "rigid"
+      ]
+    },
+    "fps": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 120
+    },
+    "model": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "additionalProperties": false
+    },
+    "source": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "additionalProperties": false
+    },
+    "motion": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "additionalProperties": false
+    },
+    "engine": {
+      "$ref": "action-effects-v2.schema.json#/$defs/engine"
+    },
+    "rig": {
+      "type": "object",
+      "required": [
+        "id"
+      ]
+    },
+    "coordinateSystem": {
+      "type": "object",
+      "properties": {
+        "runtimeUp": {
+          "const": "+Y"
+        },
+        "runtimeForward": {
+          "const": "+Z"
+        },
+        "units": {
+          "const": "meters"
+        },
+        "handedness": {
+          "const": "right"
+        },
+        "parentScale": {
+          "const": "positive-uniform"
+        }
+      },
+      "required": [
+        "runtimeUp",
+        "runtimeForward",
+        "units",
+        "handedness",
+        "parentScale"
+      ],
+      "additionalProperties": false
+    },
+    "sourceMotion": {
+      "type": "object",
+      "properties": {
+        "packageSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "modelSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "sourceReviewSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "rights": {
+          "type": "object",
+          "properties": {
+            "authorized": {
+              "const": true
+            },
+            "license": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "authorized",
+            "license"
+          ]
+        },
+        "rigId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "clips": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$"
+              },
+              "motionSha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              }
+            },
+            "required": [
+              "id",
+              "motionSha256"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1,
+          "maxItems": 1000
+        }
+      },
+      "required": [
+        "packageSha256",
+        "modelSha256",
+        "sourceReviewSha256",
+        "rights",
+        "rigId",
+        "clips"
+      ],
+      "additionalProperties": false
+    },
+    "anchors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "node"
+        ]
+      },
+      "minItems": 0,
+      "maxItems": 10000
+    },
+    "targets": {
+      "type": "array",
+      "items": {
+        "$ref": "action-effects-v2.schema.json#/$defs/target"
+      },
+      "minItems": 0,
+      "maxItems": 64
+    },
+    "budgets": {
+      "$ref": "action-effects-v2.schema.json#/$defs/budgets"
+    },
+    "actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$"
+          },
+          "role": {
+            "type": "string",
+            "minLength": 1
+          },
+          "clip": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$"
+          },
+          "duration": {
+            "type": "number",
+            "minimum": 0.000001,
+            "maximum": 3600
+          },
+          "motionSha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$"
+                },
+                "clip": {
+                  "type": "string",
+                  "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$"
+                },
+                "occurrence": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 15
+                },
+                "start": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 3600
+                },
+                "end": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 3600
+                },
+                "sourceStart": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 3600
+                },
+                "sourceEnd": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 3600
+                },
+                "rate": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 4
+                },
+                "blendIn": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 30
+                },
+                "motionSha256": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                }
+              },
+              "required": [
+                "id",
+                "clip",
+                "occurrence",
+                "start",
+                "end",
+                "sourceStart",
+                "sourceEnd",
+                "rate",
+                "blendIn",
+                "motionSha256"
+              ],
+              "additionalProperties": false
+            },
+            "minItems": 1,
+            "maxItems": 2048
+          },
+          "cues": {
+            "type": "array",
+            "items": {
+              "$ref": "action-effects-v2.schema.json#/$defs/compiledCue"
+            },
+            "minItems": 1,
+            "maxItems": 256
+          },
+          "markers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$"
+                },
+                "at": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 3600
+                },
+                "name": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "step": {
+                  "type": "string",
+                  "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$"
+                },
+                "occurrence": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 15
+                }
+              },
+              "required": [
+                "id",
+                "at",
+                "name",
+                "step",
+                "occurrence"
+              ],
+              "additionalProperties": false
+            },
+            "minItems": 0,
+            "maxItems": 200000
+          },
+          "retireAt": {
+            "type": "number",
+            "minimum": 0.000001,
+            "maximum": 3660
+          }
+        },
+        "required": [
+          "id",
+          "role",
+          "clip",
+          "duration",
+          "motionSha256",
+          "steps",
+          "cues",
+          "markers",
+          "retireAt"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 1,
+      "maxItems": 64
+    },
+    "verification": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "enum": [
+            "pending",
+            "accepted"
+          ]
+        }
+      },
+      "required": [
+        "status"
+      ]
+    },
+    "effectSources": {
+      "type": "array",
+      "items": {
+        "$ref": "action-effects-v2.schema.json#/$defs/runtimeSource"
+      },
+      "minItems": 1,
+      "maxItems": 64
+    },
+    "effectClosureSha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "asset",
+    "version",
+    "profile",
+    "fps",
+    "model",
+    "source",
+    "motion",
+    "engine",
+    "rig",
+    "coordinateSystem",
+    "sourceMotion",
+    "anchors",
+    "targets",
+    "budgets",
+    "actions",
+    "verification",
+    "effectSources",
+    "effectClosureSha256"
+  ],
+  "additionalProperties": false,
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "action-package-v2.schema.json",
+  "title": "Reviewed compound action and presentation package",
+  "description": "Portable runtime effect closure only: no raw preparation, rights, review or capture payloads. Native package-relative resources retain their exact bytes and paths; outer paths are explicitly rebound on native promotion."
+}

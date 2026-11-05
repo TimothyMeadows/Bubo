@@ -2,6 +2,8 @@
 
 `threejs-action.mjs` is an executable presentation adapter over actual baked composite GLB clips and an `hephaera-action-package/v1` timeline. The host provides its locked Three.js APIs, loaded GLB, canonical engine receipt and separate authoritative movement root. The reusable module imports nothing and performs no network access, installation, provider calls or simulation mutations.
 
+Native [action v2](../README.md) adds exact reusable effect dependencies and receiving/promotion gates. This v1 adapter does not consume v2 and cannot certify its Quarks effects. The selected scene scheduler, shared FX owner and actual browser/device evidence belong to the separate v2 host integration; native export or Blender technical views do not establish that readiness.
+
 ## Integration
 
 Resolve ENGINE.md and compatible engine skills before implementation. Verify model/package hashes and the current contract/definition/registry receipt before loading. The adapter validates receipt agreement, actual clip names/durations, binding identities, root ownership and bounded data. It cannot authenticate arbitrary caller objects or replace the canonical resolver.

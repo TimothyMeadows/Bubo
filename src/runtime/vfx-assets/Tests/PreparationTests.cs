@@ -26,12 +26,22 @@ internal static class PreparationTests
         Codec(own);
         Pixels(own);
         Lifecycle(own);
+        ReadOnlyVerification(own);
         ContrastDiagnostics(own);
         if (cli is not null) Cli(cli, own);
         else Check.Limits.Add("Preparation public CLI/interruption checks need --cli EXISTING_BUBO_DLL_OR_EXE.");
     }
 
     static VfxPreparationRequest Parse(Owned fixture) => PreparationJson.Parse(JsonSerializer.SerializeToUtf8Bytes(fixture.Request));
+    static void ReadOnlyVerification(string root)
+    {
+        var fixture = new Owned(Path.Combine(root, "read-only-verification"));
+        var prepared = VfxPreparation.Prepare(fixture.Workspace(), Owned.RequestPath, Output, Build);
+        var before = fixture.Host.Snapshot();
+        var result = VfxPreparation.Verify(new ReadOnlyWorkspace(fixture.Workspace()), prepared.ManifestPath, Build);
+        Check.That(result.IsValid && result.PackageSha256 == prepared.PackageSha256, "preparation verification requires only read admission without write or lock access");
+        Check.That(InspectionTests.Equal(before, fixture.Host.Snapshot()), "read-only verification preserves every source, claim and prepared byte");
+    }
     static JsonObject Data(object value) => PreparationFixtures.Object(value);
     static void Reject(Action action, string name)
     {
@@ -555,6 +565,19 @@ internal static class PreparationTests
             if (!changed && path.EndsWith("/atlas.png", StringComparison.Ordinal)) { changed = true; mutate(); }
             return resolved;
         }
+    }
+
+    sealed class ReadOnlyWorkspace(IWorkspace workspace) : IWorkspace
+    {
+        public string Root => workspace.Root;
+        public Bubo.Host.HostExecutionContext? HostContext => workspace.HostContext;
+        public string Resolve(string path) => workspace.Resolve(path);
+        public string Relative(string path) => workspace.Relative(path);
+        public string HashFile(string path) => workspace.HashFile(path);
+        public T Load<T>(string path) => workspace.Load<T>(path);
+        public string ResolveWrite(string path) => throw new InvalidOperationException("Read-only verification attempted write admission");
+        public void Save<T>(string path, T value) => throw new InvalidOperationException("Read-only verification attempted persistence");
+        public FileStream Lock(string path) => throw new InvalidOperationException("Read-only verification attempted lock acquisition");
     }
 
     static string[] Arguments(Owned fixture, string operation, params string[] arguments) => new[] { "vfx-assets", operation, "--api-version", "2", "--root", fixture.Root, "--host-context", "host-context.json" }.Concat(arguments).ToArray();

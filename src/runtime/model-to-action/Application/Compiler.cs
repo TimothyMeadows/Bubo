@@ -12,7 +12,14 @@ public static class ActionCompiler
         ["maxFrames"] = (1, 1000000, true), ["maxReviewFrames"] = (1, 10000, true), ["maxRuntimeBytes"] = (1024, 1073741824, true),
         ["timeoutSeconds"] = (1, 86400, true), ["maxLogBytes"] = (1024, 1073741824, true), ["maxAttempts"] = (1, 100, true)
     };
-    public static JsonObject Compile(JsonObject recipe, JsonObject motion, string asset, string version)
+    public static JsonObject Compile(JsonObject recipe, JsonObject motion, string asset, string version, ActionEffectCatalog? effects = null)
+    {
+        var schema = Integer(recipe, "schemaVersion", 1, 2);
+        if (schema == 2) return ActionCompilerV2.Compile(recipe, motion, asset, version, effects ?? throw new InvalidOperationException("Action recipe v2 requires freshly inspected effect dependencies"));
+        if (effects is not null) throw new InvalidOperationException("Action recipe v1 cannot receive v2 effect dependencies");
+        return CompileV1(recipe, motion, asset, version);
+    }
+    internal static JsonObject CompileV1(JsonObject recipe, JsonObject motion, string asset, string version)
     {
         Fields(recipe, "schemaVersion", "fps", "actions", "targets", "budgets", "review", "provenance");
         if (recipe["schemaVersion"]?.GetValue<int>() != 1) throw new InvalidOperationException("Unknown action recipe schema");

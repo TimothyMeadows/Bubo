@@ -8,7 +8,8 @@ using Hephaera.ModelAction.Domain;
 using static Hephaera.ModelAction.Application.ActionValidation;
 namespace Hephaera.ModelAction.Application;
 
-public sealed partial class Pipeline(IWorkspace w, Dictionary<string, string> options, INativeProcess native, IEngineResolver engines)
+public sealed partial class Pipeline(IWorkspace w, Dictionary<string, string> options, INativeProcess native, IEngineResolver engines,
+    IActionEffectDependencyInspector? effectInspector = null)
 {
     static readonly string[] Order = ["inspect", "compose", "export", "review"];
     Manifest m = new(); string path = "";
@@ -36,7 +37,11 @@ public sealed partial class Pipeline(IWorkspace w, Dictionary<string, string> op
     }
     void CheckLayout()
     {
-        if (m.SchemaVersion != "hephaera-model-action/v1") throw new InvalidOperationException("Unsupported action manifest");
+        if (m.SchemaVersion is not ("hephaera-model-action/v1" or "hephaera-model-action/v2")) throw new InvalidOperationException("Unsupported action manifest");
+        var recipeVersion = Recipe["schemaVersion"]?.GetValue<int>();
+        if (recipeVersion != (m.SchemaVersion == "hephaera-model-action/v2" ? 2 : 1)) throw new InvalidOperationException("Action manifest and recipe versions conflict");
+        if (recipeVersion == 1 && (m.StyleSha256 is not null || m.EffectSourceInventories is not null)) throw new InvalidOperationException("V1 action state cannot inherit v2 effect identities");
+        if (recipeVersion == 2) { Hash(m.StyleSha256 ?? ""); if (m.EffectSourceInventories is not { Count: > 0 }) throw new InvalidOperationException("V2 action state requires its complete private effect inventory"); }
         Id(m.Task); Id(m.Asset); Id(m.Version);
         if (path != $"{TaskPrefix}model-to-action/{m.Asset}/{m.Version}/manifest.json" || m.Staging != $"{StagingRoot}/model-to-action/{m.Asset}/{m.Version}") throw new InvalidOperationException("Action state violates repository-local layout");
         foreach (var input in new[] { m.Model, m.Motion, m.Recipe, m.SourceReview, m.EngineReceipt }.Concat(m.Originals.Keys))
@@ -66,9 +71,30 @@ public sealed partial class Pipeline(IWorkspace w, Dictionary<string, string> op
     }
     Stage Require(string name) => m.Stages.TryGetValue(name, out var stage) && stage.Status == "complete" ? stage : throw new InvalidOperationException("Complete " + name + " first");
     string Artifact(string name, string kind) => Require(name).Artifacts.GetValueOrDefault(kind) ?? throw new InvalidOperationException("Stage omitted " + kind);
-    JsonObject Plan()
+    ActionEffectCatalog InspectEffects(JsonObject recipe, JsonObject engine, CancellationToken cancellation)
     {
-        var plan = ActionCompiler.Compile(Recipe, Motion, m.Asset, m.Version);
+        if (recipe["schemaVersion"]?.GetValue<int>() == 1) return new ActionEffectCatalog(System.Array.Empty<ActionEffectInspection>());
+        var style = Need("host-style-sha256"); Hash(style);
+        var build = Need("runtime-build-sha256"); Hash(build);
+        return ActionEffectDependencies.Inspect(w, recipe,
+            new ActionEffectInspectionContext(engine, style, build, recipe["budgets"]!.AsObject()),
+            effectInspector ?? throw new InvalidOperationException("V2 action source inspection requires the explicit native dependency inspector"), cancellation);
+    }
+    ActionEffectCatalog EffectCatalog(CancellationToken cancellation = default)
+    {
+        var recipe = Recipe;
+        if (recipe["schemaVersion"]?.GetValue<int>() == 2 && m.StyleSha256 != Need("host-style-sha256")) throw new InvalidOperationException("Action effect STYLE changed; initialize a fresh version");
+        var catalog = InspectEffects(recipe, m.Engine, cancellation);
+        if (m.SchemaVersion == "hephaera-model-action/v2" && (m.EffectSourceInventories is null
+            || !JsonNode.DeepEquals(JsonSerializer.SerializeToNode(m.EffectSourceInventories, Workspace.Json), JsonSerializer.SerializeToNode(catalog.Sources.Select(item => item.SourceInventory).ToList(), Workspace.Json))))
+            throw new InvalidOperationException("Action effect source inventory changed; initialize a fresh reviewed version");
+        return catalog;
+    }
+    JsonObject Plan(CancellationToken cancellation = default)
+    {
+        var recipe = Recipe;
+        var plan = ActionCompiler.Compile(recipe, Motion, m.Asset, m.Version,
+            recipe["schemaVersion"]?.GetValue<int>() == 2 ? EffectCatalog(cancellation) : null);
         plan["engine"] = m.Engine.DeepClone();
         plan["motion"] = new JsonObject { ["path"] = m.Motion, ["sha256"] = HashFile(m.Motion) };
         plan["sourceMotion"]!["packageSha256"] = HashFile(m.Motion);
@@ -94,7 +120,7 @@ public sealed partial class Pipeline(IWorkspace w, Dictionary<string, string> op
         if (!File.Exists(m.Blender) || w.HashFile(m.Blender) != m.BlenderSha256) throw new InvalidOperationException("Configured Blender binary changed");
         var selection = await engines.Resolve(cancellation);
         if (!JsonNode.DeepEquals(selection, m.Engine) || !JsonNode.DeepEquals(LoadObject(m.EngineReceipt), m.Engine)) throw new InvalidOperationException("Engine selection/context changed; initialize a fresh version");
-        SourceApproval(LoadObject(m.SourceReview), Plan(), HashFile(m.Motion), HashFile(m.Model));
+        SourceApproval(LoadObject(m.SourceReview), Plan(cancellation), HashFile(m.Motion), HashFile(m.Model));
         var stop = System.Array.IndexOf(Order, rerun);
         foreach (var (name, stage) in m.Stages.Where(pair => stop < 0 || System.Array.IndexOf(Order, pair.Key) < stop))
             if (stage.Status == "complete") { VerifyHashes(stage.Inputs); VerifyHashes(stage.Outputs); VerifyHashes(stage.ExternalInputs, true); }
@@ -113,19 +139,34 @@ public sealed partial class Pipeline(IWorkspace w, Dictionary<string, string> op
     }
     public async Task Execute(string command, CancellationToken cancellation)
     {
+        if (command == "inspect-effects")
+        {
+            var recipe = LoadObject(Relative(w, Need("recipe")));
+            var context = new ActionEffectInspectionContext(await engines.Resolve(cancellation), Need("host-style-sha256"), Need("runtime-build-sha256"), recipe["budgets"]!.AsObject());
+            var subjects = ActionEffectDependencies.ReviewSubjects(w, recipe, context,
+                effectInspector ?? throw new InvalidOperationException("Explicit native effect inspector required"), cancellation);
+            Console.WriteLine(JsonSerializer.Serialize(new { schemaVersion = "bubo-action-effect-subjects/v1", accepted = false, subjects }, Workspace.Json));
+            return;
+        }
         if (command == "init") { await Init(cancellation); return; }
         path = Relative(w, Need("manifest")); m = w.Load<Manifest>(path); CheckLayout();
         using var ownership = w.Lock(State + "/asset.lock"); m = w.Load<Manifest>(path); CheckLayout();
         await Fresh(command, cancellation);
-        if (command == "status") { var hash = Fingerprint(); Console.WriteLine(JsonSerializer.Serialize(new { manifest = m, approvalFingerprints = new { action = hash, independent = hash, human = hash } }, Workspace.Json)); return; }
+        if (command == "status")
+        {
+            if (m.SchemaVersion == "hephaera-model-action/v2")
+                foreach (var approval in m.Approvals.Where(item => item.Kind is "independent" or "human"))
+                { if (HashFile(approval.Evidence) != approval.EvidenceHash) throw new InvalidOperationException("Runtime review receipt changed"); ValidateRuntime(LoadObject(approval.Evidence), cancellation); }
+            var hash = Fingerprint(); Console.WriteLine(JsonSerializer.Serialize(new { manifest = m, approvalFingerprints = new { action = hash, independent = hash, human = hash } }, Workspace.Json)); return;
+        }
         if (command == "doctor")
         {
             var directory = State + "/doctor-" + Guid.NewGuid().ToString("N"); Directory.CreateDirectory(w.ResolveWrite(directory));
             await CheckBlender(directory, cancellation); Console.WriteLine("READY: existing Blender4.5 and canonical engine checked; no dependency installed"); return;
         }
-        if (command == "record") { Record(); return; }
-        if (command == "validate") { Validate(); Console.WriteLine("VALID: current action ancestry, stage outputs and receipts; no automatic artistic/runtime acceptance"); return; }
-        if (command == "promote") { Promote(); return; }
+        if (command == "record") { Record(cancellation); return; }
+        if (command == "validate") { Validate(cancellation); Console.WriteLine("VALID: current action ancestry, stage outputs and receipts; no automatic artistic/runtime acceptance"); return; }
+        if (command == "promote") { Promote(cancellation); return; }
         var index = System.Array.IndexOf(Order, command);
         if (index < 0) throw new InvalidOperationException("Unknown action command");
         if (index > 0) Require(Order[index - 1]);
@@ -138,13 +179,14 @@ public sealed partial class Pipeline(IWorkspace w, Dictionary<string, string> op
         var motionPath = Relative(w, Need("motion-package")); var recipePath = Relative(w, Need("recipe")); var reviewPath = Relative(w, Need("source-review"));
         if (!reviewPath.StartsWith(TaskRoot(task) + "/", StringComparison.Ordinal)) throw new InvalidOperationException("Source review must belong to the active task cache");
         var motion = LoadObject(motionPath); var recipe = LoadObject(recipePath); var reviewed = LoadObject(reviewPath);
-        var plan = ActionCompiler.Compile(recipe, motion, asset, version);
+        var engine = await engines.Resolve(cancellation);
+        var catalog = InspectEffects(recipe, engine, cancellation);
+        var plan = ActionCompiler.Compile(recipe, motion, asset, version, recipe["schemaVersion"]?.GetValue<int>() == 2 ? catalog : null);
         var model = Relative(w, Text(motion["model"]!.AsObject(), "path"));
         if (new FileInfo(w.Resolve(model)).Length > recipe["budgets"]!["maxRuntimeBytes"]!.GetValue<long>()) throw new InvalidOperationException("Source GLB exceeds runtime byte budget");
         var glb = Glb(w.Resolve(model)); Source(motion, glb);
         if (Text(motion["model"]!.AsObject(), "sha256") != HashFile(model)) throw new InvalidOperationException("Motion package model bytes do not match");
         SourceApproval(reviewed, plan, HashFile(motionPath), HashFile(model));
-        var engine = await engines.Resolve(cancellation);
         if (Text(engine, "effectiveEngine") == "PHASERJS") throw new InvalidOperationException("Phaser requires an explicitly selected 2D sprite/pre-rendered action handoff; GLB action composition is not that handoff");
         if (Text(motion["engine"]!.AsObject(), "effectiveEngine") != Text(engine, "effectiveEngine")) throw new InvalidOperationException("Source motion engine conflicts with current project; no engine selected implicitly");
         var blender = Path.GetFullPath(Need("blender"));
@@ -152,6 +194,12 @@ public sealed partial class Pipeline(IWorkspace w, Dictionary<string, string> op
         path = $"{TaskRoot(task)}/model-to-action/{asset}/{version}/manifest.json";
         if (File.Exists(w.Resolve(path)) || Directory.Exists(w.Resolve($"{StagingRoot}/model-to-action/{asset}/{version}"))) throw new InvalidOperationException("Asset version already exists");
         m = new Manifest { Task = task, Asset = asset, Version = version, Actor = Need("actor"), Profile = Text(motion, "profile"), Staging = $"{StagingRoot}/model-to-action/{asset}/{version}", Blender = blender, BlenderSha256 = w.HashFile(blender), Engine = engine };
+        if (recipe["schemaVersion"]?.GetValue<int>() == 2)
+        {
+            m.SchemaVersion = "hephaera-model-action/v2";
+            m.StyleSha256 = Need("host-style-sha256");
+            m.EffectSourceInventories = catalog.Sources.Select(source => source.SourceInventory).ToList();
+        }
         m.HostPolicySha256 = w.HostContext is { } selectedHost ? HostPolicyIdentity.Fingerprint(selectedHost) : null;
         m.RuntimeBuildSha256 = options.GetValueOrDefault("runtime-build-sha256");
         using var ownership = w.Lock(State + "/asset.lock");
@@ -167,11 +215,13 @@ public sealed partial class Pipeline(IWorkspace w, Dictionary<string, string> op
             m.SourceInputs[source] = expected; m.Originals[target] = expected; return target;
         }
         m.Model = Copy(model, "model.glb"); m.Motion = Copy(motionPath, "motion.json"); m.Recipe = Copy(recipePath, "recipe.json"); m.SourceReview = Copy(reviewPath, "source-review.json");
+        ActionEffectDependencies.Snapshot(w, catalog, original.TrimEnd('/'), m.Originals, m.SourceInputs, cancellation);
         m.EngineReceipt = original + "engine.json"; w.Save(m.EngineReceipt, engine); m.Originals[m.EngineReceipt] = HashFile(m.EngineReceipt);
         if (w.HostContext is { } host)
             foreach (var reference in host.References.Where(reference => reference.Kind == "policy"))
                 m.SourceInputs[reference.Path] = HashFile(reference.Path);
         m.History.Add(new JsonObject { ["event"] = "init", ["sourceMotionPackage"] = motionPath, ["sourceModel"] = model, ["sourceReview"] = reviewPath, ["timestamp"] = DateTimeOffset.UtcNow.ToString("O") });
+        VerifyHashes(m.Originals); VerifyHashes(m.SourceInputs); _ = EffectCatalog(cancellation);
         Save(); Console.WriteLine(path);
     }
 }

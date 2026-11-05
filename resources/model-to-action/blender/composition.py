@@ -6,8 +6,8 @@ import re
 import struct
 from array import array
 
-from core import all_curves, armatures, digest, finite, identity, inventory, meshes, objects, read_glb, relative, safe_id, save_blend, save_json, text
-from verification import MAX_FRAME_BYTES, preflight, read_spool, write_spool
+from core import action_v2, all_curves, armatures, confined, digest, finite, identity, inventory, meshes, objects, positive_uniform_matrix, read_glb, relative, safe_id, save_blend, save_json, strict_json, text
+from verification import MAX_FRAME_BYTES, budget as verification_budget, preflight, read_spool, write_spool
 
 
 def glb_float_rows(document,binary,index,kind):
@@ -91,6 +91,26 @@ def node(name):
     if value is None:
         raise ValueError('Required model node is missing: ' + name)
     return value
+
+
+def validate_actual_v2_anchors(plan):
+    if not action_v2(plan):
+        return
+    checked=set()
+    for anchor in plan['anchors']:
+        owner=node(anchor['node'])
+        while owner is not None:
+            if owner.name not in checked:
+                positive_uniform_matrix([float(value) for row in owner.matrix_world for value in row])
+                checked.add(owner.name)
+            if owner.parent_type=='BONE' and owner.parent and owner.parent.type=='ARMATURE':
+                bone=owner.parent.pose.bones.get(owner.parent_bone)
+                if bone is None:
+                    raise ValueError('Actual V2 anchor bone parent is missing')
+                while bone is not None:
+                    positive_uniform_matrix([float(value) for row in owner.parent.matrix_world @ bone.matrix for value in row])
+                    bone=bone.parent
+            owner=owner.parent
 
 
 def rest_state():
@@ -219,6 +239,7 @@ def source_library(motion, plan):
         initial = None
         for time in schedules[identifier]:
             sample_source(value, time, rest, plan['fps'])
+            validate_actual_v2_anchors(plan)
             current = root_transform(motion)
             if not all(math.isfinite(value) for row in current for value in row):
                 raise ValueError('Non-finite source root transform')
@@ -310,6 +331,8 @@ def sample_plan(action, time, library, rest, fps):
 
 
 def plan_signature(plan):
+    if action_v2(plan):
+        return identity({key:plan[key] for key in ('schemaVersion','fps','rig','anchors','targets','budgets','effectSources','coordinateSystem')} | {'actions':[{key:action[key] for key in ('id','role','clip','duration','retireAt','steps','cues','markers')} for action in plan['actions']]})
     return identity({key: plan[key] for key in ('fps','rig','anchors','targets','budgets')} | {'actions': [{key: action[key] for key in ('id','role','clip','duration','steps','cues','markers')} for action in plan['actions']]})
 
 
@@ -356,6 +379,7 @@ def compose(job, plan):
         for index in range(count):
             pose = sample_plan(declared, index/plan['fps'], library, rest, plan['fps'])
             apply_pose(pose)
+            validate_actual_v2_anchors(plan)
             current = root_transform(motion)
             if first_root is None:
                 first_root = current
@@ -506,6 +530,7 @@ def mesh_materials():
 
 
 def current_geometry_sample(plan):
+    validate_actual_v2_anchors(plan)
     return {'meshes': pose_vertices(), 'anchors': {
         anchor['id']: array('d', (float(value) for row in node(anchor['node']).matrix_world for value in row))
         for anchor in plan['anchors']}}
@@ -645,7 +670,7 @@ def export(job, root, source, output, plan):
     if anchor_error>.001:
         raise ValueError('Independent re-import changed effect-anchor world transforms')
     package=copy.deepcopy(plan)
-    package.update(schemaVersion='hephaera-action-package/v1',asset=job['asset'],version=job['version'],profile=job['profile'],
+    package.update(schemaVersion=plan['schemaVersion'],asset=job['asset'],version=job['version'],profile=job['profile'],
                    model={'path':relative(root,glb),'sha256':digest(glb)},source={'path':blend,'sha256':digest(root/blend)},actions=actions,
                    verification={'status':'pending','runtime':'not-run','human':'pending','independent':'pending'})
     package_path=output/'action-package.json';save_json(package_path,package)
@@ -655,7 +680,117 @@ def export(job, root, source, output, plan):
               'verificationStorage':{'mode':'disk-backed-float64','spoolBytes':spool['totalBytes'],
                   'framePayloadBytes':spool['framePayloadBytes'],'framesComparedIncrementally':True,'fixedFramePayloadLimit':MAX_FRAME_BYTES,
                   'frameChecksumsVerified':True,'completeDataChecksumVerified':True}}}
-    return {'blend':blend,'glb':relative(root,glb),'package':relative(root,package_path),
+    artifacts={'blend':blend,'glb':relative(root,glb),'package':relative(root,package_path),
             'verificationIndex':relative(root,spool_dir/'index.json'),
             'verificationData':relative(root,spool_dir/'poses.bin'),
-            'verificationFrames':relative(root,spool_dir/'frames.jsonl')},actions,measured
+            'verificationFrames':relative(root,spool_dir/'frames.jsonl')}
+    if action_v2(plan):
+        proof={'schemaVersion':'hephaera-action-export-proof/v2','planSha256':plan_signature(plan),
+               'profile':job['profile'],'rigSha256':identity(plan['rig']),'sourceBlendSha256':digest(source),
+               'model':{'path':relative(root,glb),'sha256':digest(glb),'bytes':glb.stat().st_size},
+               'materials':material_bindings,'before':before,
+               'animationHashes':{action['id']:action['motionSha256'] for action in actions},
+               'spool':{name:{'path':relative(root,spool_dir/name),'sha256':digest(spool_dir/name),'bytes':(spool_dir/name).stat().st_size} for name in ('index.json','poses.bin','frames.jsonl')}}
+        encoded=(json.dumps(proof,indent=2,allow_nan=False)+'\n').encode('utf-8')
+        if len(encoded)>1024*1024 or spool['totalBytes']+len(encoded)>verification_budget(plan):
+            raise ValueError('Complete V2 export proof and pose spool exceed their explicit verification budget')
+        proof_path=spool_dir/'export-proof.json';save_json(proof_path,proof)
+        artifacts['exportProof']=relative(root,proof_path)
+        measured['independentReimport']['processScope']='producer-process-reopen; separate fresh-process verification required'
+    return artifacts,actions,measured
+
+
+def verify_export(job,root,source,output,plan):
+    """Fresh invocation reads the delivered GLB and the complete hash-bound producer spool."""
+    import bpy
+    from mathutils import Vector,kdtree
+    reference=job.get('verification')
+    if not action_v2(plan) or not isinstance(reference,dict) or set(reference)!={'path','sha256'}:
+        raise ValueError('Fresh V2 export verification requires one exact producer-proof reference')
+    proof_path=confined(root,reference['path'])
+    if not re.fullmatch(r'[a-f0-9]{64}',str(reference.get('sha256',''))) or proof_path.stat().st_size>1024*1024 or digest(proof_path)!=reference['sha256']:
+        raise ValueError('Independent producer-proof hash is missing or stale')
+    if proof_path!=source.parent/'verification'/'export-proof.json' or output!=source.parent/'independent':
+        raise ValueError('Independent V2 verification must retain the exact export/proof/output ownership layout')
+    proof=strict_json(proof_path,1024*1024)
+    fields={'schemaVersion','planSha256','profile','rigSha256','sourceBlendSha256','model','materials','before','animationHashes','spool'}
+    if set(proof)!=fields or proof.get('schemaVersion')!='hephaera-action-export-proof/v2' or proof.get('planSha256')!=plan_signature(plan) or proof.get('profile')!=job['profile'] or proof.get('rigSha256')!=identity(plan['rig']):
+        raise ValueError('Fresh export proof differs from the exact current plan/profile/rig')
+    if not re.fullmatch(r'[a-f0-9]{64}',str(proof['sourceBlendSha256'])):
+        raise ValueError('Fresh export proof lacks immutable source identity')
+    model=proof['model']
+    if not isinstance(model,dict) or set(model)!={'path','sha256','bytes'} or model['path']!=relative(root,source) or finite(model.get('bytes'),'Delivered GLB bytes',1,plan['budgets']['maxRuntimeBytes'],True)!=source.stat().st_size or model['sha256']!=digest(source):
+        raise ValueError('Fresh verification must read the exact delivered GLB bytes')
+    spool=proof['spool'];spool_dir=proof_path.parent
+    if not isinstance(spool,dict) or set(spool)!={'index.json','poses.bin','frames.jsonl'}:
+        raise ValueError('Independent verification requires the complete producer spool')
+    total=proof_path.stat().st_size
+    for name in ('index.json','poses.bin','frames.jsonl'):
+        item=spool[name]
+        if not isinstance(item,dict) or set(item)!={'path','sha256','bytes'} or item.get('path')!=relative(root,spool_dir/name):
+            raise ValueError('Independent spool reference escapes its exact role')
+        file=confined(root,item['path'])
+        size=finite(item.get('bytes'),'Independent spool bytes',1,verification_budget(plan),True)
+        total+=size
+        if total>verification_budget(plan) or file.stat().st_size!=size or not re.fullmatch(r'[a-f0-9]{64}',str(item.get('sha256',''))) or digest(file)!=item['sha256']:
+            raise ValueError('Independent spool hash/length/cumulative verification budget differs')
+    document,binary=read_glb(source,plan['budgets']['maxRuntimeBytes'])
+    wanted={action['id'] for action in plan['actions']}
+    animations=document.get('animations',[])
+    if len(animations)!=len(wanted) or {animation.get('name') for animation in animations}!=wanted or set(proof['animationHashes'])!=wanted:
+        raise ValueError('Fresh delivered GLB compound inventory is incomplete or ambiguous')
+    for animation in animations:
+        if exported_animation_hash(document,binary,animation)!=proof['animationHashes'][animation['name']]:
+            raise ValueError('Fresh delivered GLB motion channels differ from the sealed export')
+    restore_composites(plan)
+    after=inventory(job['profile'])
+    if mesh_materials()!=proof['materials']:
+        raise ValueError('Fresh-process reimport changed actual material correspondence')
+    if job['profile']=='skinned':
+        if len(armatures())!=1 or plan['rig'].get('rootBone') not in armatures()[0].pose.bones or plan['rig'].get('node',armatures()[0].name)!=armatures()[0].name:
+            raise ValueError('Fresh-process reimport changed actual rig ownership')
+    elif plan['rig'].get('rootNode') not in {obj.name for obj in objects()}:
+        raise ValueError('Fresh-process reimport lost the actual mechanical root')
+    maximum=0.0;anchor_error=0.0;compared=0
+    actual=iter(sampled_compounds(plan))
+    with read_spool(root,spool_dir,plan,plan_signature(plan)) as (_,expected):
+        for identifier,frame,first in expected:
+            try:actual_id,actual_frame,second=next(actual)
+            except StopIteration:raise ValueError('Fresh-process reimport lost required frame coverage') from None
+            if (actual_id,actual_frame)!=(identifier,frame):raise ValueError('Fresh-process reimport changed frame ordering')
+            for anchor in plan['anchors']:
+                left=first['anchors'][anchor['id']];right=second['anchors'][anchor['id']]
+                positive_uniform_matrix(left);positive_uniform_matrix(right)
+                anchor_error=max(anchor_error,max(abs(a-b) for a,b in zip(left,right)))
+            first,second=first['meshes'],second['meshes']
+            if set(first)!=set(second):raise ValueError('Fresh-process reimport changed actual mesh ownership')
+            for name in first:
+                if not first[name] or not second[name]:raise ValueError('Fresh-process reimport lost real geometry')
+                for left,right in ((first[name],second[name]),(second[name],first[name])):
+                    tree=kdtree.KDTree(len(right)//3)
+                    for index in range(0,len(right),3):tree.insert(Vector(right[index:index+3]),index//3)
+                    tree.balance()
+                    for index in range(0,len(left),3):
+                        distance=tree.find(Vector(left[index:index+3]))[2]
+                        if not math.isfinite(distance):raise ValueError('Non-finite fresh-process geometry comparison')
+                        maximum=max(maximum,distance)
+            compared+=1
+    try:next(actual)
+    except StopIteration:pass
+    else:raise ValueError('Fresh-process reimport produced unexpected extra frames')
+    if maximum>.001 or anchor_error>.001:
+        raise ValueError('Fresh-process actual geometry/anchor error exceeds .001 metre/matrix tolerance')
+    if digest(proof_path)!=reference['sha256'] or digest(source)!=model['sha256']:
+        raise ValueError('Fresh-process proof or delivered GLB changed during verification')
+    for name,item in spool.items():
+        if (spool_dir/name).stat().st_size!=item['bytes'] or digest(spool_dir/name)!=item['sha256']:
+            raise ValueError('Fresh-process complete spool changed during verification')
+    metrics={'freshProcess':True,'actualGlb':True,'allBakedFramesCompared':compared,'maximumWorldVertexError':maximum,
+             'maximumAnchorMatrixError':anchor_error,'toleranceMetres':.001,'materialBindingsVerified':True,'rootOwnershipVerified':True,
+             'actualAnchorTransforms':'sampled-positive-uniform-nonmirrored-no-shear','completeSpoolChecksumsVerified':True,
+             'after':after,'engineFXRendering':'not-run','humanAcceptance':'pending'}
+    report=output/'verification-report.json'
+    save_json(report,{'schemaVersion':'hephaera-action-independent-export/v2','inputSha256':model['sha256'],
+                      'proofSha256':reference['sha256'],'planSha256':plan_signature(plan),'metrics':metrics,
+                      'limits':['Fresh-process sampled GLB geometry/material/rig/anchor verification is technical evidence; no engine FX rendering, artistic review or human runtime acceptance.']})
+    return {'verificationReport':relative(root,report)},metrics

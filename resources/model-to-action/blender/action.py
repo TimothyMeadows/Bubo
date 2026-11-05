@@ -6,8 +6,8 @@ import sys
 sys.dont_write_bytecode=True
 sys.path.insert(0,str(Path(__file__).resolve().parent))
 
-from core import digest, inventory, load_job, load_scene, relative, save_blend, save_json
-from composition import compose, export, source_library, validate_source_glb, verification_preflight
+from core import action_v2, digest, inventory, load_job, load_scene, relative, save_blend, save_json
+from composition import compose, export, source_library, validate_source_glb, verification_preflight, verify_export
 
 
 def main():
@@ -28,10 +28,12 @@ def main():
         artifacts={'blend':save_blend(root,output)}
     elif operation=='export':
         artifacts,actions,measured=export(job,root,source,output,plan)
+    elif operation=='verify-export':
+        artifacts,measured=verify_export(job,root,source,output,plan)
     else:
         from review import review
         artifacts,data,measured=review(job,root,source,output,plan)
-        findings.append({'severity':'information','code':'technical-cue-proxies','message':'Blender cue proxies do not certify selected-engine VFX or human runtime acceptance.'})
+        findings.append({'severity':'information','code':'motion-and-anchors-only' if action_v2(plan) else 'technical-cue-proxies','message':'Actual motion/anchor technical review does not render selected-engine VFX or establish human runtime acceptance.' if action_v2(plan) else 'Blender cue proxies do not certify selected-engine VFX or human runtime acceptance.'})
     if digest(source)!=before:raise ValueError('Fixed authoring changed its immutable input')
     if source_check is not None:measured['sourceRootChannelValidation']=source_check
     report=output/'report.json'

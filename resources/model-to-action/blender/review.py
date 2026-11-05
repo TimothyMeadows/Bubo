@@ -3,16 +3,20 @@ import html
 import json
 import math
 
-from core import digest, finite, inventory, meshes, objects, read_glb, relative, save_json, vector
-from composition import activate_composite, node, restore_composites
+from core import action_v2, digest, finite, inventory, meshes, objects, read_glb, relative, save_json, vector
+from composition import activate_composite, node, restore_composites, validate_actual_v2_anchors
 
 
 def review_times(action, fps):
-    duration = action['duration']
+    duration = action.get('retireAt',action['duration'])
     times = [min(index/fps,duration) for index in range(math.ceil(duration*fps)+1)] + [0,duration]
     times += [step[key] for step in action['steps'] for key in ('start','end')]
     times += [cue[key] for cue in action['cues'] for key in ('start','end')]
     times += [marker['at'] for marker in action.get('markers',[])]
+    if 'retireAt' in action:
+        times += [action['duration'], action['retireAt']]
+        times += [cue['retireAt'] for cue in action['cues']]
+        times += [layer[key] for cue in action['cues'] for layer in cue['layers'] for key in ('start','stopAt','retireAt')]
     return sorted({round(finite(value,'Review sample',0,duration),9) for value in times})
 
 
@@ -55,7 +59,17 @@ def review(job, root, source, output, plan):
             if cue['anchor'] not in anchors:
                 raise ValueError('Cue lacks real source anchor')
             frame=cue['start']*plan['fps'];scene.frame_set(math.floor(frame),subframe=frame-math.floor(frame));bpy.context.view_layer.update()
+            validate_actual_v2_anchors(plan)
             position=node(anchors[cue['anchor']]['node']).matrix_world.translation.copy()
+            if action_v2(plan):
+                position=node(anchors[cue['anchor']]['node']).matrix_world @ Vector(runtime_to_blender(cue['transform']['position']))
+                releases[(action['id'],cue['id'])]={'anchor':cue['anchor'],'node':anchors[cue['anchor']]['node'],'releaseTime':cue['start'],'originBlender':list(position),'engineFXRendered':False}
+                if cue.get('target') is not None:
+                    if cue['target'] not in settings['targets']:raise ValueError('V2 targeted cue requires its explicit technical preview point')
+                    target=Vector(runtime_to_blender(settings['targets'][cue['target']]))
+                    if (target-position).length>targets[cue['target']]['maxDistance']:raise ValueError('V2 technical target exceeds declared maximum distance')
+                    releases[(action['id'],cue['id'])]['technicalTargetBlender']=list(target)
+                points.append(position)
             if cue['type']=='projectile':
                 if cue.get('target') not in targets or cue['target'] not in settings['targets']:
                     raise ValueError('Projectile technical review needs its explicit fixed target')
@@ -65,7 +79,8 @@ def review(job, root, source, output, plan):
                 releases[(action['id'],cue['id'])]=(position,target)
                 points.extend([position,target])
         for time in times:
-            frame=time*plan['fps'];scene.frame_set(math.floor(frame),subframe=frame-math.floor(frame));bpy.context.view_layer.update()
+            frame=min(time,action['duration'])*plan['fps'];scene.frame_set(math.floor(frame),subframe=frame-math.floor(frame));bpy.context.view_layer.update()
+            validate_actual_v2_anchors(plan)
             graph=bpy.context.evaluated_depsgraph_get()
             for obj in meshes():
                 evaluated=obj.evaluated_get(graph)
@@ -82,6 +97,7 @@ def review(job, root, source, output, plan):
     proxy_data={};proxy_objects=[]
     for action in plan['actions']:
         for cue in action['cues']:
+            if action_v2(plan):continue
             count=min(cue.get('capacity',1),8) if cue['type']=='particles' else 1
             values=[]
             for index in range(count):
@@ -96,11 +112,19 @@ def review(job, root, source, output, plan):
         activate_composite(action['id'])
         packet={'id':action['id'],'duration':action['duration'],'frames':[],
                 'method':'Actual independently re-imported baked GLB poses with technical cue proxies; actual engine effects are separate evidence'}
+        if action_v2(plan):
+            packet.update(duration=action['retireAt'],motionDuration=action['duration'],retireAt=action['retireAt'],
+                          method='Actual re-imported GLB motion with measured anchor matrices only; no engine effect geometry or materials rendered',
+                          releases=[releases[(action['id'],cue['id'])] for cue in action['cues']])
         for sample,time in enumerate(times):
-            frame=time*plan['fps'];scene.frame_set(math.floor(frame),subframe=frame-math.floor(frame));bpy.context.view_layer.update()
+            frame=min(time,action['duration'])*plan['fps'];scene.frame_set(math.floor(frame),subframe=frame-math.floor(frame));bpy.context.view_layer.update()
+            validate_actual_v2_anchors(plan)
             for obj in proxy_objects:obj.hide_render=True
             active=[];positions=[]
             for cue in action['cues']:
+                if action_v2(plan):
+                    if cue['start']<=time<cue['retireAt']:active.append(cue['id'])
+                    continue
                 if not cue['start']<=time<cue['end']:continue
                 active.append(cue['id']);fraction=(time-cue['start'])/(cue['end']-cue['start'])
                 anchor=node(anchors[cue['anchor']]['node']).matrix_world.translation.copy()
@@ -121,7 +145,10 @@ def review(job, root, source, output, plan):
                 if path.exists() or path.is_symlink():raise ValueError('Technical action frame already exists')
                 path.parent.mkdir(parents=True,exist_ok=True);scene.render.filepath=str(path);bpy.ops.render.render(write_still=True)
                 name=relative(root,path);artifacts['frame-'+str(len(artifacts))]=name
-                packet['frames'].append({'path':name,'sha256':digest(path),'time':time,'camera':view,'view':view,'activeCues':active,'cueProxies':positions})
+                item={'path':name,'sha256':digest(path),'time':time,'camera':view,'view':view,'activeCues':active,'cueProxies':positions}
+                if action_v2(plan):
+                    item.update(engineFXRendered=False,anchorMatricesBlender={anchor['id']:[float(value) for row in node(anchor['node']).matrix_world for value in row] for anchor in plan['anchors']})
+                packet['frames'].append(item)
         packets.append(packet)
     flattened=[frame for packet in packets for frame in packet['frames']]
     if len(flattened)!=requested or len({frame['path'] for frame in flattened})!=requested:
@@ -133,6 +160,11 @@ def review(job, root, source, output, plan):
           'cueRendering':'technical-proxies-only','humanApproval':'pending','independentReview':'pending','runtimeVerification':'not-run',
           'limits':['All declared durations and grid/step/cue/marker boundaries are sampled; finite sampling is not continuous visual acceptance.',
                     'Proxy spheres represent attachment/phase/trajectory only; native engine particles/materials and gameplay need independent target evidence.']}
+    if action_v2(plan):
+        data.update(schemaVersion='hephaera-action-review/v2',cueRendering='motion-and-anchors-only',actualEngineFX='not-rendered',
+                    anchorTransformPolicy='actual-sampled-positive-uniform-nonmirrored-no-shear',
+                    limits=['Actual GLB motion and anchor matrices are sampled through every declared motion/effect/layer/drain boundary; actor pose is held after motion completion.',
+                            'No V2 effects, shader/material appearance, endpoint freshness or trail path is rendered or certified here. Actual selected-engine rendering, independent review and human runtime acceptance remain separate.'])
     report_path=output/'action-review.json';save_json(report_path,data);artifacts['reviewReport']=relative(root,report_path)
     payload=[]
     for packet in packets:
@@ -143,4 +175,7 @@ def review(job, root, source, output, plan):
     page=output/'review.html'
     page.write_text('''<!doctype html><meta charset="utf-8"><title>Action sequence technical review</title><style>body{background:#222;color:#eee;font-family:sans-serif}section{display:inline-block;vertical-align:top;margin:12px}img{display:block;background:#444;max-width:480px}input{width:100%}</style><h1>Complete action sequence review</h1><p>Actual baked GLB motion with technical cue proxies. Engine effects and human runtime acceptance remain pending. Playback follows recorded seconds; pause and scrub exact sample boundaries.</p><a href="action-review.json">Frame hashes, exact times, cue labels and limitations</a><main></main><script>const packets='''+encoded+''';for(const p of packets){const s=document.createElement('section'),h=document.createElement('h2'),img=document.createElement('img'),range=document.createElement('input'),label=document.createElement('p'),button=document.createElement('button');h.textContent=p.name;range.type='range';range.min=0;range.max=p.frames.length-1;let cursor=0,playing=false,last=null,shown=-1;const show=i=>{if(i===shown)return;shown=i;const f=p.frames[i];img.src=f.path;label.textContent=f.time.toFixed(3)+' / '+p.duration.toFixed(3)+' sec; proxy cues: '+f.cues.join(', ');range.value=i};button.textContent='Play';button.onclick=()=>{playing=!playing;button.textContent=playing?'Pause':'Play';last=null};range.oninput=()=>{cursor=p.frames[+range.value].time;show(+range.value);last=null};s.append(h,img,button,range,label);document.querySelector('main').append(s);show(0);function tick(now){if(playing&&last!==null){cursor=(cursor+Math.min((now-last)/1000,.25))%p.duration;let i=0;while(i+1<p.frames.length&&p.frames[i+1].time<=cursor)i++;show(i)}last=now;requestAnimationFrame(tick)}requestAnimationFrame(tick)};</script>''',encoding='utf-8')
     artifacts['review']=relative(root,page)
+    if action_v2(plan):
+        content=page.read_text(encoding='utf-8').replace('Actual baked GLB motion with technical cue proxies.','Actual baked GLB motion and measured anchors only. No engine VFX rendered.').replace('proxy cues: ','effect schedule (not rendered): ')
+        page.write_text(content,encoding='utf-8')
     return artifacts,data,measured

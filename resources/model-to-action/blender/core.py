@@ -103,6 +103,20 @@ def save_json(path, value):
     path.write_text(json.dumps(value, indent=2, allow_nan=False) + '\n', encoding='utf-8')
 
 
+def strict_json(path, maximum):
+    if not path.is_file() or path.stat().st_size < 2 or path.stat().st_size > maximum:
+        raise ValueError('Missing or oversized fixed action JSON')
+    def unique(pairs):
+        result={}
+        for key,value in pairs:
+            if key in result:raise ValueError('Duplicate fixed action JSON field')
+            result[key]=value
+        return result
+    def constant(value):
+        raise ValueError('Non-finite fixed action JSON number')
+    return json.loads(path.read_text(encoding='utf-8-sig'),object_pairs_hook=unique,parse_constant=constant)
+
+
 def read_glb(path, maximum=512 * 1024 * 1024):
     size = path.stat().st_size
     if size < 20 or size > maximum:
@@ -230,6 +244,105 @@ def save_blend(root, output):
     return relative(root, path)
 
 
+def action_v2(plan):
+    return plan.get('schemaVersion') == 'hephaera-action-package/v2'
+
+
+def positive_uniform_matrix(values):
+    """Validate an actual affine world matrix, including reflected and sheared bases."""
+    values = vector(list(values), 16, 'Actual anchor matrix')
+    if max(abs(value) for value in values) > 1e12 or max(abs(values[12]), abs(values[13]), abs(values[14]), abs(values[15]-1)) > 1e-6:
+        raise ValueError('Actual anchor matrix is not a finite bounded affine transform')
+    columns = [[values[row*4+column] for row in range(3)] for column in range(3)]
+    lengths = [math.sqrt(sum(value*value for value in column)) for column in columns]
+    if min(lengths) < .0001 or max(lengths) > 1000 or max(lengths)-min(lengths) > 1e-5*max(lengths):
+        raise ValueError('Actual anchor and ancestor transforms require positive uniform scale')
+    for first, second in ((0, 1), (0, 2), (1, 2)):
+        if abs(sum(a*b for a,b in zip(columns[first], columns[second]))) > 1e-5*lengths[first]*lengths[second]:
+            raise ValueError('Actual anchor and ancestor transforms cannot contain shear')
+    a,b,c = columns
+    determinant = a[0]*(b[1]*c[2]-b[2]*c[1])-b[0]*(a[1]*c[2]-a[2]*c[1])+c[0]*(a[1]*b[2]-a[2]*b[1])
+    if determinant <= 0:
+        raise ValueError('Actual anchor and ancestor transforms cannot be mirrored')
+
+
+def validate_v2_cue(cue, action, sources, anchors, targets, budget):
+    allowed = {'id','type','source','anchor','start','end','placement','target','transform','lifetime','overrides','trail','retireAt','layers'}
+    if set(cue)-allowed or cue.get('type') != 'effect' or cue.get('source') not in sources or cue.get('anchor') not in anchors:
+        raise ValueError('V2 requires an exact versioned effect source and actual anchor; no legacy proxy cue')
+    begin = finite(cue.get('start'), 'V2 cue start', 0, action['duration'])
+    end = finite(cue.get('end'), 'V2 cue end', 0, action['duration'])
+    if begin >= end:
+        raise ValueError('V2 cue must have a positive emission window')
+    transform = cue.get('transform', {})
+    if set(transform) != {'units','up','forward','handedness','position','orientation','scale','parentScale'} or any(transform.get(key) != value for key,value in {'units':'meters','up':'+Y','forward':'+Z','handedness':'right','parentScale':'positive-uniform'}.items()):
+        raise ValueError('V2 effect transform must retain explicit runtime units/basis/scale policy')
+    if any(abs(value)>1e6 for value in vector(transform.get('position'),3,'V2 local position')):
+        raise ValueError('V2 local position exceeds finite bounds')
+    rotation = vector(transform.get('orientation'),4,'V2 xyzw quaternion')
+    if abs(sum(value*value for value in rotation)-1)>1e-6:
+        raise ValueError('V2 effect orientation must be normalized')
+    finite(transform.get('scale'),'V2 uniform scale',.0001,1000)
+    lifetime = cue.get('lifetime', {})
+    if set(lifetime) != {'tailSeconds','pause','tailAttachment','cancel'} or lifetime.get('pause') not in ('follow-action','continue-on-scene') or lifetime.get('tailAttachment') not in ('follow-anchor','capture-world-on-stop') or lifetime.get('cancel') != 'retire-generation':
+        raise ValueError('V2 lifecycle must retain bounded explicit policies')
+    tail = finite(lifetime.get('tailSeconds'),'V2 tail',0,budget['maxTailSeconds'])
+    placement = cue.get('placement')
+    if placement not in ('anchor-follow','captured-world','fixed-target-projectile','fixed-target','beam'):
+        raise ValueError('Unknown V2 effect placement')
+    if lifetime['tailAttachment']=='follow-anchor' and placement not in ('anchor-follow','beam'):
+        raise ValueError('World/target/projectile effects require captured world tails')
+    if placement in ('fixed-target-projectile','fixed-target','beam'):
+        if cue.get('target') not in targets or targets[cue['target']]['mode']=='continuous-world-point' and placement!='beam':
+            raise ValueError('V2 target must be exact; continuous endpoints belong only to explicit beams')
+    elif 'target' in cue:
+        raise ValueError('Untargeted V2 cue cannot consume a target')
+    layers = cue.get('layers')
+    if not isinstance(layers,list) or not layers or len(layers)>128:
+        raise ValueError('Compiled V2 cue needs its actual bounded layer timing inventory')
+    ids=set(); retirement=begin
+    for layer in layers:
+        if set(layer) != {'id','family','space','start','stopAt','retireAt','emissionDurationSeconds','particleLifetimeSeconds','tailSeconds'}:
+            raise ValueError('Compiled V2 layer timing fields are incomplete or unknown')
+        identifier=safe_id(layer.get('id'))
+        if identifier in ids or layer.get('space') not in ('local','world') or layer.get('family') not in ('sprite','burst','ring','mesh','projectile','trail','impact','ground-indicator','beam'):
+            raise ValueError('Compiled V2 layer identity, family or emission space is invalid')
+        ids.add(identifier)
+        start=finite(layer.get('start'),'V2 layer start',begin,end)
+        stop=finite(layer.get('stopAt'),'V2 layer emission stop',start,end)
+        duration=finite(layer.get('emissionDurationSeconds'),'V2 authored emission duration',.001,3600)
+        finite(layer.get('particleLifetimeSeconds'),'V2 particle lifetime',.001,60)
+        layer_tail=finite(layer.get('tailSeconds'),'V2 layer tail',0,tail)
+        retire=finite(layer.get('retireAt'),'V2 layer retirement',stop,stop+layer_tail+1e-7)
+        if abs(stop-start-duration)>1e-7 or abs(retire-stop-layer_tail)>1e-7:
+            raise ValueError('Compiled V2 layer timing differs from explicit authored duration/tail')
+        retirement=max(retirement,retire)
+    if abs(finite(cue.get('retireAt'),'V2 cue retirement',begin,end+tail)-retirement)>1e-7:
+        raise ValueError('Compiled V2 cue retirement does not bind its complete layer union')
+    has_beam=any(layer['family']=='beam' for layer in layers)
+    if has_beam != (placement=='beam') or placement=='fixed-target-projectile' and not any(layer['family']=='projectile' for layer in layers):
+        raise ValueError('V2 placement disagrees with actual declared layer families')
+    overrides=cue.get('overrides',[]); seen=set()
+    if not isinstance(overrides,list) or len(overrides)>len(ids):
+        raise ValueError('V2 override inventory exceeds selected layers')
+    for override in overrides:
+        if set(override)-{'layer','sizeMultiplier','colorMultiplier','emissionMultiplier'} or len(override)<2 or override.get('layer') not in ids or override['layer'] in seen:
+            raise ValueError('V2 override must reference one actual layer with reduction-only parameters')
+        seen.add(override['layer'])
+        for key in ('sizeMultiplier','emissionMultiplier'):
+            if key in override:finite(override[key],key,.0001 if key=='sizeMultiplier' else 0,1)
+        if 'colorMultiplier' in override and any(value<0 or value>1 for value in vector(override['colorMultiplier'],4,'V2 color multiplier')):
+            raise ValueError('V2 color override cannot increase a channel')
+    if any(layer['family']=='trail' for layer in layers):
+        trail=cue.get('trail',{})
+        if set(trail)!={'reset','maxSamples','distanceMeters'} or trail.get('reset')!='teleport-or-discontinuity':
+            raise ValueError('V2 trail needs explicit teleport/discontinuity reset')
+        finite(trail.get('maxSamples'),'V2 retained trail samples',2,budget['maxTrailSamples'],True)
+        finite(trail.get('distanceMeters'),'V2 trail discontinuity distance',.0001,100000)
+    elif 'trail' in cue:
+        raise ValueError('Trail policy requires an actual trail layer')
+
+
 def load_job():
     import bpy
     if bpy.app.version[:2] != (4, 5):
@@ -240,10 +353,12 @@ def load_job():
     path = Path(args.job).absolute()
     if not path.is_file() or path.stat().st_size > 8 * 1024 * 1024:
         raise ValueError('Missing or oversized fixed action job')
-    job = json.loads(path.read_text(encoding='utf-8-sig'))
-    allowed = {'schemaVersion','root','operation','input','outputDir','result','asset','version','profile','motionPackage','plan','review'}
-    if set(job) - allowed or job.get('schemaVersion') != 1 or job.get('operation') not in ('inspect','compose','export','review'):
+    job = strict_json(path,8*1024*1024)
+    allowed = {'schemaVersion','root','operation','input','outputDir','result','asset','version','profile','motionPackage','plan','review','verification'}
+    if set(job) - allowed or job.get('schemaVersion') != 1 or job.get('operation') not in ('inspect','compose','export','review','verify-export'):
         raise ValueError('Unsupported native action job')
+    if ('verification' in job) != (job['operation']=='verify-export'):
+        raise ValueError('Only independent export verification accepts an exact producer proof')
     safe_id(job.get('asset')); safe_id(job.get('version'))
     root = Path(text(job.get('root'), 'Project root')).absolute()
     if not root.is_dir() or root.is_symlink():
@@ -264,13 +379,17 @@ def load_job():
         raise ValueError('Action source must be a real GLB or prior working blend')
     if source.suffix.lower() == '.blend' and not job['input'].startswith(prefix + 'attempts/'):
         raise ValueError('Only this asset\'s prior fixed working blend may be opened')
-    if job['operation'] in ('inspect','compose','review') and source.suffix.lower() != '.glb':
+    if job['operation'] in ('inspect','compose','review','verify-export') and source.suffix.lower() != '.glb':
         raise ValueError('This action stage requires an actual GLB')
     if job['operation'] == 'export' and source.suffix.lower() != '.blend':
         raise ValueError('Export requires a composed working blend')
     plan = job.get('plan'); motion = job.get('motionPackage')
     if not isinstance(plan, dict) or not isinstance(motion, dict) or motion.get('schemaVersion') != 'hephaera-motion-package/v1':
         raise ValueError('Missing compiled plan or reviewed motion metadata')
+    if plan.get('schemaVersion') not in ('hephaera-action-package/v1','hephaera-action-package/v2'):
+        raise ValueError('Unknown action plan version; V2 is never relabeled as legacy cues')
+    if job['operation']=='verify-export' and not action_v2(plan):
+        raise ValueError('The separate export verification operation requires explicit action v2')
     if job.get('profile') not in ('skinned','articulated','rigid') or motion.get('profile') != job['profile']:
         raise ValueError('Action profile disagrees with source motion')
     no_excluded_providers(motion); no_excluded_providers(plan)
@@ -284,6 +403,19 @@ def load_job():
     for key, maximum in limits.items():
         finite(budget.get(key), key, 1024 if key in ('maxRuntimeBytes','maxLogBytes') else 1, maximum, key != 'maxActionSeconds')
     finite(budget.get('maxVerificationBytes', 8 * 1024**3), 'maxVerificationBytes', 1024, 64 * 1024**3, True)
+    effect_sources={}
+    if action_v2(plan):
+        for key,maximum in {'maxEffectSources':64,'maxEffectFiles':16384,'maxEffectDependencyBytes':4*1024**3,'maxEffectJsonBytes':256*1024**2,'maxTrailSamples':65536}.items():
+            finite(budget.get(key),key,1,maximum,True)
+        finite(budget.get('maxTailSeconds'),'maxTailSeconds',0,60)
+        sources=plan.get('effectSources')
+        if not isinstance(sources,list) or not sources or len(sources)>budget['maxEffectSources']:
+            raise ValueError('V2 plan requires actual inspected effect sources')
+        for source_effect in sources:
+            identifier=safe_id(source_effect.get('id'));safe_id(source_effect.get('effectId'))
+            if identifier in effect_sources:
+                raise ValueError('Duplicate V2 effect source')
+            effect_sources[identifier]=source_effect
     actions = plan.get('actions')
     if not isinstance(actions, list) or not actions or len(actions) > budget['maxActions']:
         raise ValueError('Missing or excessive action set')
@@ -296,7 +428,12 @@ def load_job():
     if len(anchor_ids) != len(plan.get('anchors', [])) or len(targets) != len(plan.get('targets', [])):
         raise ValueError('Duplicate anchor or target identity')
     for target in targets.values():
-        if target.get('mode') != 'fixed-world-point':
+        if action_v2(plan) and target.get('mode')=='continuous-world-point':
+            finite(target.get('maxAgeSeconds'),'Endpoint maximum age',.001,1)
+            finite(target.get('maxUpdatesPerSecond'),'Endpoint update bound',1,1000,True)
+            if any(target.get(key)!=value for key,value in {'clock':'presentation-seconds','generation':'match-action','sampleAt':'interval-end-before-fx','onInvalid':'retire-effect'}.items()):
+                raise ValueError('Continuous beam endpoints require explicit current generation/freshness sampling')
+        elif target.get('mode') != 'fixed-world-point':
             raise ValueError('Only explicit fixed-world targets are supported')
         finite(target.get('maxDistance'), 'Target maximum distance', .001, 1000000)
     expanded_total = 0
@@ -319,6 +456,9 @@ def load_job():
         if len(cue_ids) != len(set(cue_ids)):
             raise ValueError('Duplicate action cue')
         for cue in action['cues']:
+            if action_v2(plan):
+                validate_v2_cue(cue,action,effect_sources,anchor_ids,targets,budget)
+                continue
             if cue.get('type') not in ('orb','particles','projectile') or cue.get('anchor') not in anchor_ids:
                 raise ValueError('Cue requires a supported type and actual anchor')
             begin = finite(cue.get('start'), 'Cue start', 0, duration)
@@ -337,6 +477,9 @@ def load_job():
             text(marker.get('name'), 'Action marker name')
         if particle_total > budget['maxParticles']:
             raise ValueError('Per-action aggregate particle capacity exceeds budget')
+        if action_v2(plan):
+            if not action['cues'] or abs(finite(action.get('retireAt'),'V2 action retirement',duration,duration+budget['maxTailSeconds'])-max([duration]+[cue['retireAt'] for cue in action['cues']]))>1e-7:
+                raise ValueError('V2 action must retain real cues and their exact bounded drain union')
     if frames > budget['maxFrames']:
         raise ValueError('Baked action samples exceed maxFrames')
     if expanded_total > budget['maxExpandedSteps']:

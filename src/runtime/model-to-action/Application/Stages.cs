@@ -7,10 +7,10 @@ namespace Hephaera.ModelAction.Application;
 
 public sealed partial class Pipeline
 {
-    async Task CheckBlender(string directory, CancellationToken cancellation)
+    async Task CheckBlender(string directory, CancellationToken cancellation, long? maximumLogBytes = null)
     {
         var log = directory + "/blender-version.log";
-        await native.Run(m.Blender, ["--version"], w.Root, w.Resolve(log), Math.Min(30, Budget["timeoutSeconds"]!.GetValue<int>()), cancellation, (long)Budget["maxLogBytes"]!.GetValue<double>());
+        await native.Run(m.Blender, ["--version"], w.Root, w.Resolve(log), Math.Min(30, Budget["timeoutSeconds"]!.GetValue<int>()), cancellation, maximumLogBytes ?? (long)Budget["maxLogBytes"]!.GetValue<double>());
         if (!Regex.IsMatch(File.ReadAllText(w.Resolve(log)), @"Blender\s+4\.5(?:\.\d+)?\b")) throw new InvalidOperationException("Existing Blender4.5LTS required; no fallback or installation");
         if (w.HashFile(m.Blender) != m.BlenderSha256) throw new InvalidOperationException("Blender changed during version inspection");
     }
@@ -53,6 +53,10 @@ public sealed partial class Pipeline
     }
     async Task RunStage(string name, CancellationToken cancellation)
     {
+        var version2 = m.SchemaVersion == "hephaera-model-action/v2";
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellation);
+        if (version2) deadline.CancelAfter(TimeSpan.FromSeconds(Budget["timeoutSeconds"]!.GetValue<int>()));
+        cancellation = deadline.Token;
         var index = System.Array.IndexOf(Order, name);
         if (m.History.Count(item => item["event"]?.GetValue<string>() == "stage-start" && item["stage"]?.GetValue<string>() == name) >= Budget["maxAttempts"]!.GetValue<int>()) throw new InvalidOperationException("Action stage attempt budget exhausted; use a new reviewed version");
         var stage = new Stage { Attempt = m.Staging + "/attempts/" + name + "-" + Guid.NewGuid().ToString("N") };
@@ -67,12 +71,12 @@ public sealed partial class Pipeline
         try
         {
             cancellation.ThrowIfCancellationRequested();
-            var scripts = CopyBundle(stage); await CheckBlender(stage.Attempt, cancellation);
-            var plan = Plan(); var input = name is "inspect" or "compose" ? m.Model : name == "export" ? Artifact("compose", "blend") : Artifact("export", "glb");
+            var scripts = CopyBundle(stage); await CheckBlender(stage.Attempt, cancellation, version2 ? RemainingStageLogBytes(stage) : null);
+            var plan = Plan(cancellation); var input = name is "inspect" or "compose" ? m.Model : name == "export" ? Artifact("compose", "blend") : Artifact("export", "glb");
             var planPath = stage.Attempt + "/compiled-plan.json"; w.Save(planPath, plan); stage.Inputs[planPath] = HashFile(planPath); stage.Artifacts["plan"] = planPath;
             var job = new JsonObject { ["schemaVersion"] = 1, ["root"] = w.Root, ["operation"] = name, ["input"] = input, ["outputDir"] = stage.Attempt, ["result"] = stage.Attempt + "/result.json", ["asset"] = m.Asset, ["version"] = m.Version, ["profile"] = m.Profile, ["motionPackage"] = Motion, ["plan"] = plan, ["review"] = Recipe["review"]!.DeepClone() };
             var jobPath = stage.Attempt + "/job.json"; w.Save(jobPath, job); stage.Inputs[jobPath] = HashFile(jobPath);
-            await native.Run(m.Blender, ["--factory-startup", "--background", "--disable-autoexec", "--python-exit-code", "1", "--python", w.Resolve(scripts + "/action.py"), "--", "--job", w.Resolve(jobPath)], w.Root, w.Resolve(stage.Attempt + "/process.log"), Budget["timeoutSeconds"]!.GetValue<int>(), cancellation, (long)Budget["maxLogBytes"]!.GetValue<double>());
+            await native.Run(m.Blender, ["--factory-startup", "--background", "--disable-autoexec", "--python-exit-code", "1", "--python", w.Resolve(scripts + "/action.py"), "--", "--job", w.Resolve(jobPath)], w.Root, w.Resolve(stage.Attempt + "/process.log"), Budget["timeoutSeconds"]!.GetValue<int>(), cancellation, version2 ? RemainingStageLogBytes(stage) : (long)Budget["maxLogBytes"]!.GetValue<double>());
             var result = LoadObject(stage.Attempt + "/result.json");
             if (Text(result, "schemaVersion") != "hephaera-action-stage/v1" || Text(result, "operation") != name || Text(result, "inputSha256") != HashFile(input)) throw new InvalidOperationException("Native action result does not match invoked operation/input");
             if (result["findings"] is not JsonArray findings) throw new InvalidOperationException("Native action findings are incomplete");
@@ -92,7 +96,11 @@ public sealed partial class Pipeline
             }
             string[] required = name switch { "inspect" => ["report"], "compose" => ["blend"], "export" => ["blend", "glb", "package", "verificationIndex", "verificationData", "verificationFrames"], "review" => ["review", "report", "reviewReport"], _ => throw new InvalidOperationException("Unknown stage") };
             foreach (var key in required) if (!stage.Artifacts.ContainsKey(key)) throw new InvalidOperationException("Native stage omitted " + key);
-            if (name == "export") ValidateVerificationArtifacts(stage);
+            if (name == "export")
+            {
+                ValidateVerificationArtifacts(stage);
+                if (version2) await VerifyExportIndependent(stage, scripts, plan, cancellation);
+            }
             foreach (var artifact in stage.Artifacts.Values)
                 if (!File.Exists(w.Resolve(artifact))) throw new InvalidOperationException("Native stage declared a missing artifact: " + artifact);
             stage.Artifacts["result"] = stage.Attempt + "/result.json";
@@ -103,19 +111,42 @@ public sealed partial class Pipeline
                 package["model"] = new JsonObject { ["path"] = stage.Artifacts["glb"], ["sha256"] = HashFile(stage.Artifacts["glb"]) };
                 package["source"] = new JsonObject { ["path"] = stage.Artifacts["blend"], ["sha256"] = HashFile(stage.Artifacts["blend"]) };
                 package["verification"] = new JsonObject { ["status"] = "pending", ["note"] = "Export does not create action, independent or human runtime acceptance" };
-                ValidateActions(Array(package, "actions"), plan); w.Save(stage.Artifacts["package"], package); ValidatePackage(package, stage);
+                if (version2)
+                {
+                    var catalog = EffectCatalog(cancellation);
+                    package["effectSources"] = ActionEffectDependencies.ExpectedRuntimeSources(catalog, stage.Attempt);
+                    package["effectClosureSha256"] = ActionEffectDependencies.ExpectedRuntimeFingerprint(catalog);
+                    var effectBytes = catalog.Sources.Sum(source => checked(
+                        source.SourceInventory.Files.Single(file => file.Path == source.RuntimeSource.Package.Path).Bytes
+                        + source.SourceInventory.Files.Single(file => file.Path == source.RuntimeSource.Profile.Path).Bytes
+                        + source.RuntimeSource.Resources.Sum(file => file.Bytes)
+                        + source.RuntimeSource.Correspondences.Sum(file => file.Report.Bytes)));
+                    var descriptorBytes = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(package, Workspace.Json).LongLength;
+                    if (effectBytes + descriptorBytes + new FileInfo(w.Resolve(stage.Artifacts["glb"])).Length > ActionEffectDependencies.LongBudget(Budget, "maxRuntimeBytes", 1024, ActionEffectDependencies.MaximumFileBytes))
+                        throw new InvalidOperationException("Complete runtime model/effect/package payload exceeds maxRuntimeBytes before dependency copying");
+                    package["effectSources"] = ActionEffectDependencies.Export(w, catalog, stage.Attempt, stage, cancellation);
+                    package["effectClosureSha256"] = ActionEffectDependencies.RuntimeClosureFingerprint(Array(package, "effectSources"));
+                }
+                ValidateActions(Array(package, "actions"), plan); w.Save(stage.Artifacts["package"], package); ValidatePackage(package, stage, cancellation);
             }
             if (name == "review") ValidateReview(LoadObject(stage.Artifacts["reviewReport"]), stage, plan);
-            var files = Directory.GetFiles(w.Resolve(stage.Attempt), "*", SearchOption.AllDirectories);
-            if (files.Length > Budget["maxReviewFrames"]!.GetValue<int>() + 200) throw new InvalidOperationException("Native action output file budget exceeded");
+            var maximumFiles = checked(Budget["maxReviewFrames"]!.GetValue<int>() + 200 + (version2 ? Budget["maxEffectFiles"]!.GetValue<int>() : 0));
+            var files = version2 ? GuardedStageFiles(stage.Attempt, maximumFiles, cancellation) : Directory.GetFiles(w.Resolve(stage.Attempt), "*", SearchOption.AllDirectories);
+            if (files.Length > maximumFiles) throw new InvalidOperationException("Native action output file budget exceeded");
+            if (version2) _ = RemainingStageLogBytes(stage);
             var verificationPrefix = stage.Attempt + "/verification/";
             if (files.Where(file => w.Relative(file).StartsWith(verificationPrefix, StringComparison.Ordinal)).Sum(file => new FileInfo(file).Length) > VerificationBytes(Budget))
                 throw new InvalidOperationException("Native action verification spool exceeds maxVerificationBytes");
+            var effectFiles = version2 && name == "export"
+                ? ActionEffectDependencies.RuntimeFiles(Array(LoadObject(stage.Artifacts["package"]), "effectSources"), w, cancellation).ToDictionary(item => item.Path, item => item.Sha256, StringComparer.Ordinal)
+                : new Dictionary<string, string>(StringComparer.Ordinal);
             foreach (var file in files)
             {
-                var relative = w.Relative(file); ValidateArtifact(relative); stage.Outputs[relative] = HashFile(relative);
+                cancellation.ThrowIfCancellationRequested();
+                var relative = w.Relative(file); ValidateArtifact(relative, stage, effectFiles); stage.Outputs[relative] = HashFile(relative);
             }
             VerifyHashes(stage.Inputs); VerifyHashes(stage.ExternalInputs, true); VerifyHashes(m.Originals); VerifyHashes(m.SourceInputs);
+            if (version2) _ = EffectCatalog(cancellation);
             if (!JsonNode.DeepEquals(await engines.Resolve(cancellation), m.Engine)) throw new InvalidOperationException("Engine context changed during native action stage");
             stage.Status = "complete"; Save();
         }
@@ -124,6 +155,37 @@ public sealed partial class Pipeline
             stage.Status = "failed"; stage.Error = error.Message;
             m.History.Add(new JsonObject { ["event"] = "stage-failed", ["stage"] = name, ["state"] = System.Text.Json.JsonSerializer.SerializeToNode(stage, Workspace.Json) }); Save(); throw;
         }
+    }
+    long RemainingStageLogBytes(Stage stage)
+    {
+        var maximum = (long)Budget["maxLogBytes"]!.GetValue<double>();
+        long used = 0;
+        foreach (var path in new[] { stage.Attempt + "/blender-version.log", stage.Attempt + "/process.log", stage.Attempt + "/independent/process.log" })
+            if (File.Exists(w.Resolve(path))) used = checked(used + new FileInfo(w.Resolve(path)).Length);
+        if (used >= maximum) throw new InvalidOperationException("V2 native steps exhausted their cumulative stage log budget");
+        return maximum - used;
+    }
+    string[] GuardedStageFiles(string root, int maximumFiles, CancellationToken cancellation)
+    {
+        var files = new List<string>(); var pending = new Stack<string>(); pending.Push(root);
+        long directories = 0;
+        while (pending.TryPop(out var directory))
+        {
+            cancellation.ThrowIfCancellationRequested();
+            if (++directories > (long)maximumFiles * 1024) throw new InvalidOperationException("Native action directory inventory exceeds finite output envelope");
+            foreach (var entry in Directory.EnumerateFileSystemEntries(ActionEffectDependencies.Resolve(w, directory)))
+            {
+                cancellation.ThrowIfCancellationRequested();
+                var relative = w.Relative(entry); ActionEffectDependencies.Resolve(w, relative);
+                if (Directory.Exists(entry)) pending.Push(relative);
+                else
+                {
+                    if (files.Count >= maximumFiles) throw new InvalidOperationException("Native action output file budget exceeded");
+                    files.Add(entry);
+                }
+            }
+        }
+        return files.ToArray();
     }
     static void ValidateActions(JsonArray actual, JsonObject plan)
     {
@@ -136,6 +198,7 @@ public sealed partial class Pipeline
             Hash(Text(action, "motionSha256"));
             if (Math.Abs(Number(action, "duration", .000001, 3600) - target["duration"]!.GetValue<double>()) > 1e-5) throw new InvalidOperationException("Native action duration differs from compiled sequence");
             foreach (var key in new[] { "role", "clip", "steps", "cues", "markers" }) if (!JsonNode.DeepEquals(action[key], target[key])) throw new InvalidOperationException("Native action changed compiled " + key);
+            if (plan["schemaVersion"]?.GetValue<string>() == "hephaera-action-package/v2" && !JsonNode.DeepEquals(action["retireAt"], target["retireAt"])) throw new InvalidOperationException("Native action changed effect retirement");
         }
     }
     static void ValidateVerificationArtifacts(Stage stage)
@@ -144,11 +207,43 @@ public sealed partial class Pipeline
             if (!stage.Artifacts.TryGetValue(role, out var path) || path != stage.Attempt + "/verification/" + file)
                 throw new InvalidOperationException("Action verification artifact role must name its exact immutable file: " + role);
     }
-    void ValidatePackage(JsonObject package, Stage stage)
+    async Task VerifyExportIndependent(Stage stage, string scripts, JsonObject plan, CancellationToken cancellation)
+    {
+        var proof = stage.Artifacts.GetValueOrDefault("exportProof") ?? throw new InvalidOperationException("V2 export omitted fresh-process verification proof");
+        if (proof != stage.Attempt + "/verification/export-proof.json") throw new InvalidOperationException("V2 export proof must use its exact immutable role");
+        var output = stage.Attempt + "/independent";
+        var jobPath = stage.Attempt + "/independent-job.json";
+        var resultPath = output + "/result.json";
+        var job = new JsonObject { ["schemaVersion"] = 1, ["root"] = w.Root, ["operation"] = "verify-export", ["input"] = stage.Artifacts["glb"], ["outputDir"] = output, ["result"] = resultPath,
+            ["asset"] = m.Asset, ["version"] = m.Version, ["profile"] = m.Profile, ["motionPackage"] = Motion, ["plan"] = plan.DeepClone(), ["review"] = Recipe["review"]!.DeepClone(),
+            ["verification"] = new JsonObject { ["path"] = proof, ["sha256"] = HashFile(proof) } };
+        w.Save(jobPath, job); stage.Inputs[jobPath] = HashFile(jobPath);
+        await native.Run(m.Blender, ["--factory-startup", "--background", "--disable-autoexec", "--python-exit-code", "1", "--python", w.Resolve(scripts + "/action.py"), "--", "--job", w.Resolve(jobPath)],
+            w.Root, w.Resolve(output + "/process.log"), Budget["timeoutSeconds"]!.GetValue<int>(), cancellation, RemainingStageLogBytes(stage));
+        var result = LoadObject(resultPath);
+        if (Text(result, "schemaVersion") != "hephaera-action-stage/v1" || Text(result, "operation") != "verify-export" || Text(result, "inputSha256") != HashFile(stage.Artifacts["glb"]) || result["metrics"]?["freshProcess"]?.GetValue<bool>() != true)
+            throw new InvalidOperationException("Fresh-process action verification is missing or does not bind delivered GLB");
+        if (result["findings"] is not JsonArray findings || findings.Any(finding => Text(finding!.AsObject(), "severity").ToLowerInvariant() is not ("information" or "info" or "warning" or "review"))) throw new InvalidOperationException("Fresh-process action verification has blocking or unknown findings");
+        var report = result["artifacts"]?["verificationReport"]?.GetValue<string>() ?? throw new InvalidOperationException("Fresh-process verification report missing");
+        if (Relative(w, report) != output + "/verification-report.json") throw new InvalidOperationException("Fresh-process report escapes exact role");
+        _ = LoadObject(report);
+        stage.Artifacts["independentVerification"] = report;
+        stage.Artifacts["independentResult"] = resultPath;
+    }
+    void ValidatePackage(JsonObject package, Stage stage, CancellationToken cancellation = default)
     {
         ValidateVerificationArtifacts(stage);
-        var plan = Plan(); ValidateActions(Array(package, "actions"), plan);
-        if (Text(package, "schemaVersion") != "hephaera-action-package/v1") throw new InvalidOperationException("Unsupported action package");
+        var plan = Plan(cancellation); ValidateActions(Array(package, "actions"), plan);
+        var version2 = m.SchemaVersion == "hephaera-model-action/v2";
+        if (Text(package, "schemaVersion") != (version2 ? "hephaera-action-package/v2" : "hephaera-action-package/v1")) throw new InvalidOperationException("Unsupported action package");
+        if (version2)
+        {
+            ActionEffectDependencies.ValidateRuntimeClosure(w, package, cancellation: cancellation);
+            var catalog = EffectCatalog(cancellation);
+            ValidatePromotedEffectSources(package, catalog);
+            if (Text(package, "effectClosureSha256") != ActionEffectDependencies.ExpectedRuntimeFingerprint(catalog)) throw new InvalidOperationException("Runtime effect closure differs from exact current inspected sources");
+        }
+        else if (package.ContainsKey("effectSources") || package.ContainsKey("effectClosureSha256")) throw new InvalidOperationException("V1 cannot inherit v2 effect dependencies");
         foreach (var key in new[] { "asset", "version", "profile", "fps", "rig", "coordinateSystem", "sourceMotion", "anchors", "targets", "budgets", "motion", "engine" })
             if (!JsonNode.DeepEquals(package[key], plan[key])) throw new InvalidOperationException("Action package differs from source plan: " + key);
         foreach (var pair in new[] { ("model", "glb"), ("source", "blend") })
@@ -178,14 +273,24 @@ public sealed partial class Pipeline
             if (!file.StartsWith(stage.Attempt + "/", StringComparison.Ordinal) || !file.EndsWith(".png", StringComparison.OrdinalIgnoreCase) || HashFile(file) != Text(frame, "sha256")) throw new InvalidOperationException("Technical review frame is stale/escaped");
             Number(frame, "time", 0, 3600);
         }
+        if (m.SchemaVersion == "hephaera-model-action/v2" && (Text(report, "cueRendering") != "motion-and-anchors-only" || Text(report, "actualEngineFX") != "not-rendered")) throw new InvalidOperationException("Blender review must declare its motion/anchor-only effect limitation");
         var review = Recipe["review"]!.AsObject(); var fps = review["fps"]!.GetValue<double>();
         var cameras = Array(review, "cameras").Select(node => node!.GetValue<string>()).ToArray();
         foreach (var action in Array(plan, "actions").Select(node => node!.AsObject()))
         {
-            var duration = action["duration"]!.GetValue<double>(); var times = new List<double> { 0, duration };
+            var duration = action[m.SchemaVersion == "hephaera-model-action/v2" ? "retireAt" : "duration"]!.GetValue<double>(); var times = new List<double> { 0, duration };
             for (var index = 0; index <= Math.Ceiling(duration * fps); index++) times.Add(Math.Min(duration, index / fps));
             foreach (var step in Array(action, "steps")) { times.Add(step!["start"]!.GetValue<double>()); times.Add(step["end"]!.GetValue<double>()); }
-            foreach (var cue in Array(action, "cues")) { times.Add(cue!["start"]!.GetValue<double>()); times.Add(cue["end"]!.GetValue<double>()); }
+            foreach (var cue in Array(action, "cues"))
+            {
+                times.Add(cue!["start"]!.GetValue<double>()); times.Add(cue["end"]!.GetValue<double>());
+                if (m.SchemaVersion == "hephaera-model-action/v2")
+                {
+                    times.Add(cue["retireAt"]!.GetValue<double>());
+                    foreach (var layer in cue["layers"]!.AsArray())
+                        foreach (var key in new[] { "start", "stopAt", "retireAt" }) times.Add(layer![key]!.GetValue<double>());
+                }
+            }
             foreach (var marker in Array(action, "markers")) times.Add(marker!["at"]!.GetValue<double>());
             var packet = packets.Single(node => Text(node!.AsObject(), "id") == Text(action, "id"))!.AsObject();
             var samples = Array(packet, "frames").Select(node => node!.AsObject()).ToArray();
@@ -194,10 +299,16 @@ public sealed partial class Pipeline
                     if (!samples.Any(sample => (sample["camera"]?.GetValue<string>() ?? sample["view"]?.GetValue<string>()) == camera && Math.Abs(sample["time"]!.GetValue<double>() - time) < 1e-5)) throw new InvalidOperationException("Technical review omits a required camera/time boundary sample");
         }
     }
-    void ValidateArtifact(string relative)
+    void ValidateArtifact(string relative, Stage currentStage, IReadOnlyDictionary<string, string> effectFiles)
     {
         var file = w.Resolve(relative); var info = new FileInfo(file);
         if (!info.Exists || info.Length == 0) throw new InvalidOperationException("Missing/empty native action output: " + relative);
+        if (m.SchemaVersion == "hephaera-model-action/v2" && relative.StartsWith(currentStage.Attempt + "/effects/", StringComparison.Ordinal))
+        {
+            if (!effectFiles.TryGetValue(relative, out var expected) || expected != HashFile(relative)) throw new InvalidOperationException("Unexpected runtime effect output");
+            // Static effect GLBs have already passed native VFX inspection; the actor validator remains strict for actor exports.
+            return;
+        }
         switch (info.Extension.ToLowerInvariant())
         {
             case ".json": _ = LoadObject(relative); break;

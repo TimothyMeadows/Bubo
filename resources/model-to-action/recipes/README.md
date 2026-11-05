@@ -5,3 +5,11 @@
 The example creates a repeated dance, an overlapping three-hit presentation and a charge/cast/recovery sequence. Source clip IDs, trims, markers, anchor IDs and budgets must match the selected asset. The native compiler rejects absent or ambiguous bindings. Offset addresses use action seconds after the expanded occurrence begins; marker addresses use trimmed source time mapped by playback rate. A fixed target is supplied separately by the host at playback; its review position is a technical preview, without homing or hit authority.
 
 Select model-to-action explicitly after the source model and individual clips are reviewed. No recipe grants source rights, installs a dependency, changes ENGINE.md/STYLE.md, authorizes an attack or records human acceptance. Begin with source inspection and revise only the new staged attempts. Review the complete exported motions and selected-engine effects before recording separate acceptance.
+
+## Original v2 data example
+
+`cast-vfx-v2.example.json` describes an original rigid launcher's charge, marker-bound release with projectile/trail, and fixed-point rehearsal impact with bounded drain. It expects one-second reviewed in-place `prepare`/`release` clips, a unique source `release` marker at 0.25 seconds and a real exported `muzzle` anchor. A rigid source needs no invented skeleton. `cast-vfx-v2.profile.example.json` shows the corresponding typed layer vocabulary.
+
+The package/profile/resource hashes, report lengths and review references are placeholders, not accepted source evidence. Supply an actual original owned/licensed native package with `charge`, `projectile-trail` and `impact` effects and all declared resources; author each exact selected effect's independent review through `inspect-effects` before initialization. The shared package/profile is copied and counted once per runtime source owner; each selected effect gets its own review subject. The trail's atlas must be one complete cell under the initial Three.js profile. No media is generated, installed or promoted by these examples.
+
+Use the separate v2 schemas and [native v2 contract](../README.md). The existing dance/combination/cast example remains recipe1 and is not silently converted into a production Quarks effect or given v2 acceptance.

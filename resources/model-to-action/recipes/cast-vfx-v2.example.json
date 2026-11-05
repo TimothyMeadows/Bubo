@@ -1,0 +1,349 @@
+{
+  "schemaVersion": 2,
+  "fps": 30,
+  "actions": [
+    {
+      "id": "original-launcher-cast",
+      "role": "presentation",
+      "steps": [
+        {
+          "id": "prepare",
+          "clip": "prepare",
+          "from": 0,
+          "to": 1,
+          "rate": 1,
+          "repeat": 1,
+          "blendIn": 0
+        },
+        {
+          "id": "release",
+          "clip": "release",
+          "from": 0,
+          "to": 1,
+          "rate": 1,
+          "repeat": 1,
+          "blendIn": 0
+        }
+      ],
+      "cues": [
+        {
+          "id": "charge",
+          "type": "effect",
+          "source": "charge",
+          "anchor": "muzzle",
+          "start": {
+            "step": "prepare",
+            "occurrence": 0,
+            "offset": 0
+          },
+          "end": {
+            "step": "prepare",
+            "occurrence": 0,
+            "offset": 1
+          },
+          "placement": "anchor-follow",
+          "transform": {
+            "units": "meters",
+            "up": "+Y",
+            "forward": "+Z",
+            "handedness": "right",
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "orientation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "scale": 1,
+            "parentScale": "positive-uniform"
+          },
+          "lifetime": {
+            "tailSeconds": 0.25,
+            "pause": "follow-action",
+            "tailAttachment": "capture-world-on-stop",
+            "cancel": "retire-generation"
+          }
+        },
+        {
+          "id": "release-body-and-trail",
+          "type": "effect",
+          "source": "travel",
+          "anchor": "muzzle",
+          "start": {
+            "step": "release",
+            "occurrence": 0,
+            "marker": "release"
+          },
+          "end": {
+            "step": "release",
+            "occurrence": 0,
+            "offset": 0.75
+          },
+          "placement": "fixed-target-projectile",
+          "target": "rehearsal-point",
+          "transform": {
+            "units": "meters",
+            "up": "+Y",
+            "forward": "+Z",
+            "handedness": "right",
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "orientation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "scale": 1,
+            "parentScale": "positive-uniform"
+          },
+          "lifetime": {
+            "tailSeconds": 0.2,
+            "pause": "follow-action",
+            "tailAttachment": "capture-world-on-stop",
+            "cancel": "retire-generation"
+          },
+          "trail": {
+            "reset": "teleport-or-discontinuity",
+            "maxSamples": 16,
+            "distanceMeters": 5
+          }
+        },
+        {
+          "id": "rehearsal-impact",
+          "type": "effect",
+          "source": "impact",
+          "anchor": "muzzle",
+          "start": {
+            "step": "release",
+            "occurrence": 0,
+            "offset": 0.75
+          },
+          "end": {
+            "step": "release",
+            "occurrence": 0,
+            "offset": 1
+          },
+          "placement": "fixed-target",
+          "target": "rehearsal-point",
+          "transform": {
+            "units": "meters",
+            "up": "+Y",
+            "forward": "+Z",
+            "handedness": "right",
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "orientation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "scale": 1,
+            "parentScale": "positive-uniform"
+          },
+          "lifetime": {
+            "tailSeconds": 0.2,
+            "pause": "follow-action",
+            "tailAttachment": "capture-world-on-stop",
+            "cancel": "retire-generation"
+          }
+        }
+      ]
+    }
+  ],
+  "targets": [
+    {
+      "id": "rehearsal-point",
+      "mode": "fixed-world-point",
+      "maxDistance": 20
+    }
+  ],
+  "budgets": {
+    "maxActions": 4,
+    "maxStepsPerAction": 16,
+    "maxExpandedSteps": 64,
+    "maxActionSeconds": 10,
+    "maxEffects": 16,
+    "maxParticles": 512,
+    "maxFrames": 1000,
+    "maxReviewFrames": 3000,
+    "maxRuntimeBytes": 33554432,
+    "timeoutSeconds": 300,
+    "maxLogBytes": 16777216,
+    "maxAttempts": 3,
+    "maxVerificationBytes": 268435456,
+    "maxEffectSources": 3,
+    "maxEffectFiles": 128,
+    "maxEffectDependencyBytes": 33554432,
+    "maxEffectJsonBytes": 4194304,
+    "maxTailSeconds": 0.25,
+    "maxTrailSamples": 32
+  },
+  "review": {
+    "fps": 12,
+    "resolution": [
+      256,
+      256
+    ],
+    "cameras": [
+      "front",
+      "right",
+      "three-quarter"
+    ],
+    "targets": {
+      "rehearsal-point": [
+        4,
+        1,
+        0
+      ]
+    }
+  },
+  "effectSources": [
+    {
+      "id": "charge",
+      "package": {
+        "path": "inputs/cast-effects/package.json",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "effectId": "charge",
+      "profile": {
+        "schemaVersion": "hephaera-three-vfx-profile/v1",
+        "path": "inputs/cast-effects/profile.json",
+        "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      "correspondences": [
+        {
+          "resourceId": "atlas",
+          "resourceSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "kind": "texture",
+          "decodedSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "report": {
+            "path": "inputs/cast-effects/atlas-correspondence.json",
+            "sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+            "bytes": 512
+          }
+        },
+        {
+          "resourceId": "projectile-mesh",
+          "resourceSha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+          "kind": "geometry",
+          "decodedSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "report": {
+            "path": "inputs/cast-effects/mesh-correspondence.json",
+            "sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+            "bytes": 512
+          }
+        }
+      ],
+      "productionReview": {
+        "path": "inputs/cast-effects/charge-review.json",
+        "sha256": "4444444444444444444444444444444444444444444444444444444444444444"
+      },
+      "rights": {
+        "path": "inputs/cast-effects/rights.json",
+        "sha256": "3333333333333333333333333333333333333333333333333333333333333333"
+      }
+    },
+    {
+      "id": "travel",
+      "package": {
+        "path": "inputs/cast-effects/package.json",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "effectId": "projectile-trail",
+      "profile": {
+        "schemaVersion": "hephaera-three-vfx-profile/v1",
+        "path": "inputs/cast-effects/profile.json",
+        "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      "correspondences": [
+        {
+          "resourceId": "atlas",
+          "resourceSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "kind": "texture",
+          "decodedSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "report": {
+            "path": "inputs/cast-effects/atlas-correspondence.json",
+            "sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+            "bytes": 512
+          }
+        },
+        {
+          "resourceId": "projectile-mesh",
+          "resourceSha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+          "kind": "geometry",
+          "decodedSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "report": {
+            "path": "inputs/cast-effects/mesh-correspondence.json",
+            "sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+            "bytes": 512
+          }
+        }
+      ],
+      "productionReview": {
+        "path": "inputs/cast-effects/travel-review.json",
+        "sha256": "5555555555555555555555555555555555555555555555555555555555555555"
+      },
+      "rights": {
+        "path": "inputs/cast-effects/rights.json",
+        "sha256": "3333333333333333333333333333333333333333333333333333333333333333"
+      }
+    },
+    {
+      "id": "impact",
+      "package": {
+        "path": "inputs/cast-effects/package.json",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "effectId": "impact",
+      "profile": {
+        "schemaVersion": "hephaera-three-vfx-profile/v1",
+        "path": "inputs/cast-effects/profile.json",
+        "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      "correspondences": [
+        {
+          "resourceId": "atlas",
+          "resourceSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "kind": "texture",
+          "decodedSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "report": {
+            "path": "inputs/cast-effects/atlas-correspondence.json",
+            "sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+            "bytes": 512
+          }
+        },
+        {
+          "resourceId": "projectile-mesh",
+          "resourceSha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+          "kind": "geometry",
+          "decodedSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "report": {
+            "path": "inputs/cast-effects/mesh-correspondence.json",
+            "sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+            "bytes": 512
+          }
+        }
+      ],
+      "productionReview": {
+        "path": "inputs/cast-effects/impact-review.json",
+        "sha256": "6666666666666666666666666666666666666666666666666666666666666666"
+      },
+      "rights": {
+        "path": "inputs/cast-effects/rights.json",
+        "sha256": "3333333333333333333333333333333333333333333333333333333333333333"
+      }
+    }
+  ]
+}
