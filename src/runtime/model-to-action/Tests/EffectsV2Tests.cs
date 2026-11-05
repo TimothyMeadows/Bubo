@@ -34,6 +34,7 @@ static class EffectsV2Tests
             }
             throw new Exception("Expected v2 rejection: " + name);
         }
+        RuntimeDataNullabilityTests.Run(Check, (action, name) => Reject(action, name));
         var fixture = new OwnedEffectFixture(root, "fx");
         var recipe = fixture.Recipe;
         var catalog = fixture.Inspect(recipe);
@@ -558,7 +559,7 @@ sealed class SyntheticReceivingFixture
                 ["id"] = source.Id, ["effectId"] = source.EffectId, ["packageSha256"] = source.Package.Sha256, ["profileSha256"] = source.Profile.Sha256,
                 ["sourceClosureSha256"] = source.Ancestry.SourceClosureSha256, ["productionReviewSha256"] = source.Ancestry.ProductionReviewSha256, ["rightsSha256"] = source.Ancestry.RightsSha256
             };
-            if (source.Ancestry.NativePreparationSha256 is { } prep) row["nativePreparationSha256"] = prep;
+            row["nativePreparationSha256"] = source.Ancestry.NativePreparationSha256;
             sourceAssertions.Add(row);
             foreach (var resource in source.Resources)
             {
@@ -631,7 +632,7 @@ static class IntegratedV2PipelineTests
 {
     public static void Run(string root, Action<bool, string> check, Action<Action, string> reject)
     {
-        var fixture = new OwnedEffectFixture(root, "fx"); var w = fixture.Workspace;
+        var fixture = new OwnedEffectFixture(root, "fx", fullEngineIdentity: true); var w = fixture.Workspace;
         Fixture.WriteGlb(w.ResolveWrite("actor.glb"), ["kick", "punch"]);
         fixture.Motion["model"]!["path"] = "actor.glb"; fixture.Motion["model"]!["sha256"] = Workspace.Hash(w.Resolve("actor.glb"));
         w.Save("motion.json", fixture.Motion); w.Save("recipe.json", fixture.Recipe);
@@ -672,6 +673,9 @@ static class IntegratedV2PipelineTests
             return JsonNode.Parse(text.ToString())!.AsObject();
         }
         var initialized = State();
+        check(initialized.Engine.ContainsKey("task") && initialized.Engine["task"] is null
+            && initialized.Engine.ContainsKey("outputScope") && initialized.Engine["outputScope"] is null,
+            "SYNTHETIC Pipeline preserves the complete nullable canonical engine identity");
         check(initialized.SchemaVersion == "hephaera-model-action/v2" && initialized.EffectSourceInventories?.Single().Files.Count == 9,
             "SYNTHETIC Pipeline init persists complete v2 private source inventory");
         check(initialized.SourceInputs.Keys.Any(p => p.StartsWith("private/", StringComparison.Ordinal))
@@ -710,6 +714,17 @@ static class IntegratedV2PipelineTests
         }
         Record("action", "synthetic-action-human");
         reject(() => Record("independent", "synthetic-independent", false), "SYNTHETIC independent review cannot omit selected-engine v2 receiving evidence");
+        var changedIdentity = runtime.Packet.DeepClone().AsObject();
+        changedIdentity["engine"]!["task"] = "another-task";
+        reject(() => runtime.Validate(packet: changedIdentity), "SYNTHETIC receiving nullable engine field remains exact, not ignored");
+        changedIdentity = runtime.Packet.DeepClone().AsObject(); changedIdentity["engine"]!.AsObject().Remove("task");
+        reject(() => runtime.Validate(packet: changedIdentity), "SYNTHETIC receiving cannot strip a current null engine identity field");
+        changedIdentity = runtime.Packet.DeepClone().AsObject(); changedIdentity["engine"]!["unexpected"] = null;
+        reject(() => runtime.Validate(packet: changedIdentity), "SYNTHETIC receiving cannot append an unknown null engine identity field");
+        changedIdentity = runtime.Packet.DeepClone().AsObject(); changedIdentity["engine"]!["existingEngines"] = new JsonArray((JsonNode?)null);
+        reject(() => runtime.Validate(packet: changedIdentity), "SYNTHETIC receiving cannot insert null array entries into current engine identity");
+        var changedEnvelope = runtime.Envelope.DeepClone().AsObject(); changedEnvelope["runtime"]!["engineIdentity"]!["outputScope"] = "invented-scope";
+        reject(() => runtime.Validate(envelope: changedEnvelope), "SYNTHETIC receiving outer nullable engine identity remains exact");
         Record("independent", "synthetic-independent", true);
         reject(() => Record("human", "synthetic-final-human", false), "SYNTHETIC human review cannot omit selected-engine v2 receiving evidence");
         Record("human", "synthetic-final-human", true);
@@ -813,7 +828,19 @@ sealed class OwnedEffectFixture
     public ActionEffectInspectionContext Context { get; }
     public JsonObject Recipe { get; }
     public JsonObject Motion { get; }
-    public static JsonObject EngineIdentity() => new() { ["effectiveEngine"] = "THREEJS", ["contractSha256"] = new string('1', 64), ["definitionSha256"] = new string('2', 64), ["registrySha256"] = new string('3', 64) };
+    public static JsonObject EngineIdentity(bool full = false)
+    {
+        var result = full ? JsonNode.Parse("""
+            {"schemaVersion":1,"projectEngine":"THREEJS","selectionSource":"contract","contract":"ENGINE.md","runtimeKind":"web",
+             "packaging":{"profile":"MAUI","selectionSource":"engine","platforms":["WINDOWS","MACOS","ANDROID","IOS"],"nativeReadiness":"unverified"},
+             "particles":{"backend":"THREE_QUARKS","package":"three.quarks","skill":"threejs-build-particles","selectionSource":"engine","renderer":"WebGLRenderer","readiness":"unverified","testedVersion":"0.17.1","testedCoreVersion":"0.17.1","minimumThreeVersion":"0.182.0"},
+             "postprocessing":{"backend":"PMNDRS_POSTPROCESSING","package":"postprocessing","skill":"threejs-build-postprocessing","selectionSource":"engine","renderer":"WebGLRenderer","context":"webgl2","testedVersion":"6.39.5","testedThreeVersion":"0.182.0","profile":"ldr","readiness":"unverified"},
+             "existingEngines":[],"outputScope":null,"task":null}
+            """)!.AsObject() : new JsonObject();
+        result["effectiveEngine"] = "THREEJS"; result["contractSha256"] = new string('1', 64);
+        result["definitionSha256"] = new string('2', 64); result["registrySha256"] = new string('3', 64);
+        return result;
+    }
     public static JsonObject Address(int occurrence, double offset) => new() { ["step"] = "cast", ["occurrence"] = occurrence, ["offset"] = offset };
     public string Full(string relative) => Workspace.Resolve(relative);
     public static string HashBytes(byte[] bytes) => Convert.ToHexStringLower(SHA256.HashData(bytes));
@@ -835,7 +862,7 @@ sealed class OwnedEffectFixture
         Context with { Budgets = recipe["budgets"]!.AsObject() }, new EffectDependencyInspector(), default);
 
     public OwnedEffectFixture(string root, string identifier, int maxIndices = 300000, long maxBufferBytes = 8388608,
-        IReadOnlyCollection<string>? selectedFamilies = null)
+        IReadOnlyCollection<string>? selectedFamilies = null, bool fullEngineIdentity = false)
     {
         id = identifier; Directory.CreateDirectory(root); Workspace = new Workspace(root);
         var prefix = "inputs/" + id;
@@ -929,8 +956,8 @@ sealed class OwnedEffectFixture
         });
         if (!selected.Contains("beam")) { Recipe["actions"]![0]!["cues"]![0]!["placement"] = "anchor-follow"; Recipe["actions"]![0]!["cues"]![0]!.AsObject().Remove("target"); }
         if (!selected.Contains("trail")) Recipe["actions"]![0]!["cues"]![0]!.AsObject().Remove("trail");
-        Motion = Fixture.Motion(Workspace.Hash(Full(mesh))); Motion["engine"] = EngineIdentity();
-        Context = new(EngineIdentity(), new string('a', 64), new string('b', 64), Recipe["budgets"]!.AsObject());
+        Motion = Fixture.Motion(Workspace.Hash(Full(mesh))); Motion["engine"] = EngineIdentity(fullEngineIdentity);
+        Context = new(EngineIdentity(fullEngineIdentity), new string('a', 64), new string('b', 64), Recipe["budgets"]!.AsObject());
         var files = new List<ActionEffectFile> { Row("native-package", packagePath), Row("production-profile", profilePath), Row("rights", rightsPath), Row("production-evidence", evidencePath) };
         files.AddRange(resources.Select(resource => Row("resource", resource.Item3, resource.Item1)));
         files.AddRange(correspondences.Select(c => Row("source-correspondence", c.Report.Path, c.ResourceId)));

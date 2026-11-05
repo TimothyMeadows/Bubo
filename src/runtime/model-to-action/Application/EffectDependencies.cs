@@ -22,6 +22,8 @@ public sealed record ActionEffectInspection(ActionEffectSource Source, VfxPackag
 public sealed record ActionEffectReviewSubject(string SourceId, string SubjectSha256,
     IReadOnlyList<ActionEffectFile> Inventory, bool Accepted = false);
 
+public enum ActionRuntimeDataKind { EffectSources, ActionReceipt, RuntimeAcceptanceReceipt, ReceivingPacket }
+
 /// <summary>Created only by current native inspection; it is not a caller-authored compiler facts object.</summary>
 public sealed class ActionEffectCatalog
 {
@@ -440,23 +442,47 @@ public static class ActionEffectDependencies
 
     public static IReadOnlyList<ActionRuntimeEffectSource> RuntimeSources(JsonArray value)
     {
-        var result = ParseRuntimeData<ActionRuntimeEffectSource[]>(Encoding.UTF8.GetBytes(value.ToJsonString()));
+        var result = ParseRuntimeData<ActionRuntimeEffectSource[]>(Encoding.UTF8.GetBytes(value.ToJsonString()), ActionRuntimeDataKind.EffectSources);
         if (result.Select(item => item.Id).Distinct(StringComparer.OrdinalIgnoreCase).Count() != result.Length) throw new InvalidOperationException("Duplicate runtime effect source ID");
         return result;
     }
 
     public static JsonArray ToJson<T>(IEnumerable<T> values) => JsonSerializer.SerializeToNode(values, Json)!.AsArray();
 
-    public static T ParseRuntimeData<T>(byte[] bytes)
+    enum RuntimeDataPosition { Root, Other, ReceiptRuntime, ReceivingSources, ReceivingSource, RuntimeSource, Ancestry, OptionalPreparation, EngineIdentity }
+
+    public static T ParseRuntimeData<T>(byte[] bytes, ActionRuntimeDataKind kind)
     {
+        if (!Enum.IsDefined(kind)) throw new InvalidOperationException("Explicit runtime effect parsing context required");
         if (bytes.Length is < 2 or > MaximumJsonBytes) throw new InvalidOperationException("Runtime effect JSON exceeds its finite byte envelope");
         try
         {
             using var document = JsonDocument.Parse(bytes, new JsonDocumentOptions { MaxDepth = 32 });
             var count = 0;
-            void Check(JsonElement node)
+            RuntimeDataPosition PropertyPosition(RuntimeDataPosition position, JsonProperty property)
             {
-                if (++count > 262144 || node.ValueKind == JsonValueKind.Null) throw new InvalidOperationException("Runtime effect JSON contains null or exceeds finite node inventory");
+                if (position == RuntimeDataPosition.EngineIdentity) return RuntimeDataPosition.EngineIdentity;
+                // These exact identities remain opaque host data. Their complete
+                // structure, including nulls, is compared with the current engine
+                // by RuntimeEffectEvidence; never strip or rebind those fields.
+                if (property.Value.ValueKind == JsonValueKind.Object &&
+                    (kind == ActionRuntimeDataKind.ReceivingPacket && position == RuntimeDataPosition.Root && property.Name == "engine" ||
+                     kind == ActionRuntimeDataKind.RuntimeAcceptanceReceipt && position == RuntimeDataPosition.ReceiptRuntime && property.Name == "engineIdentity"))
+                    return RuntimeDataPosition.EngineIdentity;
+                if (kind == ActionRuntimeDataKind.RuntimeAcceptanceReceipt && position == RuntimeDataPosition.Root && property.Name == "runtime")
+                    return RuntimeDataPosition.ReceiptRuntime;
+                if (kind == ActionRuntimeDataKind.ReceivingPacket && position == RuntimeDataPosition.Root && property.Name == "effectSources")
+                    return RuntimeDataPosition.ReceivingSources;
+                if (position == RuntimeDataPosition.RuntimeSource && property.Name == "ancestry") return RuntimeDataPosition.Ancestry;
+                if ((position is RuntimeDataPosition.Ancestry or RuntimeDataPosition.ReceivingSource) && property.Name == "nativePreparationSha256")
+                    return RuntimeDataPosition.OptionalPreparation;
+                return RuntimeDataPosition.Other;
+            }
+            void Check(JsonElement node, RuntimeDataPosition position)
+            {
+                if (++count > 262144) throw new InvalidOperationException("Runtime effect JSON exceeds finite node inventory");
+                if (node.ValueKind == JsonValueKind.Null && position is not (RuntimeDataPosition.EngineIdentity or RuntimeDataPosition.OptionalPreparation))
+                    throw new InvalidOperationException("Runtime effect JSON contains an unsupported null");
                 if (node.ValueKind == JsonValueKind.String && node.GetString()!.Length > 4096) throw new InvalidOperationException("Runtime effect text exceeds finite bound");
                 if (node.ValueKind == JsonValueKind.Object)
                 {
@@ -464,16 +490,20 @@ public static class ActionEffectDependencies
                     foreach (var property in node.EnumerateObject())
                     {
                         if (!names.Add(property.Name)) throw new InvalidOperationException("Duplicate runtime effect JSON field");
-                        Check(property.Value);
+                        Check(property.Value, PropertyPosition(position, property));
                     }
                 }
                 else if (node.ValueKind == JsonValueKind.Array)
                 {
                     if (node.GetArrayLength() > 16384) throw new InvalidOperationException("Runtime effect array exceeds finite bound");
-                    foreach (var item in node.EnumerateArray()) Check(item);
+                    var child = position == RuntimeDataPosition.EngineIdentity ? RuntimeDataPosition.EngineIdentity
+                        : position == RuntimeDataPosition.ReceivingSources ? RuntimeDataPosition.ReceivingSource
+                        : kind == ActionRuntimeDataKind.EffectSources && position == RuntimeDataPosition.Root ? RuntimeDataPosition.RuntimeSource
+                        : RuntimeDataPosition.Other;
+                    foreach (var item in node.EnumerateArray()) Check(item, child);
                 }
             }
-            Check(document.RootElement);
+            Check(document.RootElement, RuntimeDataPosition.Root);
             return JsonSerializer.Deserialize<T>(bytes, EffectProfileV2.Json) ?? throw new InvalidOperationException("Missing runtime effect data");
         }
         catch (JsonException error) { throw new InvalidOperationException("Invalid strict runtime effect JSON", error); }
