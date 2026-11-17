@@ -1,0 +1,4 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><AssemblyName>Bubo.Splats.Application</AssemblyName></PropertyGroup>
+  <ItemGroup><ProjectReference Include="../Domain/Splat.Domain.csproj" /></ItemGroup>
+</Project>

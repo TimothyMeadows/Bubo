@@ -13,6 +13,10 @@ try {
     }
     dotnet run --project src/runtime/vfx-assets/Tests/Vfx.Tests.csproj --configuration $Configuration --no-build -- --cli "src/Bubo.Cli/bin/$Configuration/net10.0/bubo.dll"
     if ($LASTEXITCODE -ne 0) { throw 'VFX contract/dependency checks failed.' }
+    dotnet run --project src/runtime/image-to-splat/Tests/Splat.Tests.csproj --configuration $Configuration --no-build
+    if ($LASTEXITCODE -ne 0) { throw 'Gaussian contract/parser checks failed.' }
+    python -X utf8 tests/test-splat-cli.py --cli "src/Bubo.Cli/bin/$Configuration/net10.0/bubo.dll"
+    if ($LASTEXITCODE -ne 0) { throw 'Gaussian public CLI checks failed.' }
     python -X utf8 scripts/audit-resources.py
     if ($LASTEXITCODE -ne 0) { throw 'Resource audit failed.' }
     python -X utf8 tests/test-cli-contract.py --cli "src/Bubo.Cli/bin/$Configuration/net10.0/bubo.dll"

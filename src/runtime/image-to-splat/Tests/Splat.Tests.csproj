@@ -1,0 +1,4 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><AssemblyName>Bubo.Splats.Tests</AssemblyName></PropertyGroup>
+  <ItemGroup><ProjectReference Include="../Application/Splat.Application.csproj" /></ItemGroup>
+</Project>

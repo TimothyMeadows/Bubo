@@ -176,6 +176,7 @@
     "resources/schematic-to-model/examples-v2/vessel.json": "03a280dff719b570f367efc1f0b0395779d21adb39ea52f70b4b91a831572651",
     "resources/schematic-to-model/EXPORT.md": "e4e673fd1d1fbc9e26af24f40e8cafe97bf7d814c46d73f2ffd15fc51b3401ff",
     "resources/schematic-to-model/PARTS.md": "058a42393c6213adea7ba9ebf8673175ca1e5cbcfd236e455fbc1e9f175f64c9",
-    "resources/schematic-to-model/README.md": "1ee7b5d356d6a93e22a0475df19a27b412808777e92e20838cec7ae147ec9e1a"
+    "resources/schematic-to-model/README.md": "1ee7b5d356d6a93e22a0475df19a27b412808777e92e20838cec7ae147ec9e1a",
+    "resources/image-to-splat/catalog.json": "60f97c7667a41011c1f295eb6a72cf8a144aa8f1fb15c0d9a29a740d137931ce"
   }
 }
