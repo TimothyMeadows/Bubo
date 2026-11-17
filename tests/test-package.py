@@ -24,6 +24,12 @@ def main():
         for name in ('resources/media/voice/worker.py','resources/media/voice/source-adaptations/core-init.py','resources/media/voice/source-adaptations/tokenizer-init.py','resources/media/notices/Qwen3-TTS-LICENSE.txt','resources/media/notices/Qwen3-TTS-NOTICE.txt'):
             assert read(name),'Missing/empty direct voice resource: '+name
         receipt=json.loads(read('build-info.json'))
+        assert read('docs/IMAGE_TO_SPLAT.md') and read('resources/image-to-splat/catalog.json')
+        for name in ('Bubo.Splats.Domain.dll', 'Bubo.Splats.Application.dll', 'Bubo.Splats.Infrastructure.dll'):
+            assert read(name), 'Missing Gaussian foundation assembly: '+name
+        splats=receipt['capabilities']['splats']
+        assert splats['operations']==['inspect','validate','setup'] and splats['phase']=='contracts-and-cpu-inspection'
+        assert not any(splats[key] for key in ('generationAvailable','provisioningExecutionAvailable','renderingAvailable','runtimeAcceptanceAvailable'))
         assert read('docs/VFX_ASSETS.md'), 'Missing VFX contract documentation'
         for name in ('Bubo.Vfx.Domain.dll', 'Bubo.Vfx.Application.dll', 'Bubo.Vfx.Infrastructure.dll'):
             assert read(name), 'Missing standalone VFX runtime assembly: '+name

@@ -9,6 +9,8 @@ for project in src/Bubo.Host.Tests/Bubo.Host.Tests.csproj src/runtime/proof-to-m
   dotnet run --project "$project" -c "$configuration" --no-build
 done
 dotnet run --project src/runtime/vfx-assets/Tests/Vfx.Tests.csproj -c "$configuration" --no-build -- --cli "src/Bubo.Cli/bin/$configuration/net10.0/bubo.dll"
+dotnet run --project src/runtime/image-to-splat/Tests/Splat.Tests.csproj -c "$configuration" --no-build
+python3 tests/test-splat-cli.py --cli "src/Bubo.Cli/bin/$configuration/net10.0/bubo.dll"
 python3 scripts/audit-resources.py
 python3 tests/test-cli-contract.py --cli "src/Bubo.Cli/bin/$configuration/net10.0/bubo.dll"
 python3 tests/test-floor-plan-authoring.py

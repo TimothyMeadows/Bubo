@@ -1,4 +1,10 @@
 <Solution>
+  <Folder Name="/src/runtime/image-to-splat/">
+    <Project Path="src/runtime/image-to-splat/Domain/Splat.Domain.csproj" />
+    <Project Path="src/runtime/image-to-splat/Application/Splat.Application.csproj" />
+    <Project Path="src/runtime/image-to-splat/Infrastructure/Splat.Infrastructure.csproj" />
+    <Project Path="src/runtime/image-to-splat/Tests/Splat.Tests.csproj" />
+  </Folder>
   <Folder Name="/src/runtime/vfx-assets/">
     <Project Path="src/runtime/vfx-assets/Domain/Vfx.Domain.csproj" />
     <Project Path="src/runtime/vfx-assets/Application/Vfx.Application.csproj" />

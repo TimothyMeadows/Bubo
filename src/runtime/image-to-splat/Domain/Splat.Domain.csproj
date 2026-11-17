@@ -1,0 +1,3 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><AssemblyName>Bubo.Splats.Domain</AssemblyName></PropertyGroup>
+</Project>

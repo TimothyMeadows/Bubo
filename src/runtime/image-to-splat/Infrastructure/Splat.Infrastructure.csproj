@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><AssemblyName>Bubo.Splats.Infrastructure</AssemblyName></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Application/Splat.Application.csproj" />
+    <ProjectReference Include="../../asset-production/AssetProduction.csproj" />
+  </ItemGroup>
+</Project>
