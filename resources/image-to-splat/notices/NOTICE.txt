@@ -1,0 +1,14 @@
+Bubo TripoSplat local-inference component attribution
+
+Original Bubo orchestration and workers are MIT licensed. Upstream components retain their own terms. Do not infer blanket MIT clearance from TripoSplat's repository label.
+
+TripoSplat source d8db9e018b413dd9c4a9fe22463781bf98e8e68d and model release56a96e603204ec410c4da60c13ea4fa09a2169a9: VAST-AI, MIT.
+DINOv3 conditioning: Meta DINOv3 custom agreement (attached). Author training defaults identify facebook/dinov3-vith16plus-pretrain-lvd1689m. The distributed repack differs from the official checkpoint; a precise conversion recipe/tensor equivalence is not independently verified. Applicable entity acceptance and review of this disclosed derivative lineage are required.
+FLUX.2 autoencoder ONLY: Black Forest Labs, Apache-2.0. This profile excludes the FLUX generator; its separate noncommercial terms are not used to license the autoencoder. VAST's autoencoder file matches the official336213556-byte checkpoint exactly.
+BiRefNet: Copyright(c)2024 ZhengPeng, MIT. VAST's444473596-byte file matches the official checkpoint exactly.
+
+The author acknowledges TRELLIS/Swin and related design antecedents. The two pinned inference files contain embedded model implementations without individual component headers. This record conservatively retains component terms; it does not prove historic source copying or repair an upstream omission. No training renderer or training environment is included.
+
+Python/framework/native dependencies retain component-specific terms and bundled licence notices in the exact Python archive and pinned wheels. Microsoft app-local CRT redistribution notices are retained separately. No CUDA13 runtime, driver, global software, hosted inference or ComfyUI integration is installed by this profile.
+
+Commercial-use and rights records remain scoped host decisions, distinct from independent historical-provenance verification, actual native readiness, source-image rights, generated-output acceptance and distribution eligibility.

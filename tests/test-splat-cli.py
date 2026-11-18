@@ -68,17 +68,17 @@ def main():
 
         capabilities = invoke(['capabilities', '--api-version', '2'])
         check('image-to-splat' in capabilities['workflows'], 'Workflow not advertised')
-        check(capabilities['splats']['operations'] == ['inspect', 'validate', 'setup'], 'Wrong foundation operations')
-        check(not any(capabilities['splats'][key] for key in ('generationAvailable', 'provisioningExecutionAvailable', 'renderingAvailable', 'runtimeAcceptanceAvailable')), 'Unsupported native capability')
+        check(capabilities['splats']['operations'] == ['inspect', 'validate', 'setup', 'provision', 'generate', 'verify-package'], 'Wrong foundation operations')
+        check(capabilities['splats']['generationAvailable'] and capabilities['splats']['provisioningExecutionAvailable'] and not any(capabilities['splats'][key] for key in ('nativeReadinessVerified', 'renderingAvailable', 'runtimeAcceptanceAvailable')), 'Implemented worker must not claim native qualification')
         setup = invoke(['image-to-splat', 'setup', *common])['data']
         check(setup['mode'] == 'dry-run' and setup['status'] == 'blocked' and not setup['gpuUsed'], 'Setup readiness overstated')
         check(not setup['filesWritten'] and not setup['licenseAcceptancePerformed'], 'Setup side effects advertised')
         check(len(setup['catalog']['weights']) == 5 and setup['catalog']['weightBytes'] == 3779190284, 'Model closure changed')
         check(len(setup['catalog']['environmentCandidates']['win-amd64']['artifacts']) == 16, 'Environment metadata incomplete')
         for operation, flags, error in [
-            ('generate', [], 'Unsupported workflow/operation'),
+            ('generate', [], 'Explicit --request required'),
             ('promote', [], 'Unsupported workflow/operation'),
-            ('setup', ['--execute'], 'Unknown or inapplicable option'),
+            ('setup', ['--execute'], 'Explicit --request required'),
             ('inspect', ['--gpu', '0'], 'Unknown or inapplicable option'),
             ('setup', ['--load', 'true'], 'Unknown or inapplicable option'),
             ('setup', ['--manifest', 'anything'], 'Unknown or inapplicable option'),
@@ -157,6 +157,30 @@ def main():
         invoke(['image-to-splat', 'validate', *common, '--request', 'inputs/request.json'], 'missing required')
         save_request({**artifact, 'units': 'metres'})
         invoke(['image-to-splat', 'validate', *common, '--request', 'inputs/request.json'], 'uncalibrated')
+        setup_request = dict(schemaVersion='bubo-splat-provision/v1', task='splat-contract', installationRoot='tools/new-install', downloadRoot='tools/downloads',
+                             bootstrapPython={'path': str(project / 'tools/bootstrap-python.exe'), 'sha256': 'a'*64},
+                             runtimeSourceRoot='tools/existing-crt', noticeSourceRoot='tools/existing-notices', licenses=[{'path': 'inputs/licenses.json', 'sha256': 'b'*64}])
+        save_request(setup_request)
+        plan = invoke(['image-to-splat', 'provision', *common, '--request', 'inputs/request.json'])['data']
+        check(plan['mode'] == 'dry-run' and not plan['gpuUsed'] and not plan['networkAccess'] and not plan['installation'], 'Provision dry-run performed setup')
+        check(plan['downloadBytes'] > 7100000000 and plan['minimumFreeDiskBytes'] == 25769803776, 'Setup size/bounds omitted')
+        invoke(['image-to-splat', 'provision', *common, '--request', 'inputs/request.json', '--execute'], 'Explicit provisioning permission')
+        del context['roots']['outputs']
+        save_context()
+        plan_without_outputs = invoke(['image-to-splat', 'provision', *common, '--request', 'inputs/request.json'])['data']
+        check(plan_without_outputs['mode'] == 'dry-run', 'Optional outputs absence broke dry-run')
+        context['roots']['outputs'] = ['outputs']
+        save_request({**setup_request, 'installationRoot': 'outputs/illegal-install'})
+        invoke(['image-to-splat', 'provision', *common, '--request', 'inputs/request.json'], 'tool roots')
+        registration = dict(schemaVersion='bubo-splat-installation-request/v1', task='splat-contract', receiptPath='state/install.json',
+                            modelDirectory='tools/models', sourceDirectory='tools/source', environmentRoot='tools/environment', pythonBaseRoot='tools/base',
+                            wheelhouseRoot='tools/wheels', pythonArchive='tools/downloads/python.tar.gz', noticeDirectory='tools/notices',
+                            python={'path': 'tools/environment/Scripts/python.exe', 'sha256': 'a'*64}, licenses=[{'path': 'inputs/licenses.json', 'sha256': 'b'*64}],
+                            componentReview={'path': 'inputs/component-review.json', 'sha256': 'c'*64})
+        save_request(registration)
+        registration_plan = invoke(['image-to-splat', 'setup', *common, '--request', 'inputs/request.json'])['data']
+        check(registration_plan['mode'] == 'dry-run' and not registration_plan['installationVerified'] and not registration_plan['gpuUsed'], 'Registration dry-run overstated readiness')
+        invoke(['image-to-splat', 'setup', *common, '--request', 'inputs/request.json', '--execute'], 'Explicit host provisioning permission')
         isolated = Path(working) / 'runtime'
         shutil.copytree(cli.parent, isolated)
         (isolated / 'resources/image-to-splat/catalog.json').write_bytes(b'{}')

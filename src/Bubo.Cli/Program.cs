@@ -25,7 +25,7 @@ try
 {
     if (args.Length == 0 || args is ["--help"] or ["help"])
     {
-        resultOutput.WriteLine("bubo <proof-to-model|model-to-animation|model-to-action|blender-inspection|media|floor-plan-to-model|schematic-to-model|vfx-assets|image-to-splat> <operation> --api-version 2 --root ROOT --host-context PROJECT_JSON [--manifest PROJECT_JSON] [operation options]\nbubo capabilities --api-version 2\nvfx-assets: validate|inspect --package JSON; prepare --request JSON --output STAGING_DIRECTORY; verify-preparation --manifest PREPARATION_JSON. Fixed lossless PNG sheet/sequence/math masks only; no video, rendering, generation or acceptance. media: inspect [--load true], generate, setup [--execute]. Schematic: init --design JSON, doctor, preview, validate, record, build-parts, assemble, prove-motion, export --author NAME, review, status. Native steps use --blender ABSOLUTE_EXE. Assembly and export require approved explicit v2 design and current independent parts/readiness. Model-to-animation mechanical-assembly init additionally requires --handoff JSON. Explicit build/setup precedes production. Host context supplies policy, permitted roots, rights/consent, tool hashes, budgets and reviews. Results are JSON on stdout; logs use stderr. No host instruction loading, implicit installation, provider fallback or automatic asset acceptance.");
+        resultOutput.WriteLine("bubo <proof-to-model|model-to-animation|model-to-action|blender-inspection|media|floor-plan-to-model|schematic-to-model|vfx-assets|image-to-splat> <operation> --api-version 2 --root ROOT --host-context PROJECT_JSON [--manifest PROJECT_JSON] [operation options]\nbubo capabilities --api-version 2\nimage-to-splat: inspect|validate --request JSON; setup [--request REGISTRATION_JSON --execute]; provision --request SETUP_JSON [--execute]; generate --request GENERATION_JSON; verify-package --request PACKAGE_JSON. Native Windows profile requires explicit setup, rights, generation/GPU approval and current installed closure; native qualification remains separate.\nvfx-assets: validate|inspect --package JSON; prepare --request JSON --output STAGING_DIRECTORY; verify-preparation --manifest PREPARATION_JSON. Fixed lossless PNG sheet/sequence/math masks only; no video, rendering, generation or acceptance. media: inspect [--load true], generate, setup [--execute]. Schematic: init --design JSON, doctor, preview, validate, record, build-parts, assemble, prove-motion, export --author NAME, review, status. Native steps use --blender ABSOLUTE_EXE. Assembly and export require approved explicit v2 design and current independent parts/readiness. Model-to-animation mechanical-assembly init additionally requires --handoff JSON. Explicit build/setup precedes production. Host context supplies policy, permitted roots, rights/consent, tool hashes, budgets and reviews. Results are JSON on stdout; logs use stderr. No host instruction loading, implicit installation, provider fallback or automatic asset acceptance.");
         return 0;
     }
     var capability = workflow == "capabilities";
@@ -56,9 +56,24 @@ try
         Console.CancelKeyPress += cancelInspection;
         try
         {
-            var data = Bubo.Splats.Infrastructure.SplatCommands.Execute(new Workspace(context.Root, context), operation,
-                options.GetValueOrDefault("request"), new AuditedResources(AppContext.BaseDirectory, RuntimeCatalog.ExpectedSha256),
-                inspectionCancellation.Token);
+            var splatWorkspace=new Workspace(context.Root,context);
+            var splatResources=new AuditedResources(AppContext.BaseDirectory,RuntimeCatalog.ExpectedSha256);
+            if(context.Pipeline!="LOCAL")throw new InvalidOperationException("image-to-splat requires explicit LOCAL with full art/engine context");
+            var buildSha=Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(capabilities["build"]!.ToJsonString())));
+            object data;
+            if(operation=="generate")data=await new Bubo.Splats.Infrastructure.SplatGeneration(splatWorkspace,splatResources,
+                new HostNativeProcess(context,new NativeProcess()),buildSha,RuntimeCatalog.ExpectedSha256).Generate(
+                    options.GetValueOrDefault("request")??throw new InvalidOperationException("Explicit --request required"),inspectionCancellation.Token);
+            else if(operation=="verify-package")data=new Bubo.Splats.Infrastructure.SplatGeneration(splatWorkspace,splatResources,
+                new HostNativeProcess(context,new NativeProcess()),buildSha,RuntimeCatalog.ExpectedSha256).VerifyPackage(
+                    options.GetValueOrDefault("request")??throw new InvalidOperationException("Explicit --request required"),inspectionCancellation.Token);
+            else if(operation=="provision")data=await new Bubo.Splats.Infrastructure.SplatProvision(splatWorkspace,splatResources,
+                new HostNativeProcess(context,new NativeProcess())).Execute(options.GetValueOrDefault("request")??throw new InvalidOperationException("Explicit --request required"),
+                    options.ContainsKey("execute"),inspectionCancellation.Token);
+            else if(operation=="setup" && options.ContainsKey("request"))data=new Bubo.Splats.Infrastructure.SplatInstallation(splatWorkspace,splatResources)
+                .Execute(options["request"],options.ContainsKey("execute"),inspectionCancellation.Token);
+            else if(operation=="setup" && options.ContainsKey("execute"))throw new InvalidOperationException("Explicit --request required for registration");
+            else data=Bubo.Splats.Infrastructure.SplatCommands.Execute(splatWorkspace,operation,options.GetValueOrDefault("request"),splatResources,inspectionCancellation.Token);
             resultOutput.WriteLine(JsonSerializer.Serialize(new
             {
                 schemaVersion = "bubo-execution-result/v1", apiVersion = 2, status = "succeeded", workflow, operation,
@@ -267,8 +282,9 @@ static void ValidateOperation(string workflow, string operation, Dictionary<stri
     if (workflow is "vfx-assets" or "image-to-splat") common.Remove("manifest");
     string[] specific = (workflow,operation) switch
     {
-        ("image-to-splat", "inspect" or "validate") => ["request"],
-        ("image-to-splat", "setup") => [],
+        ("image-to-splat", "inspect" or "validate" or "generate" or "verify-package") => ["request"],
+        ("image-to-splat", "provision") => ["request","execute"],
+        ("image-to-splat", "setup") => ["request","execute"],
         ("vfx-assets", "validate" or "inspect") => ["package"],
         ("vfx-assets", "prepare") => ["request","output"],
         ("vfx-assets", "verify-preparation") => ["manifest"],
@@ -332,7 +348,7 @@ static JsonObject Capabilities()
     {
         ["schemaVersion"] = "bubo-capabilities/v1", ["apiVersions"] = new JsonArray(2),
         ["workflows"] = new JsonArray("proof-to-model","model-to-animation","model-to-action","blender-inspection","media","floor-plan-to-model","schematic-to-model","vfx-assets","image-to-splat"),
-        ["splats"] = new JsonObject { ["phase"] = "contracts-and-cpu-inspection", ["pipeline"] = "LOCAL", ["backend"] = "triposplat", ["operations"] = new JsonArray("inspect","validate","setup"), ["requestSchema"] = "bubo-splat-request/v1", ["artifactSchema"] = "bubo-splat-artifact/v1", ["inspectionSchema"] = "bubo-splat-inspection/v1", ["profiles"] = new JsonArray("triposplat-ply-sh0/v1"), ["generationAvailable"] = false, ["provisioningExecutionAvailable"] = false, ["artifactAncestryVerificationAvailable"] = false, ["renderingAvailable"] = false, ["runtimeAcceptanceAvailable"] = false },
+        ["splats"] = new JsonObject { ["phase"] = "bounded-generation-native-qualification-pending", ["pipeline"] = "LOCAL", ["backend"] = "triposplat", ["operations"] = new JsonArray("inspect","validate","setup","provision","generate","verify-package"), ["requestSchema"] = "bubo-splat-request/v1", ["artifactSchema"] = "bubo-splat-artifact/v1", ["inspectionSchema"] = "bubo-splat-inspection/v1", ["profiles"] = new JsonArray("triposplat-ply-sh0/v1"), ["generationAvailable"] = true, ["provisioningExecutionAvailable"] = true, ["requiresVerifiedInstallation"] = true, ["nativeReadinessVerified"] = false, ["supportedNativePlatforms"] = new JsonArray("win-amd64"), ["generatedPackageVerificationAvailable"] = true, ["artifactAncestryVerificationAvailable"] = false, ["renderingAvailable"] = false, ["runtimeAcceptanceAvailable"] = false },
         ["actions"] = new JsonObject { ["recipeVersions"] = new JsonArray(1,2), ["packageSchemas"] = new JsonArray("hephaera-action-package/v1","hephaera-action-package/v2"), ["effectSubjectInspection"] = true, ["effectSources"] = "complete-native-package-profile-closure", ["effectRuntimeReview"] = "selected-engine-evidence-required", ["mechanicalAssemblyActionsAvailable"] = false },
         ["vfx"] = new JsonObject { ["phase"] = "fixed-input-preparation", ["operations"] = new JsonArray("validate","inspect","prepare","verify-preparation"), ["packageSchema"] = "bubo-vfx-package/v1", ["packageSchemas"] = new JsonArray("bubo-vfx-package/v1","bubo-vfx-package/v2"), ["preparationSchema"] = "bubo-vfx-preparation/v1", ["processingProfiles"] = new JsonArray("sheet","sequence","math-mask"), ["processingAvailable"] = true, ["videoDecodingAvailable"] = false, ["hardProcessingMemoryAvailable"] = false, ["renderingAvailable"] = false, ["runtimeAcceptanceAvailable"] = false },
         ["schematic"] = new JsonObject { ["phase"] = "portable-assembly-export", ["operations"] = new JsonArray("init","doctor","preview","validate","record","build-parts","assemble","prove-motion","export","review","status"), ["partConstructionAvailable"] = true, ["assemblyAvailable"] = true, ["motionProofAvailable"] = true, ["requiresApprovedAssemblyV2"] = true, ["modelExportAvailable"] = true, ["motionHandoffProfile"] = "mechanical-assembly", ["humanModelAcceptanceSeparate"] = true },

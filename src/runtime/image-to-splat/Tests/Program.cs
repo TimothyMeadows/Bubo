@@ -5,5 +5,7 @@ DomainTests.Run();
 ArtifactTests.Run();
 DescriptorIdentityTests.Run();
 InspectionTests.Run();
+GenerationTests.Run();
+InstallationTests.Run();
 Console.WriteLine($"Splat CPU contract and Gaussian inspection checks passed: {Check.Passed}");
 Console.WriteLine("Synthetic in-memory fixtures establish no model, GPU, renderer, physical scale, licence acceptance, human review or runtime asset acceptance.");

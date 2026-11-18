@@ -3,5 +3,6 @@
   <ItemGroup>
     <ProjectReference Include="../Application/Splat.Application.csproj" />
     <ProjectReference Include="../../asset-production/AssetProduction.csproj" />
+    <ProjectReference Include="../../../media/Infrastructure/Media.Infrastructure.csproj" />
   </ItemGroup>
 </Project>

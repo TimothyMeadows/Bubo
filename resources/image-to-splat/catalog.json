@@ -1,10 +1,10 @@
 {
   "schemaVersion": "bubo-splat-catalog/v1",
   "backend": "triposplat",
-  "phase": "foundation-metadata-only",
-  "generationAvailable": false,
-  "provisioningExecutionAvailable": false,
-  "commercialClearance": "pending-complete-component-review",
+  "phase": "bounded-worker-native-qualification-pending",
+  "generationAvailable": true,
+  "provisioningExecutionAvailable": true,
+  "commercialClearance": "conditional-component-agreement-and-disclosed-lineage-review",
   "source": {
     "repository": "https://github.com/VAST-AI-Research/TripoSplat",
     "revision": "d8db9e018b413dd9c4a9fe22463781bf98e8e68d",
@@ -97,7 +97,7 @@
   ],
   "environmentCandidates": {
     "win-amd64": {
-      "status": "metadata-candidate-not-installable",
+      "status": "pinned-distribution-explicit-installation-and-native-qualification-required",
       "python": {
         "version": "3.12.16",
         "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20261026/cpython-3.12.16%2B20261026-x86_64-pc-windows-msvc-install_only_stripped.tar.gz",
@@ -648,6 +648,137 @@
     "component code/weight ancestry and required notices incomplete",
     "no licence/access acceptance performed",
     "no native import, GPU probe, inference, rendering or device evidence",
-    "no installation/execution or asset-promotion implementation in foundation"
-  ]
+    "native installation/generation qualification pending; no rendering or asset-promotion implementation"
+  ],
+  "notices": [
+    {
+      "path": "TripoSplat-MIT.txt",
+      "resource": "resources/image-to-splat/notices/TripoSplat-MIT.txt",
+      "bytes": 1061,
+      "sha256": "9bca624970eb854fb4391320d52f91af0b4965970b309abed48d7159f9a262b9"
+    },
+    {
+      "path": "DINOv3-LICENSE.md",
+      "resource": "resources/image-to-splat/notices/DINOv3-LICENSE.md",
+      "bytes": 7503,
+      "sha256": "25d122eb8f5b880fd23c736fb6ea8018ee45c12237e00b8a86d14c653904999e"
+    },
+    {
+      "path": "FLUX2-Apache-2.0.txt",
+      "resource": "resources/image-to-splat/notices/FLUX2-Apache-2.0.txt",
+      "bytes": 11357,
+      "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+    },
+    {
+      "path": "BiRefNet-MIT.txt",
+      "resource": "resources/image-to-splat/notices/BiRefNet-MIT.txt",
+      "bytes": 1066,
+      "sha256": "92a7089e0915fc32bc40067560b398f1e6a7a5958abd7d04eda393629a5acefb"
+    },
+    {
+      "path": "Bubo-TripoSplat-NOTICE.txt",
+      "resource": "resources/image-to-splat/notices/NOTICE.txt",
+      "bytes": 2018,
+      "sha256": "1f2cfdd9946f79d6d84805fa0fcb0e1880efb14d785e2de1f43209b24ee8e4f5"
+    }
+  ],
+  "windowsRuntime": {
+    "visualCppVersion": "14.51.36231.0",
+    "sources": [
+      "https://docs.nvidia.com/cuda/eula/index.html",
+      "https://learn.microsoft.com/en-us/visualstudio/releases/2026/redistribution"
+    ],
+    "notices": [
+      {
+        "path": "VS-Redist.txt",
+        "bytes": 190,
+        "sha256": "2d69e3b0ac782d5513b503bafdf269a93c4fec0f1f8efac82bfbfa4b6296aef5"
+      },
+      {
+        "path": "VS-ThirdPartyNotices.txt",
+        "bytes": 6167634,
+        "sha256": "c18053db908528af47ca838e482442ae822d8bf7fef93b9d6e8f043a38d378db"
+      }
+    ],
+    "files": [
+      {
+        "path": "msvcp140.dll",
+        "bytes": 642720,
+        "sha256": "639342ea9a67c0009122238ce070a8257e2e04d367d627509fec29f8442afb42",
+        "license": "Microsoft-Visual-Studio-Redist"
+      },
+      {
+        "path": "msvcp140_codecvt_ids.dll",
+        "bytes": 31312,
+        "sha256": "f781e1e0133c397c3a2c73fd4dbcdb442378ba20fced56a2f7db5822436ddd2a",
+        "license": "Microsoft-Visual-Studio-Redist"
+      },
+      {
+        "path": "vcruntime140.dll",
+        "bytes": 178848,
+        "sha256": "19c293ac482fdb882cd29d2b0e6d807419efdcada04068f03e5723670895e17d",
+        "license": "Microsoft-Visual-Studio-Redist"
+      },
+      {
+        "path": "vcruntime140_1.dll",
+        "bytes": 50256,
+        "sha256": "a253a12e4a8e9e23ebfe0ced829f7751e4f42c60066986bf20515ced8dcc68cd",
+        "license": "Microsoft-Visual-Studio-Redist"
+      },
+      {
+        "path": "msvcp140_atomic_wait.dll",
+        "bytes": 57936,
+        "sha256": "d759dd381bdbd6142372de4cb57acc382e1b80c106b7414a408816564ee1eb6a",
+        "license": "Microsoft-Visual-Studio-Redist"
+      },
+      {
+        "path": "vcruntime140_threads.dll",
+        "bytes": 38560,
+        "sha256": "cd05a48a1183b074e81275d6c6472ecb5b09db8a0db8d1850b009ad041907ce9",
+        "license": "Microsoft-Visual-Studio-Redist"
+      },
+      {
+        "path": "vcomp140.dll",
+        "bytes": 213072,
+        "sha256": "f96f3a14d88d8846f31f3ab38a490304ce7d6e4f70fae4304c63e59c7aea2d30",
+        "license": "Microsoft-Visual-Studio-Redist"
+      }
+    ]
+  },
+  "componentProvenance": {
+    "birefnet": {
+      "disposition": "exact-upstream-byte-match",
+      "repository": "ZhengPeng7/BiRefNet",
+      "revision": "e2bf8e4460fc8fa32bba5ea4d94b3233d367b0e4",
+      "path": "model.safetensors",
+      "sha256": "9ab37426bf4de0567af6b5d21b16151357149139362e6e8992021b8ce356a154"
+    },
+    "flux2-autoencoder": {
+      "disposition": "exact-upstream-byte-match",
+      "repository": "black-forest-labs/FLUX.2-dev",
+      "revision": "26afe3a78bb242c0a8bb181dcc8937bb16e5c66c",
+      "path": "vae/diffusion_pytorch_model.safetensors",
+      "sha256": "d64f3a68e1cc4f9f4e29b6e0da38a0204fe9a49f2d4053f0ec1fa1ca02f9c4b5"
+    },
+    "dinov3": {
+      "disposition": "author-identified-source; conversion-unverified",
+      "repository": "facebook/dinov3-vith16plus-pretrain-lvd1689m",
+      "revision": "c807c9eeea853df70aec4069e6f56b28ddc82acc",
+      "upstreamSha256": "3e1d4d18b9bfa9f28fad8e9de6a783f1313532d3460efa4cd0b12521d81d1a4d",
+      "trainingSource": "https://github.com/runjie-yan/TripoSplat-Training/blob/bc94db87dd4b748d1edac5d28231c1e152e46508/deg/utils/hf_utils.py"
+    }
+  },
+  "nativeReadinessVerified": false,
+  "noticeSources": {
+    "resources/image-to-splat/notices/TripoSplat-MIT.txt": "https://raw.githubusercontent.com/VAST-AI-Research/TripoSplat/d8db9e018b413dd9c4a9fe22463781bf98e8e68d/LICENSE",
+    "resources/image-to-splat/notices/DINOv3-LICENSE.md": "https://raw.githubusercontent.com/facebookresearch/dinov3/6876159a11b4df116f30f667f8c9888617df0751/LICENSE.md",
+    "resources/image-to-splat/notices/FLUX2-Apache-2.0.txt": "https://raw.githubusercontent.com/black-forest-labs/flux2/50fe5162777813d869182b139e83b10743caef15/LICENSE.md",
+    "resources/image-to-splat/notices/BiRefNet-MIT.txt": "https://raw.githubusercontent.com/ZhengPeng7/BiRefNet/f7079632d681ecf12161fcea8905682934e59e51/LICENSE"
+  },
+  "executionBounds": {
+    "cacheBytes": 67108864,
+    "cacheEntries": 4096,
+    "cudaCacheMaxSize": 67108864,
+    "cacheMeasurement": "stage-sampled; not OS quota"
+  }
 }

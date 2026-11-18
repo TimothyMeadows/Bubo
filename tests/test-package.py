@@ -28,8 +28,11 @@ def main():
         for name in ('Bubo.Splats.Domain.dll', 'Bubo.Splats.Application.dll', 'Bubo.Splats.Infrastructure.dll'):
             assert read(name), 'Missing Gaussian foundation assembly: '+name
         splats=receipt['capabilities']['splats']
-        assert splats['operations']==['inspect','validate','setup'] and splats['phase']=='contracts-and-cpu-inspection'
-        assert not any(splats[key] for key in ('generationAvailable','provisioningExecutionAvailable','renderingAvailable','runtimeAcceptanceAvailable'))
+        assert splats['operations']==['inspect','validate','setup','provision','generate','verify-package'] and splats['phase']=='bounded-generation-native-qualification-pending'
+        assert splats['generationAvailable'] and splats['provisioningExecutionAvailable']
+        assert not any(splats[key] for key in ('nativeReadinessVerified','renderingAvailable','runtimeAcceptanceAvailable'))
+        for name in ('resources/image-to-splat/worker.py','resources/image-to-splat/provision.py','resources/image-to-splat/notices/DINOv3-LICENSE.md','resources/image-to-splat/notices/FLUX2-Apache-2.0.txt'):
+            assert read(name)
         assert read('docs/VFX_ASSETS.md'), 'Missing VFX contract documentation'
         for name in ('Bubo.Vfx.Domain.dll', 'Bubo.Vfx.Application.dll', 'Bubo.Vfx.Infrastructure.dll'):
             assert read(name), 'Missing standalone VFX runtime assembly: '+name

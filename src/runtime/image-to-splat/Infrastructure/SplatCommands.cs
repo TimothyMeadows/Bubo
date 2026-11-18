@@ -18,7 +18,7 @@ public sealed record SplatInspectionRequest
     public required SplatBudgets Budgets { get; init; }
 }
 
-/// <summary>CPU-only, read-only foundation. No installation, subprocess, model import or GPU port.</summary>
+/// <summary>Read-only CPU subset. Native setup and generation use separate explicit services.</summary>
 public static class SplatCommands
 {
     static readonly JsonSerializerOptions Json = new()
@@ -46,10 +46,11 @@ public static class SplatCommands
             {
                 schemaVersion = "bubo-splat-setup-plan/v1", mode = "dry-run", status = "blocked",
                 catalogSha256 = Workspace.Hash(catalog), catalog = document.Clone(),
-                generationAvailable = false, provisioningExecutionAvailable = false,
+                generationAvailable = true, provisioningExecutionAvailable = true,
+                installationVerified = false, nativeReadinessVerified = false,
                 gpuUsed = false, filesWritten = false, licenseAcceptancePerformed = false,
                 blockers = new[] { "component-code-ancestry-and-notice-review-required", "complete-environment-distribution-review-required",
-                    "separate-installation-and-license-evidence-required", "native-Windows-Blackwell-fit-unverified", "generation-worker-not-delivered" }
+                    "separate-installation-and-license-evidence-required", "native-Windows-Blackwell-fit-unverified", "native-profile-qualification-required" }
             };
         }
         else if (operation is "inspect" or "validate")
