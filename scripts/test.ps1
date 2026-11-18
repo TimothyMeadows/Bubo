@@ -17,6 +17,10 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Gaussian contract/parser checks failed.' }
     python -X utf8 tests/test-splat-cli.py --cli "src/Bubo.Cli/bin/$Configuration/net10.0/bubo.dll"
     if ($LASTEXITCODE -ne 0) { throw 'Gaussian public CLI checks failed.' }
+    python -I -B tests/test-splat-worker.py
+    if ($LASTEXITCODE -ne 0) { throw 'Fixed splat worker CPU checks failed.' }
+    python -I -B tests/test-splat-provision.py
+    if ($LASTEXITCODE -ne 0) { throw 'Splat provision CPU checks failed.' }
     python -X utf8 scripts/audit-resources.py
     if ($LASTEXITCODE -ne 0) { throw 'Resource audit failed.' }
     python -X utf8 tests/test-cli-contract.py --cli "src/Bubo.Cli/bin/$Configuration/net10.0/bubo.dll"

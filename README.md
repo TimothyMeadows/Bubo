@@ -69,7 +69,7 @@ Current host examples use `.hephaera/.cache/` state keys and `hephaera-*` packag
 
 ## Workflows and review
 
-- **Image-to-splat foundation:** CPU-only `setup` dry-run, strict `validate --request JSON` and streaming `inspect --request JSON` for the explicit TripoSplat SH0 Gaussian PLY profile. Direct generation, installation execution, rendering and acceptance remain unavailable. Read [the request, licence and readiness boundaries](docs/IMAGE_TO_SPLAT.md). Existing mesh pipelines and selected engines are unchanged.
+- **Local image-to-splat:** strict Gaussian inspection plus separately authorized pinned setup, direct offline TripoSplat generation, one latent with separate density variants, immutable source-bound attempt records and independently reloaded packages. The initial native Windows profile remains unqualified until real installation/GPU QA; rendering and game acceptance remain separate. Read [the request, licence and readiness boundaries](docs/IMAGE_TO_SPLAT.md). Existing mesh pipelines and selected engines are unchanged.
 
 - **Proof-to-model:** `init`, `doctor`, dry-run `setup`, `classify`, `prepare-proofs`, `reuse`, `preprocess`, `reconstruct`, `finish`, `review`, `record`, `validate`, `status`, `promote`. Source-only classification, six-view ancestry, explicit generation authorization, attempt limits, immutable working copies and independently reviewed runtime acceptance remain distinct gates.
 - **Model-to-animation:** `init`, `doctor`, `inspect`, `prepare`, `rig`, `author`, `retarget`, `bake`, `export`, `review`, `record`, `validate`, `status`, `promote`. Preserve declared profiles, actual clip/rig hashes, owned/licensed retargeting, complete motion ranges and separate acceptance.
