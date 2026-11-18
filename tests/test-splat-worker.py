@@ -7,6 +7,7 @@ import copy
 import hashlib
 import importlib.util
 import json
+import math
 import os
 import stat
 import struct
@@ -195,6 +196,37 @@ class FakeTensor:
     def numpy(self): return FakeArray()
 
 
+class FakeFloatArray:
+    def __init__(self, values, shape):
+        self.values, self.shape = list(values), shape
+
+    def astype(self, dtype, copy):
+        if dtype != '<f4' or copy is not False: raise AssertionError('Expected exact f4 output')
+        return self
+
+    def tobytes(self): return struct.pack('<' + str(len(self.values)) + 'f', *self.values)
+
+
+class FakeFieldTensor:
+    dtype = 'torch.float32'
+
+    def __init__(self, values, shape, state=None):
+        self.values, self.shape, self.fixture_state = list(values), shape, state or {}
+
+    def detach(self): return self
+    def contiguous(self): return self
+    def cpu(self): return self
+    def numpy(self): return FakeFloatArray(self.values, self.shape)
+    def to(self, *, device, dtype):
+        if device != 'cpu' or dtype != 'torch.float32': raise AssertionError('Expected explicit CPU float32 conversion')
+        return self
+
+    def __add__(self, other):
+        if other.shape != (): raise AssertionError('Only a stored scalar bias may broadcast in this fixture')
+        values = [struct.unpack('<f', struct.pack('<f', value + other.values[0]))[0] for value in self.values]
+        return FakeFieldTensor(values, self.shape)
+
+
 class FakeCuda:
     def __init__(self, state):
         self.state = state
@@ -204,8 +236,11 @@ class FakeCuda:
     def is_available(self): return True
     def is_bf16_supported(self): return True
     def set_device(self, index): self.state['gpuCalls'] += 1
+    def current_device(self): return self.state.get('selectedDevice', 0)
     def get_device_properties(self, index): return SimpleNamespace(name='SIMULATED_NOT_A_DEVICE')
-    def mem_get_info(self, index): return (14 * 1024**3, 16 * 1024**3)
+    def mem_get_info(self, index):
+        self.state.setdefault('memoryQueries', []).append(index)
+        return self.state.get('memoryInfo', (14 * 1024**3, 16 * 1024**3))
     def memory_allocated(self, index): return self.allocated
     def memory_reserved(self, index): return self.reserved
     def max_memory_allocated(self, index): return self.peak
@@ -237,13 +272,45 @@ class FakeTorch:
 
 class FakeGaussian:
     sh_degree = 0
+    _DEFAULT_TRANSFORM = [[1, 0, 0], [0, 0, -1], [0, 1, 0]]
 
     def __init__(self, count, state):
         self.count, self.state = count, state
-        self.get_xyz = SimpleNamespace(shape=(count, 3))
+        self.get_xyz = FakeFieldTensor([0, 0, 0] * count, (count, 3), state)
+        self._features_dc = FakeFieldTensor([.5, .5, .5] * count, (count, 1, 3))
+        self._opacity = FakeFieldTensor(state.get('rawOpacities', [0] * count), (count, 1))
+        self.opacity_bias_val = FakeFieldTensor([state.get('opacityBias', struct.unpack('<f', struct.pack('<f', math.log(.1 / .9)))[0])], ())
+        self.get_opacity = FakeFieldTensor(state.get('cachedOpacities', [.1] * count), (count, 1))
+        self.get_scaling = FakeFieldTensor([math.exp(-2)] * (count * 3), (count, 3))
+        self._rotation = FakeFieldTensor([0, 0, 0, 0] * count, (count, 4))
+        self.rots_bias = FakeFieldTensor([1, 0, 0, 0], (4,))
+
+    def construct_list_of_attributes(self): return list(worker.PROPERTIES)
+
+    def _get_ply_data(self, transform):
+        if transform != FakeGaussian._DEFAULT_TRANSFORM: raise AssertionError('Expected fixed source transform')
+        state = self.get_xyz.fixture_state
+        count = self.get_xyz.shape[0]
+        # Inert stand-in for the pinned method: the separate actual-source CPU
+        # fixture verifies real coordinate/quaternion transformation parity.
+        opacity = self._inverse_opacity_activation(self.get_opacity).detach().cpu().numpy()
+        rotation = [value + self.rots_bias.values[index % 4] for index, value in enumerate(self._rotation.values)]
+        fields = [self.get_xyz.numpy(), FakeFloatArray([0] * (count * 3), (count, 3)),
+                  FakeFloatArray(self._features_dc.values, (count, 3)), opacity,
+                  FakeFloatArray([math.log(value) for value in self.get_scaling.values], (count, 3)),
+                  FakeFloatArray(rotation, (count, 4))]
+        if 'badExportProperty' in state:
+            name, row, value = state['badExportProperty']
+            column = worker.PROPERTIES.index(name)
+            for field, width in zip(fields, (3, 3, 3, 1, 3, 4)):
+                if column < width:
+                    field.values[row * width + column] = value
+                    break
+                column -= width
+        return tuple(fields)
 
     def to_ply_bytes(self):
-        return ply(self.count) + bytes(self.state.get('extraBytes', 0))
+        raise AssertionError('The unsafe cached-sigmoid exporter must never run')
 
 
 class FakePipe:
@@ -515,6 +582,64 @@ class SplatWorkerTests(unittest.TestCase):
             row[index] = value
             with self.subTest(index=index, value=value), self.assertRaises(worker.ProfileError): worker.verify_ply(ply(2, row), 2)
 
+    def test_fixed_serializer_preserves_extreme_finite_raw_logits_and_every_other_column(self):
+        state = {'rawOpacities': [11, -18], 'cachedOpacities': [1, 0]}
+        gaussian = FakeGaussian(2, state); diagnostics = []
+        raw_before, cached_before = gaussian._opacity.values.copy(), gaussian.get_opacity.values.copy()
+        encoded = worker.serialize_gaussian(gaussian, 2, FakeTorch({}), diagnostics)
+        expected = []
+        for raw in (11, -18):
+            logit = struct.unpack('<f', struct.pack('<f', raw + gaussian.opacity_bias_val.values[0]))[0]
+            expected.append(struct.pack('<17f', 0, 0, 0, 0, 0, 0, .5, .5, .5, logit, -2, -2, -2, 1, 0, 0, 0))
+        self.assertEqual(encoded, ply(2)[:-2 * 68] + b''.join(expected))
+        self.assertEqual(gaussian._opacity.values, raw_before); self.assertEqual(gaussian.get_opacity.values, cached_before)
+        self.assertEqual(diagnostics, [{'gaussianCount': 2, 'rawFiniteMinimum': -18.0, 'rawFiniteMaximum': 11.0,
+                                       'rawNonfiniteCount': 0, 'cachedZeroCount': 1, 'cachedOneCount': 1,
+                                       'cachedNonfiniteCount': 0, 'opacityBias': gaussian.opacity_bias_val.values[0]}])
+
+    def test_fixed_serializer_rejects_nonfinite_raw_bias_or_cached_opacity_with_bounded_diagnostics(self):
+        cases = [({'rawOpacities': [0, float('nan')]}, 'row 1 property opacity: NaN', 'rawNonfiniteCount'),
+                 ({'rawOpacities': [0, float('inf')]}, 'row 1 property opacity: +Inf', 'rawNonfiniteCount'),
+                 ({'cachedOpacities': [.1, float('-inf')]}, 'row 1 property opacity [cached probability]: -Inf', 'cachedNonfiniteCount'),
+                 ({'opacityBias': float('nan')}, 'row 0 property opacity [bias]: NaN', None)]
+        for state, error, counter in cases:
+            diagnostics = []
+            with self.subTest(error=error), self.assertRaises(worker.ProfileError) as failure:
+                worker.serialize_gaussian(FakeGaussian(2, state), 2, FakeTorch({}), diagnostics)
+            self.assertIn(error, str(failure.exception)); self.assertEqual(len(diagnostics), 1)
+            if counter: self.assertEqual(diagnostics[0][counter], 1)
+            json.dumps(diagnostics, allow_nan=False)
+
+    def test_fixed_serializer_rejects_nonfinite_or_out_of_profile_other_fields_with_exact_identity(self):
+        for name, value, suffix in [('x', float('nan'), 'NaN'), ('f_dc_1', float('inf'), '+Inf'),
+                                    ('scale_2', float('-inf'), '-Inf'), ('rot_3', float('nan'), 'NaN'),
+                                    ('x', 1_000_001, None), ('scale_0', 31, None), ('f_dc_2', 10001, None)]:
+            with self.subTest(name=name, value=value), self.assertRaises(worker.ProfileError) as failure:
+                worker.serialize_gaussian(FakeGaussian(2, {'badExportProperty': (name, 1, value)}), 2, FakeTorch({}), [])
+            self.assertIn('row 1 property ' + name, str(failure.exception))
+            if suffix: self.assertIn(suffix, str(failure.exception))
+        with self.assertRaisesRegex(worker.ProfileError, 'Invalid Gaussian quaternion at row 1 property rot_0'):
+            worker.serialize_gaussian(FakeGaussian(2, {'badExportProperty': ('rot_0', 1, 0)}), 2, FakeTorch({}), [])
+
+    def test_fixed_export_facade_is_read_only_and_checks_cached_tensor_identity(self):
+        gaussian = FakeGaussian(2, {})
+        logits = gaussian._opacity + gaussian.opacity_bias_val
+        view = worker._GaussianExportView(gaussian, gaussian.get_opacity, logits)
+        self.assertIs(view._inverse_opacity_activation(gaussian.get_opacity), logits)
+        with self.assertRaisesRegex(worker.ProfileError, 'accessor identity'):
+            view._inverse_opacity_activation(FakeFieldTensor(gaussian.get_opacity.values, (2, 1)))
+        with self.assertRaisesRegex(worker.ProfileError, 'read-only'): view.get_opacity = gaussian._opacity
+
+    def test_fixed_serializer_requires_bounded_diagnostics_shapes_probabilities_and_logits(self):
+        for state in ({'cachedOpacities': [-.01, .1]}, {'cachedOpacities': [.1, 1.01]},
+                      {'rawOpacities': [0, 83]}, {'rawOpacities': [0, -80]}):
+            with self.subTest(state=state), self.assertRaises(worker.ProfileError):
+                worker.serialize_gaussian(FakeGaussian(2, state), 2, FakeTorch({}), [])
+        gaussian = FakeGaussian(2, {}); gaussian._opacity.shape = (2,)
+        with self.assertRaisesRegex(worker.ProfileError, 'tensor'): worker.serialize_gaussian(gaussian, 2, FakeTorch({}), [])
+        with self.assertRaisesRegex(worker.ProfileError, 'Bounded opacity diagnostics'):
+            worker.serialize_gaussian(FakeGaussian(2, {}), 2, FakeTorch({}), [{}, {}])
+
     def test_one_seeded_latent_is_reused_for_two_simulated_density_decodes(self):
         with fixture() as (_, job, path, result):
             paths = worker.validate_job(job, path, result)
@@ -576,17 +701,65 @@ class SplatWorkerTests(unittest.TestCase):
             job['settings']['gaussianCounts'] = [32768]
             job['limits']['maxOutputBytes'] = 32768 * 68 + 4096
             paths = worker.validate_job(job, path, result)
-            stack, _, _, _ = mock_native(paths, extraBytes=5000)
-            with stack: observed = worker.execute(job, paths, {}, {}, b'OWNED_SIMULATED_IMAGE')
+            stack, _, _, _ = mock_native(paths)
+            with stack, patch.object(worker, 'serialize_gaussian', side_effect=lambda gaussian, count, torch, diagnostics: ply(count) + bytes(5000)):
+                observed = worker.execute(job, paths, {}, {}, b'OWNED_SIMULATED_IMAGE')
             self.assertEqual(observed['status'], 'failed'); self.assertEqual(observed['outputs'], [])
             self.assertEqual(list(paths['outputDirectory'].iterdir()), [])
 
     def test_gpu_budget_checks_use_only_simulated_allocator_observations(self):
         state = {'gpuCalls': 0, 'cleanups': 0}
         torch = FakeTorch(state)
-        worker.check_gpu(torch, {'maxGpuAllocatedBytes': 1024})
-        with self.assertRaises(worker.ProfileError): worker.check_gpu(torch, {'maxGpuAllocatedBytes': 1023})
+        limits = {'maxGpuAllocatedBytes': 1024, 'minGpuFreeBytes': 2 * 1024**3}
+        self.assertEqual(worker.check_gpu(torch, limits), (14 * 1024**3, 16 * 1024**3))
+        with self.assertRaisesRegex(worker.ProfileError, 'allocation budget'): worker.check_gpu(torch, {**limits, 'maxGpuAllocatedBytes': 1023})
         self.assertEqual(state['gpuCalls'], 0)
+        self.assertEqual(state['memoryQueries'], [0, 0])
+
+    def test_sampled_gpu_counters_reject_invalid_types_ranges_and_device_changes(self):
+        limits = {'maxGpuAllocatedBytes': 1024, 'minGpuFreeBytes': 2 * 1024**3}
+        torch = FakeTorch({'gpuCalls': 0, 'cleanups': 0})
+        for counters in ((True, 16 * 1024**3), (2.5, 16 * 1024**3), (-1, 16 * 1024**3),
+                         (1, True), (1, 0), (1, 2.5), (1, 2**63), (17 * 1024**3, 16 * 1024**3),
+                         (14 * 1024**3,), None):
+            with self.subTest(counters=counters), patch.object(torch.cuda, 'mem_get_info', return_value=counters), \
+                 self.assertRaises(worker.ProfileError):
+                worker.check_gpu(torch, limits)
+        for device in (1, False, 0.0, None):
+            with self.subTest(device=device), patch.object(torch.cuda, 'current_device', return_value=device), \
+                 self.assertRaisesRegex(worker.ProfileError, 'Selected CUDA device changed'):
+                worker.check_gpu(torch, limits)
+        with self.assertRaisesRegex(worker.ProfileError, 'capacity changed'):
+            worker.check_gpu(torch, limits, expected_total=32 * 1024**3)
+
+    def test_sampled_torch_peak_counter_must_be_an_integer_within_device_capacity(self):
+        limits = {'maxGpuAllocatedBytes': 1024, 'minGpuFreeBytes': 2 * 1024**3}
+        torch = FakeTorch({'gpuCalls': 0, 'cleanups': 0})
+        for peak in (True, -1, 1.5, 16 * 1024**3 + 1):
+            with self.subTest(peak=peak), patch.object(torch.cuda, 'max_memory_allocated', return_value=peak), \
+                 self.assertRaisesRegex(worker.ProfileError, 'allocation counter'):
+                worker.check_gpu(torch, limits)
+
+    def test_later_sampled_headroom_breach_stops_model_conditioning_flow_or_decode_without_retry(self):
+        good = (14 * 1024**3, 16 * 1024**3)
+        low = (2 * 1024**3 - 1, 16 * 1024**3)
+        # Initial admission succeeds in every case. Each later stage must
+        # independently retain the approved 2 GiB residual free-memory floor.
+        for valid_samples, expected_stage, expected_inferences, expected_decodes in (
+                (1, 'gpu-budget-model-load', 0, []), (2, 'conditioning', 0, []),
+                (3, 'latent-inference', 1, []), (4, 'density-32768', 1, [32768])):
+            with self.subTest(stage=expected_stage), fixture() as (_, job, path, result):
+                paths = worker.validate_job(job, path, result)
+                stack, state, torch, _ = mock_native(paths)
+                with stack, patch.object(torch.cuda, 'mem_get_info', side_effect=[good] * valid_samples + [low]) as memory:
+                    observed = worker.execute(job, paths, {}, {}, b'OWNED_SIMULATED_IMAGE')
+                self.assertEqual(observed['status'], 'failed'); self.assertEqual(observed['failureStage'], expected_stage)
+                self.assertIn('Sampled residual GPU headroom', observed['failure'])
+                self.assertEqual((state['loads'], state['inferences'], state['decodes'], state['cleanups']),
+                                 (1, expected_inferences, expected_decodes, 1))
+                self.assertEqual(memory.call_count, valid_samples + 1)
+                self.assertTrue(all(call.args == (0,) for call in memory.call_args_list))
+                self.assertEqual(observed['outputs'], []); self.assertEqual(observed['cleanup']['endingAllocatedBytes'], 0)
 
     def test_cache_budget_reports_fixed_profile_and_monotonic_sampled_bytes(self):
         self.assertEqual(worker.CACHE_BYTE_LIMIT, 67_108_864)

@@ -91,6 +91,24 @@ internal static class GenerationTests
             };
             Check.Throws<InvalidOperationException>(()=>invalidMemory.Generate(invalidMemory.Request("c","candidate")),"native memory receipt cannot omit, exceed or misstate its measured scope: "+variant);
         }
+        foreach(var variant in new[]{"missing","density","nonfinite-raw","nonfinite-cached","overlap","range","bias","null","unknown"})
+        {
+            var invalidOpacity=new Project(root+"-opacity-"+variant);
+            invalidOpacity.Process.ReportMutation=report=>
+            {
+                if(variant=="missing"){report.Remove("opacityDiagnostics");return;}
+                var entry=report["opacityDiagnostics"]![0]!;
+                if(variant=="density")entry["gaussianCount"]=131072;
+                else if(variant=="nonfinite-raw")entry["rawNonfiniteCount"]=1;
+                else if(variant=="nonfinite-cached")entry["cachedNonfiniteCount"]=1;
+                else if(variant=="overlap"){entry["cachedZeroCount"]=32768;entry["cachedOneCount"]=1;}
+                else if(variant=="range")entry["rawFiniteMaximum"]=100;
+                else if(variant=="bias")entry["opacityBias"]=0;
+                else if(variant=="null")entry["rawFiniteMinimum"]=null;
+                else entry["unreviewed"]=true;
+            };
+            Check.Throws<InvalidOperationException>(()=>invalidOpacity.Generate(invalidOpacity.Request("c","candidate")),"invalid native opacity diagnostics rejected: "+variant);
+        }
         Console.WriteLine("Generation lifecycle fixtures use synthetic approvals, installation ports and numeric PLYs. No installation, human acceptance, source decode, native model or GPU ran.");
     }
     static SplatGenerationRequest Sample()=>new(){SchemaVersion="bubo-splat-generation/v1",Task="test",RunId="run",AttemptKind="candidate",
@@ -195,6 +213,8 @@ internal static class GenerationTests
                     ["componentPrecisions"]=new JsonObject{["dinov3"]="bfloat16",["vae_encoder"]="bfloat16",["rmbg"]="float16",["flow_model"]="float16",["decoder"]="float16"}},["outputs"]=outputs,
                 ["modelLoads"]=1,["stochasticInferences"]=1,["peakTorchAllocatedBytes"]=536870912L,["peakTorchReservedBytes"]=805306368L,
                 ["cleanup"]=new JsonObject{["allocatedBeforeWorkspaceClearBytes"]=0,["reservedBeforeWorkspaceClearBytes"]=0,["endingAllocatedBytes"]=0,["endingReservedBytes"]=0,["mechanism"]="torch._C._cuda_clearCublasWorkspaces"},
+                ["opacityDiagnostics"]=new JsonArray(new JsonObject{["gaussianCount"]=32768,["rawFiniteMinimum"]=0,["rawFiniteMaximum"]=0,
+                    ["rawNonfiniteCount"]=0,["cachedZeroCount"]=0,["cachedOneCount"]=0,["cachedNonfiniteCount"]=0,["opacityBias"]=Math.Log(.1/.9)}),
                 ["memoryObservations"]=new JsonObject{["scope"]="worker-process; not aggregate job",["peakCommittedBytes"]=134217728L,["currentPrivateBytes"]=33554432L,
                     ["peakWorkingSetBytes"]=167772160L,["currentWorkingSetBytes"]=50331648L,["measurement"]="Windows process memory counters"},
                 ["cacheObservations"]=new JsonObject{["maximumObservedBytes"]=0,["byteLimit"]=67108864,["fileLimit"]=4096,["measurement"]="stage-sampled; not OS quota"},

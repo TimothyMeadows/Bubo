@@ -246,17 +246,21 @@ public sealed class SplatInstallation(Workspace workspace, AuditedResources reso
         string catalogHash, string specificationHash, CancellationToken token)
     {
         var byPath = files.ToDictionary(file => file.Path, Paths);
+        // Classification uses only this operation's freshly guarded Capture identities.
+        // Do not repeat filesystem component walks for pure root membership tests.
+        var fullPaths = files.ToDictionary(file => file.Path, file => Path.GetFullPath(file.Path, Host.Root), Paths);
         void ExactRoot(string root, JsonArray expected)
         {
+            var fullRoot = Host.ResolveReadPath(root);
             var expectedPaths = new HashSet<string>(Paths);
             foreach (var node in expected)
             {
-                var file = node!.AsObject(); var path = workspace.Relative(Path.Combine(Host.ResolveReadPath(root), file["path"]!.GetValue<string>()));
+                var file = node!.AsObject(); var path = workspace.Relative(Path.Combine(fullRoot, file["path"]!.GetValue<string>()));
                 if (!expectedPaths.Add(path) || !byPath.TryGetValue(path, out var actual)
                     || actual.Sha256 != file["sha256"]!.GetValue<string>() || actual.Bytes != file["bytes"]!.GetValue<long>())
                     throw new InvalidOperationException("Pinned model/source file differs or is missing: " + path);
             }
-            if (!expectedPaths.SetEquals(files.Where(file => Within(Host.ResolveReadPath(file.Path), Host.ResolveReadPath(root))).Select(file => file.Path)))
+            if (!expectedPaths.SetEquals(files.Where(file => Within(fullPaths[file.Path], fullRoot)).Select(file => file.Path)))
                 throw new InvalidOperationException("Pinned model/source root contains extra or missing files");
         }
         ExactRoot(request.ModelDirectory, catalog["weights"]!.AsArray());
@@ -271,7 +275,7 @@ public sealed class SplatInstallation(Workspace workspace, AuditedResources reso
                 || !byPath.TryGetValue(workspace.Relative(path), out var actual) || actual.Sha256 != notice.Sha256)
                 throw new InvalidOperationException("Reviewed notice inventory differs from installed bytes");
         }
-        if (!declaredNotices.SetEquals(files.Where(file => Within(Host.ResolveReadPath(file.Path), noticeRoot)).Select(file => file.Path)))
+        if (!declaredNotices.SetEquals(files.Where(file => Within(fullPaths[file.Path], noticeRoot)).Select(file => file.Path)))
             throw new InvalidOperationException("Notices require complete reviewed inventory without extras");
         var media = SplatJson.ReadFile<JsonObject>(resources.Resolve("resources/media/catalog.json"));
         foreach (var node in media["windowsRuntime"]!["notices"]!.AsArray().Concat(catalog["notices"]!.AsArray()))
@@ -292,8 +296,10 @@ public sealed class SplatInstallation(Workspace workspace, AuditedResources reso
             Host.ResolveReadPath(request.WheelhouseRoot), Host.ResolveReadPath(request.PythonArchive), specification,
             candidate["python"]!.AsObject(), runtimeCatalog);
         token.ThrowIfCancellationRequested();
-        var environmentFiles = files.Where(file => Within(Host.ResolveReadPath(file.Path), Host.ResolveReadPath(request.EnvironmentRoot))
-            || Within(Host.ResolveReadPath(file.Path), Host.ResolveReadPath(request.PythonBaseRoot)));
+        var environmentRoot = Host.ResolveReadPath(request.EnvironmentRoot);
+        var pythonBaseRoot = Host.ResolveReadPath(request.PythonBaseRoot);
+        var environmentFiles = files.Where(file => Within(fullPaths[file.Path], environmentRoot)
+            || Within(fullPaths[file.Path], pythonBaseRoot));
         var text = string.Concat(environmentFiles.OrderBy(file => file.Path, StringComparer.Ordinal).Select(file =>
             file.Path + "|" + file.Sha256 + "|" + file.Bytes.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\n"));
         return Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(text)));

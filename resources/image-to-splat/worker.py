@@ -421,15 +421,142 @@ def verify_ply(payload, count):
     expected = 'ply\nformat binary_little_endian 1.0\nelement vertex ' + str(count) + '\n'
     expected += ''.join('property float ' + name + '\n' for name in PROPERTIES) + 'end_header\n'
     require(payload[:end] == expected.encode('ascii') and len(payload) == end + count * 68, 'Unexpected Gaussian SH0 representation/count')
-    for row in struct.iter_unpack('<17f', memoryview(payload)[end:]):
-        require(all(math.isfinite(value) for value in row), 'Nonfinite Gaussian payload')
-        require(all(abs(value) <= 1_000_000 for value in row[:3]) and all(abs(value) <= 10000 for value in row[3:9])
-                and abs(row[9]) <= 80 and all(abs(value) <= 30 for value in row[10:13])
-                and 1e-20 <= sum(value * value for value in row[13:]) <= 1e12, 'Gaussian numeric profile exceeded')
+    for index, row in enumerate(struct.iter_unpack('<17f', memoryview(payload)[end:])):
+        for column, value in enumerate(row):
+            require_finite(value, index, PROPERTIES[column])
+            ceiling = 1_000_000 if column < 3 else 10000 if column < 9 else 80 if column == 9 else 30 if column < 13 else None
+            if ceiling is not None and abs(value) > ceiling:
+                raise ProfileError('Gaussian numeric profile exceeded at row ' + str(index) + ' property ' + PROPERTIES[column])
+        require(1e-20 <= sum(value * value for value in row[13:]) <= 1e12,
+                'Invalid Gaussian quaternion at row ' + str(index) + ' property rot_0')
 
 
-def check_gpu(torch, limits):
-    require(int(torch.cuda.max_memory_allocated(0)) <= limits['maxGpuAllocatedBytes'], 'Torch GPU allocation budget exceeded')
+def require_finite(value, index, name):
+    if not math.isfinite(value):
+        kind = 'NaN' if math.isnan(value) else '+Inf' if value > 0 else '-Inf'
+        raise ProfileError('Nonfinite Gaussian payload at row ' + str(index) + ' property ' + name + ': ' + kind)
+
+
+def array_float32_bytes(value, shape, name):
+    require(tuple(value.shape) == shape, 'Unexpected Gaussian field shape: ' + name)
+    encoded = value.astype('<f4', copy=False).tobytes()
+    require(type(encoded) is bytes and len(encoded) == math.prod(shape) * 4,
+            'Unexpected float32 Gaussian field length: ' + name)
+    return encoded
+
+
+def cpu_float32_tensor(value, shape, torch, name):
+    value = value.detach().to(device='cpu', dtype=torch.float32).contiguous()
+    require(value.dtype == torch.float32 and tuple(value.shape) == shape, 'Unexpected Gaussian tensor: ' + name)
+    return value, array_float32_bytes(value.numpy(), shape, name)
+
+
+def opacity_summary(encoded):
+    minimum, maximum, bad, zero, one = None, None, 0, 0, 0
+    for (value,) in struct.iter_unpack('<f', encoded):
+        if math.isfinite(value):
+            minimum = value if minimum is None else min(minimum, value)
+            maximum = value if maximum is None else max(maximum, value)
+            zero += value == 0
+            one += value == 1
+        else:
+            bad += 1
+    return minimum, maximum, bad, zero, one
+
+
+class _GaussianExportView:
+    """Read-only field facade for the exact pinned exporter, without its sigmoid inverse.
+
+    A finite raw logit plus its finite stored bias is the intended PLY logit.
+    Rounding sigmoid to FP16 can destroy that value before inverse activation.
+    Never clip/repair raw values or mutate the model/source to work around it.
+    """
+    __slots__ = ('get_xyz', '_features_dc', 'get_opacity', '_inverse_opacity_activation',
+                 'get_scaling', '_rotation', 'rots_bias')
+
+    def __init__(self, gaussian, cached, logits):
+        for name in ('get_xyz', '_features_dc', 'get_scaling', '_rotation', 'rots_bias'):
+            object.__setattr__(self, name, getattr(gaussian, name))
+        object.__setattr__(self, 'get_opacity', cached)
+
+        def exact_inverse(value):
+            require(value is cached, 'Pinned opacity export accessor identity differs')
+            return logits
+
+        object.__setattr__(self, '_inverse_opacity_activation', exact_inverse)
+
+    def __setattr__(self, name, value):
+        raise ProfileError('Gaussian export facade is read-only')
+
+
+def serialize_gaussian(gaussian, count, torch, diagnostics):
+    """Fixed SH0 f4 serialization. Diagnostic rows and indices are zero-based."""
+    require(integer(count, 1, 131072) and gaussian.sh_degree == 0
+            and tuple(gaussian.construct_list_of_attributes()) == PROPERTIES, 'Unexpected Gaussian export profile')
+    require(type(diagnostics) is list and len(diagnostics) < 2, 'Bounded opacity diagnostics required')
+    raw, raw_bytes = cpu_float32_tensor(gaussian._opacity, (count, 1), torch, 'opacity')
+    bias, bias_bytes = cpu_float32_tensor(gaussian.opacity_bias_val, (), torch, 'opacity bias')
+    cached = gaussian.get_opacity
+    _, cached_bytes = cpu_float32_tensor(cached, (count, 1), torch, 'cached opacity')
+    raw_min, raw_max, raw_bad, _, _ = opacity_summary(raw_bytes)
+    _, _, cached_bad, cached_zero, cached_one = opacity_summary(cached_bytes)
+    bias_value = struct.unpack('<f', bias_bytes)[0]
+    diagnostics.append({'gaussianCount': count, 'rawFiniteMinimum': raw_min, 'rawFiniteMaximum': raw_max,
+                        'rawNonfiniteCount': raw_bad, 'cachedZeroCount': cached_zero, 'cachedOneCount': cached_one,
+                        'cachedNonfiniteCount': cached_bad, 'opacityBias': bias_value if math.isfinite(bias_value) else None})
+    require_finite(bias_value, 0, 'opacity [bias]')
+    for index, ((raw_value,), (cached_value,)) in enumerate(zip(struct.iter_unpack('<f', raw_bytes), struct.iter_unpack('<f', cached_bytes))):
+        require_finite(raw_value, index, 'opacity')
+        require_finite(cached_value, index, 'opacity [cached probability]')
+        require(0 <= cached_value <= 1, 'Invalid cached Gaussian probability at row ' + str(index) + ' property opacity')
+    logits = raw + bias
+    _, direct = cpu_float32_tensor(logits, (count, 1), torch, 'opacity')
+    for index, (value,) in enumerate(struct.iter_unpack('<f', direct)):
+        require_finite(value, index, 'opacity')
+        require(abs(value) <= 80, 'Gaussian numeric profile exceeded at row ' + str(index) + ' property opacity')
+    # The verified pinned method owns all original coordinates, SH0, scale and
+    # quaternion transforms. The facade's inverse accepts only the same cached
+    # tensor and returns already validated logits without evaluating logit(p).
+    export = type(gaussian)._get_ply_data(_GaussianExportView(gaussian, cached, logits),
+                                           transform=type(gaussian)._DEFAULT_TRANSFORM)
+    require(type(export) is tuple and len(export) == 6, 'Unexpected pinned Gaussian field inventory')
+    widths = (3, 3, 3, 1, 3, 4)
+    fields = [array_float32_bytes(value, (count, width), 'export group ' + str(index))
+              for index, (value, width) in enumerate(zip(export, widths))]
+    header = 'ply\nformat binary_little_endian 1.0\nelement vertex ' + str(count) + '\n'
+    header += ''.join('property float ' + name + '\n' for name in PROPERTIES) + 'end_header\n'
+    output = bytearray(header.encode('ascii'))
+    output.extend(bytes(count * 68))
+    offset = len(output) - count * 68
+    for row in range(count):
+        column = 0
+        for encoded, width in zip(fields, widths):
+            output[offset + row * 68 + column * 4:offset + row * 68 + (column + width) * 4] = encoded[row * width * 4:(row + 1) * width * 4]
+            column += width
+    encoded = bytes(output)
+    verify_ply(encoded, count)
+    return encoded
+
+
+def check_gpu(torch, limits, expected_total=None):
+    """Stage/flow-callback sample, not a continuous free-memory reservation.
+
+    Recheck the selected visible CUDA device and actual free memory as well as
+    this worker's allocator peak. Neither counter measures aggregate VRAM use
+    continuously; concurrent applications can change free memory between samples.
+    """
+    require(integer(torch.cuda.current_device(), 0, 0), 'Selected CUDA device changed')
+    observed = torch.cuda.mem_get_info(0)
+    require(type(observed) in (tuple, list) and len(observed) == 2, 'Invalid CUDA memory counters')
+    free, total = observed
+    require(integer(total, 1, 2**63 - 1) and integer(free, 0, total), 'Invalid CUDA memory counters')
+    require(expected_total is None or total == expected_total, 'Selected CUDA device memory capacity changed')
+    require(free >= limits['minGpuFreeBytes'] and limits['maxGpuAllocatedBytes'] <= total,
+            'Sampled residual GPU headroom/profile budget unavailable')
+    peak = torch.cuda.max_memory_allocated(0)
+    require(integer(peak, 0, total), 'Invalid Torch GPU allocation counter')
+    require(peak <= limits['maxGpuAllocatedBytes'], 'Torch GPU allocation budget exceeded')
+    return free, total
 
 
 class CacheBudget:
@@ -581,7 +708,7 @@ def execute(job, paths, catalog, source_bytes, payload):
               'latentSha256': None, 'conditioningSha256': None, 'outputs': [], 'modelLoads': 0, 'stochasticInferences': 0,
               'peakTorchAllocatedBytes': 0, 'peakTorchReservedBytes': 0, 'cleanup': None, 'networkAttempts': 0,
               'aggregateDriverMemoryMeasured': False, 'loadedModules': [], 'cacheObservations': cache.observations(),
-              'memoryObservations': None, 'failureStage': None, 'failure': None, 'humanReview': 'pending', 'promotion': False}
+              'memoryObservations': None, 'opacityDiagnostics': [], 'failureStage': None, 'failure': None, 'humanReview': 'pending', 'promotion': False}
     stage, torch, pipe, cond, sample, latent, generator, gaussian = 'environment', None, None, None, None, None, None, None
     cuda_ready = False
     failure = None
@@ -610,9 +737,8 @@ def execute(job, paths, catalog, source_bytes, payload):
         require(torch.cuda.is_available() and torch.cuda.is_bf16_supported(), 'CUDA and native bfloat16 support required')
         torch.cuda.set_device(0); cuda_ready = True
         properties = torch.cuda.get_device_properties(0)
-        free, total = map(int, torch.cuda.mem_get_info(0))
-        require(free >= job['limits']['minGpuFreeBytes'] and job['limits']['maxGpuAllocatedBytes'] <= total, 'GPU headroom/profile budget unavailable')
-        require(int(torch.cuda.memory_allocated(0)) == 0, 'Fresh worker CUDA allocation state required')
+        free, total = check_gpu(torch, job['limits'])
+        require(integer(torch.cuda.memory_allocated(0), 0, 0), 'Fresh worker CUDA allocation state required')
         torch.cuda.set_per_process_memory_fraction(job['limits']['maxGpuAllocatedBytes'] / total, 0)
         torch.cuda.reset_peak_memory_stats(0)
         result['device'] = {'type': 'cuda', 'index': 0, 'name': properties.name, 'totalBytes': total, 'initialFreeBytes': free}
@@ -639,7 +765,8 @@ def execute(job, paths, catalog, source_bytes, payload):
             result['execution'] = {'device': 'cuda:0', 'offload': 'none', 'torchCuda': torch.version.cuda,
                                    'decoderSampling': 'systematic; global seeded RNG', 'globalSeed': job['settings']['seed'],
                                    'componentPrecisions': component_precisions}
-            check_gpu(torch, job['limits'])
+            stage = 'gpu-budget-model-load'
+            check_gpu(torch, job['limits'], total)
             stage = 'foreground-preprocessing'
             if prepared is None:
                 started = time.perf_counter()
@@ -656,12 +783,13 @@ def execute(job, paths, catalog, source_bytes, payload):
             cond = pipe.encode_image(prepared, generator=generator)
             torch.cuda.synchronize(0); result['encodingSeconds'] = time.perf_counter() - started
             result['conditioningSha256'] = tensor_digest(cond, torch, np)
+            check_gpu(torch, job['limits'], total)
             cache.observe()
             stage = 'latent-inference'
             started = time.perf_counter()
 
             def inference_checkpoint(_step, _total):
-                check_gpu(torch, job['limits'])
+                check_gpu(torch, job['limits'], total)
                 cache.observe()
 
             sample = pipe.sample_latent(cond, steps=job['settings']['steps'], guidance_scale=job['settings']['guidance'],
@@ -680,12 +808,11 @@ def execute(job, paths, catalog, source_bytes, payload):
                 gaussian = pipe.decode_latent(latent, num_gaussians=count)
                 torch.cuda.synchronize(0)
                 result['densityDecoding'].append({'gaussianCount': count, 'seconds': time.perf_counter() - started})
-                check_gpu(torch, job['limits'])
+                check_gpu(torch, job['limits'], total)
                 cache.observe()
                 require(gaussian.sh_degree == 0 and int(gaussian.get_xyz.shape[0]) == count, 'Decoder produced an unexpected Gaussian profile/count')
-                encoded = gaussian.to_ply_bytes()
+                encoded = serialize_gaussian(gaussian, count, torch, result['opacityDiagnostics'])
                 require(total_bytes + len(encoded) <= job['limits']['maxOutputBytes'], 'Aggregate output byte limit exceeded')
-                verify_ply(encoded, count)
                 name = 'gaussian-' + str(count) + '.ply'
                 target = local_path(str(paths['outputDirectory'] / name))
                 with target.open('xb') as stream:

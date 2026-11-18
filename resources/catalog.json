@@ -179,7 +179,7 @@
     "resources/schematic-to-model/README.md": "1ee7b5d356d6a93e22a0475df19a27b412808777e92e20838cec7ae147ec9e1a",
     "resources/image-to-splat/catalog.json": "d4317640d965f464c2195687a268d77c496355a409959f5b6102b01bb0ab2ef2",
     "resources/image-to-splat/provision.py": "afc45a8d30fcd6bc29e474acad640e19306776fc1556986d25a3ed404ee0de47",
-    "resources/image-to-splat/worker.py": "4c914c35d96234ee21827cf2eddc4a04729e18cb9ddf6a804a292013f49c4172",
+    "resources/image-to-splat/worker.py": "b5493af0b9017c5ea17dd72d0584877d56ef473335e24a1a4354f96d082d8869",
     "resources/image-to-splat/notices/BiRefNet-MIT.txt": "92a7089e0915fc32bc40067560b398f1e6a7a5958abd7d04eda393629a5acefb",
     "resources/image-to-splat/notices/DINOv3-LICENSE.md": "25d122eb8f5b880fd23c736fb6ea8018ee45c12237e00b8a86d14c653904999e",
     "resources/image-to-splat/notices/FLUX2-Apache-2.0.txt": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",

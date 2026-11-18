@@ -276,7 +276,7 @@ public sealed class SplatGeneration(Workspace workspace,AuditedResources resourc
             || report["modelLoads"]!.GetValue<int>()!=1 || report["stochasticInferences"]!.GetValue<int>()!=1
             || report["networkAttempts"]!.GetValue<int>()!=0 || report["promotion"]!.GetValue<bool>() || Text(report,"humanReview")!="pending")
             throw new InvalidOperationException("Actual worker identity/candidate observations differ");
-        var allowed="schemaVersion status operation backend sourceRevision modelRevision inputSha256 settings python versions device preprocessing loadingSeconds preprocessingSeconds encodingSeconds inferenceSeconds unloadingSeconds densityDecoding conditioningSha256 latentSha256 execution outputs modelLoads stochasticInferences peakTorchAllocatedBytes peakTorchReservedBytes cleanup networkAttempts failureStage failure humanReview promotion aggregateDriverMemoryMeasured loadedModules cacheObservations memoryObservations".Split(' ').ToHashSet(StringComparer.Ordinal);
+        var allowed="schemaVersion status operation backend sourceRevision modelRevision inputSha256 settings python versions device preprocessing loadingSeconds preprocessingSeconds encodingSeconds inferenceSeconds unloadingSeconds densityDecoding conditioningSha256 latentSha256 execution outputs modelLoads stochasticInferences peakTorchAllocatedBytes peakTorchReservedBytes cleanup networkAttempts failureStage failure humanReview promotion aggregateDriverMemoryMeasured loadedModules cacheObservations memoryObservations opacityDiagnostics".Split(' ').ToHashSet(StringComparer.Ordinal);
         if(report.Any(x=>!allowed.Contains(x.Key)) || allowed.Where(x=>x!="aggregateDriverMemoryMeasured").Any(x=>!report.ContainsKey(x))
             || report["failureStage"] is not null || report["failure"] is not null)
             throw new InvalidOperationException("Incomplete or unknown native result fields");
@@ -340,6 +340,22 @@ public sealed class SplatGeneration(Workspace workspace,AuditedResources resourc
             var entry=densities[i]!.AsObject();Keys(entry,["gaussianCount","seconds"]);var seconds=entry["seconds"]!.GetValue<double>();
             if(entry["gaussianCount"]!.GetValue<int>()!=request.Request.GaussianCounts[i] || !double.IsFinite(seconds) || seconds<0 || seconds>request.Request.Budgets.TimeoutSeconds)
                 throw new InvalidOperationException("Actual density-decoding observations differ");
+        }
+        var opacityDiagnostics=report["opacityDiagnostics"]!.AsArray();
+        if(opacityDiagnostics.Count!=request.Request.GaussianCounts.Length)throw new InvalidOperationException("Complete per-density opacity serialization observations required");
+        for(var i=0;i<opacityDiagnostics.Count;i++)
+        {
+            var entry=opacityDiagnostics[i]!.AsObject();
+            var names=new[]{"gaussianCount","rawFiniteMinimum","rawFiniteMaximum","rawNonfiniteCount","cachedZeroCount","cachedOneCount","cachedNonfiniteCount","opacityBias"};
+            Keys(entry,names);
+            if(names.Any(name=>entry[name] is null))throw new InvalidOperationException("Finite complete opacity diagnostics required for success");
+            var count=entry["gaussianCount"]!.GetValue<int>();var minimum=entry["rawFiniteMinimum"]!.GetValue<double>();var maximum=entry["rawFiniteMaximum"]!.GetValue<double>();
+            var bias=entry["opacityBias"]!.GetValue<double>();var zeros=entry["cachedZeroCount"]!.GetValue<int>();var ones=entry["cachedOneCount"]!.GetValue<int>();
+            if(count!=request.Request.GaussianCounts[i] || !double.IsFinite(minimum) || !double.IsFinite(maximum) || minimum>maximum
+                || !double.IsFinite(bias) || Math.Abs(bias-Math.Log(.1/.9))>1e-5 || minimum+bias < -80.00001 || maximum+bias > 80.00001
+                || entry["rawNonfiniteCount"]!.GetValue<int>()!=0 || entry["cachedNonfiniteCount"]!.GetValue<int>()!=0
+                || zeros<0 || ones<0 || (long)zeros+ones>count)
+                throw new InvalidOperationException("Actual opacity serialization diagnostics are invalid");
         }
         if(reserved>device["totalBytes"]!.GetValue<long>() || device["initialFreeBytes"]!.GetValue<long>()>device["totalBytes"]!.GetValue<long>()
             || request.Limits.MaxGpuAllocatedBytes>device["totalBytes"]!.GetValue<long>() || report["aggregateDriverMemoryMeasured"]!.GetValue<bool>())
