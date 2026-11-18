@@ -517,6 +517,46 @@ def loaded_modules():
     return paths
 
 
+def memory_observations():
+    """Own-process commit and resident counters; neither aggregate-job RAM nor VRAM.
+
+    Windows retains PeakPagefileUsage and PeakWorkingSetSize over the process
+    lifetime, including peaks between stage samples. See PROCESS_MEMORY_COUNTERS_EX:
+    https://learn.microsoft.com/en-us/windows/win32/api/psapi/ns-psapi-process_memory_counters_ex
+    """
+    require(os.name == 'nt' and sys.maxsize > 2**32, 'Windows x64 process memory observations required')
+    import ctypes
+
+    class ProcessMemoryCountersEx(ctypes.Structure):
+        _fields_ = [('cb', ctypes.c_uint32), ('PageFaultCount', ctypes.c_uint32),
+                    ('PeakWorkingSetSize', ctypes.c_size_t), ('WorkingSetSize', ctypes.c_size_t),
+                    ('QuotaPeakPagedPoolUsage', ctypes.c_size_t), ('QuotaPagedPoolUsage', ctypes.c_size_t),
+                    ('QuotaPeakNonPagedPoolUsage', ctypes.c_size_t), ('QuotaNonPagedPoolUsage', ctypes.c_size_t),
+                    ('PagefileUsage', ctypes.c_size_t), ('PeakPagefileUsage', ctypes.c_size_t),
+                    ('PrivateUsage', ctypes.c_size_t)]
+
+    size = ctypes.sizeof(ProcessMemoryCountersEx)
+    require(ctypes.sizeof(ctypes.c_uint32) == 4 and ctypes.sizeof(ctypes.c_size_t) == 8 and size == 80,
+            'Windows x64 process memory counter ABI differs')
+    kernel = ctypes.WinDLL('kernel32', use_last_error=True)
+    kernel.GetCurrentProcess.argtypes = []
+    kernel.GetCurrentProcess.restype = ctypes.c_void_p
+    kernel.K32GetProcessMemoryInfo.argtypes = [ctypes.c_void_p, ctypes.POINTER(ProcessMemoryCountersEx), ctypes.c_uint32]
+    kernel.K32GetProcessMemoryInfo.restype = ctypes.c_int32
+    counters = ProcessMemoryCountersEx()
+    counters.cb = size
+    require(bool(kernel.K32GetProcessMemoryInfo(kernel.GetCurrentProcess(), ctypes.byref(counters), size))
+            and counters.cb == size, 'Windows process memory observation unavailable')
+    peak, current = int(counters.PeakPagefileUsage), int(counters.PrivateUsage)
+    peak_working, current_working = int(counters.PeakWorkingSetSize), int(counters.WorkingSetSize)
+    require(integer(current, 1, 2**63 - 1) and integer(peak, current, 2**63 - 1)
+            and integer(current_working, 1, 2**63 - 1) and integer(peak_working, current_working, 2**63 - 1),
+            'Windows process memory counters are invalid')
+    return {'scope': 'worker-process; not aggregate job', 'peakCommittedBytes': peak, 'currentPrivateBytes': current,
+            'peakWorkingSetBytes': peak_working, 'currentWorkingSetBytes': current_working,
+            'measurement': 'Windows process memory counters'}
+
+
 def module_union(observed, current):
     """Combine phase samples only; the receiving installation owner admits each actual path."""
     require(type(observed) is list and type(current) is list and 1 <= len(current) <= 2048,
@@ -541,7 +581,7 @@ def execute(job, paths, catalog, source_bytes, payload):
               'latentSha256': None, 'conditioningSha256': None, 'outputs': [], 'modelLoads': 0, 'stochasticInferences': 0,
               'peakTorchAllocatedBytes': 0, 'peakTorchReservedBytes': 0, 'cleanup': None, 'networkAttempts': 0,
               'aggregateDriverMemoryMeasured': False, 'loadedModules': [], 'cacheObservations': cache.observations(),
-              'failureStage': None, 'failure': None, 'humanReview': 'pending', 'promotion': False}
+              'memoryObservations': None, 'failureStage': None, 'failure': None, 'humanReview': 'pending', 'promotion': False}
     stage, torch, pipe, cond, sample, latent, generator, gaussian = 'environment', None, None, None, None, None, None, None
     cuda_ready = False
     failure = None
@@ -563,6 +603,8 @@ def execute(job, paths, catalog, source_bytes, payload):
             # have already been checked on CPU before any native import.
             prepared, preprocessing = None, None
         result['preprocessingSeconds'] += time.perf_counter() - started
+        stage = 'memory-observation-before-native'
+        memory_observations()
         stage = 'native-import'
         torch, np, source = load_backend(paths, source_bytes)
         require(torch.cuda.is_available() and torch.cuda.is_bf16_supported(), 'CUDA and native bfloat16 support required')
@@ -682,6 +724,15 @@ def execute(job, paths, catalog, source_bytes, payload):
                 result['failureStage'], result['failure'] = 'cache-final-cleanup', 'Cache budget or safe inventory unavailable'
                 failure = 'cache-final-cleanup'
         result['cacheObservations'] = cache.observations()
+        try:
+            # Query after native/cache cleanup; lifetime commit/working-set
+            # peaks retain allocations that have already been released.
+            result['memoryObservations'] = memory_observations()
+        except Exception:
+            result['memoryObservations'] = None
+            if failure is None:
+                result['failureStage'], result['failure'] = 'memory-observation-final-cleanup', 'Windows process memory observation unavailable or invalid'
+                failure = 'memory-observation-final-cleanup'
         result['networkAttempts'] = guard.network_attempts
         if guard.network_attempts and failure is None:
             result['failureStage'], result['failure'] = 'offline', 'Offline execution was violated'

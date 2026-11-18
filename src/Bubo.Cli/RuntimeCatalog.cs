@@ -3,7 +3,7 @@ using Hephaera.AssetProduction;
 
 static class RuntimeCatalog
 {
-    public const string ExpectedSha256 = "d50c501e188f8873029e96caa5c47f14d1e18a2601398d493b7293de3c27dccf";
+    public const string ExpectedSha256 = "dfe18cf79ce2a7bca018109ae1cb75d70b9a41a47cda1a900f1b6f379fd280e9";
     public static void Verify()
     {
         var root = Path.GetFullPath(AppContext.BaseDirectory);

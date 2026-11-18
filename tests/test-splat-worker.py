@@ -2,7 +2,7 @@
 from contextlib import ExitStack, contextmanager, nullcontext
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 import copy
 import hashlib
 import importlib.util
@@ -55,6 +55,41 @@ def ply(count, row=None):
     header = 'ply\nformat binary_little_endian 1.0\nelement vertex ' + str(count) + '\n'
     header += ''.join('property float ' + name + '\n' for name in worker.PROPERTIES) + 'end_header\n'
     return header.encode('ascii') + struct.pack('<17f', *row) * count
+
+
+def simulated_memory_receipt(peak=96 * 1024**2, current=64 * 1024**2):
+    return {'scope': 'worker-process; not aggregate job', 'peakCommittedBytes': peak, 'currentPrivateBytes': current,
+            'peakWorkingSetBytes': 80 * 1024**2, 'currentWorkingSetBytes': 24 * 1024**2,
+            'measurement': 'Windows process memory counters'}
+
+
+def simulated_memory_api(values=None, success=1, pointer_size=8):
+    """Inert ctypes/Win32 port: no ctypes extension import or OS API invocation."""
+    class Structure:
+        def __init__(self):
+            for name, _ in self._fields_: setattr(self, name, 0)
+
+    uint32, size_t, void_p, int32 = [SimpleNamespace(byte_width=size) for size in (4, pointer_size, pointer_size, 4)]
+
+    def sizeof(value):
+        return sum(field_type.byte_width for _, field_type in value._fields_) if hasattr(value, '_fields_') else value.byte_width
+
+    captured = []
+
+    def query(handle, counters, size):
+        captured.append((handle, counters, size))
+        for name, value in (values or {'PeakPagefileUsage': 96 * 1024**2, 'PrivateUsage': 64 * 1024**2,
+                                      'PeakWorkingSetSize': 80 * 1024**2, 'WorkingSetSize': 24 * 1024**2}).items():
+            setattr(counters, name, value)
+        return success
+
+    kernel = SimpleNamespace(GetCurrentProcess=Mock(return_value='SIMULATED_OWN_PROCESS_HANDLE'),
+                             K32GetProcessMemoryInfo=Mock(side_effect=query))
+    api = ModuleType('ctypes')
+    api.Structure, api.c_uint32, api.c_size_t, api.c_void_p, api.c_int32 = Structure, uint32, size_t, void_p, int32
+    api.sizeof, api.byref, api.POINTER = sizeof, lambda value: value, lambda value: ('SIMULATED_POINTER', value)
+    api.WinDLL = Mock(return_value=kernel)
+    return api, kernel, captured
 
 
 class FakeMask:
@@ -264,6 +299,7 @@ def mock_native(paths, image=None, **overrides):
     backend = stack.enter_context(patch.object(worker, 'load_backend', return_value=(torch, np, source)))
     stack.enter_context(patch.object(worker, 'snapshot', return_value={}))
     stack.enter_context(patch.object(worker, 'loaded_modules', return_value=[str(ROOT / 'SIMULATED_RUNTIME_MODULE.dll')]))
+    stack.enter_context(patch.object(worker, 'memory_observations', side_effect=lambda: simulated_memory_receipt()))
     return stack, state, torch, backend
 
 
@@ -658,6 +694,87 @@ class SplatWorkerTests(unittest.TestCase):
         self.assertEqual(len(worker.module_union([], maximum)), 2048)
         with self.assertRaises(worker.ProfileError):
             worker.module_union(maximum, [str(ROOT / 'SIMULATED_OVERFLOW.dll')])
+
+    def test_memory_counter_windows_abi_and_commit_resident_fields_use_only_mocked_calls(self):
+        api, kernel, captured = simulated_memory_api()
+        with patch.dict(sys.modules, {'ctypes': api}), patch.object(worker.os, 'name', 'nt'):
+            observed = worker.memory_observations()
+        self.assertEqual(observed, simulated_memory_receipt())
+        api.WinDLL.assert_called_once_with('kernel32', use_last_error=True)
+        self.assertEqual(kernel.GetCurrentProcess.argtypes, [])
+        self.assertIs(kernel.GetCurrentProcess.restype, api.c_void_p)
+        self.assertIs(kernel.K32GetProcessMemoryInfo.restype, api.c_int32)
+        self.assertEqual(kernel.K32GetProcessMemoryInfo.call_count, 1)
+        handle, counters, size = captured[0]
+        self.assertEqual((handle, size, counters.cb), ('SIMULATED_OWN_PROCESS_HANDLE', 80, 80))
+        self.assertEqual([name for name, _ in counters._fields_], ['cb', 'PageFaultCount', 'PeakWorkingSetSize',
+                         'WorkingSetSize', 'QuotaPeakPagedPoolUsage', 'QuotaPagedPoolUsage', 'QuotaPeakNonPagedPoolUsage',
+                         'QuotaNonPagedPoolUsage', 'PagefileUsage', 'PeakPagefileUsage', 'PrivateUsage'])
+        self.assertTrue(all(kind is api.c_uint32 for _, kind in counters._fields_[:2]))
+        self.assertTrue(all(kind is api.c_size_t for _, kind in counters._fields_[2:]))
+
+    def test_memory_observation_rejects_unsupported_abi_without_querying_mock_os(self):
+        api, kernel, _ = simulated_memory_api(pointer_size=4)
+        with patch.dict(sys.modules, {'ctypes': api}), patch.object(worker.os, 'name', 'nt'), \
+             self.assertRaisesRegex(worker.ProfileError, 'ABI differs'):
+            worker.memory_observations()
+        kernel.K32GetProcessMemoryInfo.assert_not_called()
+
+    def test_memory_observation_failed_mock_win32_call_is_rejected(self):
+        api, _, _ = simulated_memory_api(success=0)
+        with patch.dict(sys.modules, {'ctypes': api}), patch.object(worker.os, 'name', 'nt'), \
+             self.assertRaisesRegex(worker.ProfileError, 'observation unavailable'):
+            worker.memory_observations()
+
+    def test_memory_observation_rejects_invalid_commit_or_resident_counter_relations(self):
+        for change in ({'PrivateUsage': 0}, {'PeakPagefileUsage': 1}, {'PeakWorkingSetSize': 1},
+                       {'WorkingSetSize': 0}, {'PeakPagefileUsage': 2**63}, {'cb': 79}):
+            values = {'PeakPagefileUsage': 96 * 1024**2, 'PrivateUsage': 64 * 1024**2,
+                      'PeakWorkingSetSize': 80 * 1024**2, 'WorkingSetSize': 24 * 1024**2, **change}
+            api, _, _ = simulated_memory_api(values=values)
+            with self.subTest(change=change), patch.dict(sys.modules, {'ctypes': api}), \
+                 patch.object(worker.os, 'name', 'nt'), self.assertRaises(worker.ProfileError):
+                worker.memory_observations()
+
+    def test_simulated_final_memory_receipt_is_after_cleanup_and_retains_lifetime_peak(self):
+        with fixture() as (_, job, path, result):
+            job['settings']['gaussianCounts'] = [32768]
+            paths = worker.validate_job(job, path, result)
+            stack, state, _, _ = mock_native(paths)
+            observations = []
+
+            def observe():
+                observations.append(state['cleanups'])
+                return simulated_memory_receipt(peak=(96 if len(observations) == 1 else 128) * 1024**2,
+                                                current=(64 if len(observations) == 1 else 32) * 1024**2)
+
+            with stack, patch.object(worker, 'memory_observations', side_effect=observe):
+                observed = worker.execute(job, paths, {}, {}, b'OWNED_SIMULATED_IMAGE')
+            self.assertEqual(observed['status'], 'succeeded'); self.assertEqual(observations, [0, 1])
+            self.assertEqual(observed['memoryObservations'], simulated_memory_receipt(peak=128 * 1024**2, current=32 * 1024**2))
+
+    def test_simulated_initial_memory_measurement_failure_blocks_native_entry(self):
+        with fixture() as (_, job, path, result):
+            paths = worker.validate_job(job, path, result)
+            stack, state, _, backend = mock_native(paths)
+            with stack, patch.object(worker, 'memory_observations', side_effect=[worker.ProfileError('Simulated unavailable memory observation'),
+                                                                              simulated_memory_receipt()]):
+                observed = worker.execute(job, paths, {}, {}, b'OWNED_SIMULATED_IMAGE')
+            self.assertEqual(observed['status'], 'failed'); self.assertEqual(observed['failureStage'], 'memory-observation-before-native')
+            self.assertEqual(state['gpuCalls'], 0); backend.assert_not_called()
+
+    def test_simulated_final_memory_measurement_failure_rejects_successful_outputs(self):
+        with fixture() as (_, job, path, result):
+            job['settings']['gaussianCounts'] = [32768]
+            paths = worker.validate_job(job, path, result)
+            stack, state, _, _ = mock_native(paths)
+            with stack, patch.object(worker, 'memory_observations', side_effect=[simulated_memory_receipt(),
+                                                                              worker.ProfileError('Simulated unavailable final memory observation')]):
+                observed = worker.execute(job, paths, {}, {}, b'OWNED_SIMULATED_IMAGE')
+            self.assertEqual(observed['status'], 'failed'); self.assertEqual(observed['failureStage'], 'memory-observation-final-cleanup')
+            self.assertIsNone(observed['memoryObservations']); self.assertEqual(len(observed['outputs']), 1)
+            self.assertEqual((state['inferences'], state['cleanups']), (1, 1))
+            self.assertEqual(observed['cleanup']['endingAllocatedBytes'], 0)
 
     def test_simulated_native_module_samples_cover_load_inference_and_cleanup_phases(self):
         with fixture() as (_, job, path, result):

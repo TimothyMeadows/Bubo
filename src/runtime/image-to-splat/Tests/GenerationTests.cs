@@ -80,6 +80,17 @@ internal static class GenerationTests
         objectPackage=objectPackage with{Variants=[objectPackage.Variants[0] with{Artifact=new(){Path=artifact,Sha256=Workspace.Hash(Path.Combine(fifth.Root,artifact))}}]};
         File.WriteAllBytes(Path.Combine(fifth.Root,packagePath),JsonSerializer.SerializeToUtf8Bytes(objectPackage,SplatJson.Options));fifth.Reference(packagePath,"input");
         Check.Throws<InvalidOperationException>(()=>fifth.Service().VerifyPackage(packagePath,default),"rehashing an artifact cannot replace verified source-model ancestry");
+        foreach(var variant in new[]{"over-budget","wrong-scope","missing-memory"})
+        {
+            var invalidMemory=new Project(root+"-memory-"+variant);
+            invalidMemory.Process.ReportMutation=report=>
+            {
+                if(variant=="over-budget")report["memoryObservations"]!["peakCommittedBytes"]=268435457L;
+                else if(variant=="wrong-scope")report["memoryObservations"]!["scope"]="aggregate-job";
+                else report.Remove("memoryObservations");
+            };
+            Check.Throws<InvalidOperationException>(()=>invalidMemory.Generate(invalidMemory.Request("c","candidate")),"native memory receipt cannot omit, exceed or misstate its measured scope: "+variant);
+        }
         Console.WriteLine("Generation lifecycle fixtures use synthetic approvals, installation ports and numeric PLYs. No installation, human acceptance, source decode, native model or GPU ran.");
     }
     static SplatGenerationRequest Sample()=>new(){SchemaVersion="bubo-splat-generation/v1",Task="test",RunId="run",AttemptKind="candidate",
@@ -155,6 +166,7 @@ internal static class GenerationTests
         public int Starts {get;private set;}
         public bool FailAfterClaim {get;set;}
         public Action? BeforeClaim {get;set;}
+        public Action<JsonObject>? ReportMutation {get;set;}
         public bool SupportsPrivateMemoryLimit=>true;
         public Task Run(string executable,IEnumerable<string> arguments,string cwd,string log,int seconds,CancellationToken cancellation=default,long maximumLogBytes=16777216,IReadOnlyDictionary<string,string>? environment=null)
             =>throw new InvalidOperationException("Unapproved non-GPU process route");
@@ -183,9 +195,11 @@ internal static class GenerationTests
                     ["componentPrecisions"]=new JsonObject{["dinov3"]="bfloat16",["vae_encoder"]="bfloat16",["rmbg"]="float16",["flow_model"]="float16",["decoder"]="float16"}},["outputs"]=outputs,
                 ["modelLoads"]=1,["stochasticInferences"]=1,["peakTorchAllocatedBytes"]=536870912L,["peakTorchReservedBytes"]=805306368L,
                 ["cleanup"]=new JsonObject{["allocatedBeforeWorkspaceClearBytes"]=0,["reservedBeforeWorkspaceClearBytes"]=0,["endingAllocatedBytes"]=0,["endingReservedBytes"]=0,["mechanism"]="torch._C._cuda_clearCublasWorkspaces"},
+                ["memoryObservations"]=new JsonObject{["scope"]="worker-process; not aggregate job",["peakCommittedBytes"]=134217728L,["currentPrivateBytes"]=33554432L,
+                    ["peakWorkingSetBytes"]=167772160L,["currentWorkingSetBytes"]=50331648L,["measurement"]="Windows process memory counters"},
                 ["cacheObservations"]=new JsonObject{["maximumObservedBytes"]=0,["byteLimit"]=67108864,["fileLimit"]=4096,["measurement"]="stage-sampled; not OS quota"},
                 ["loadedModules"]=new JsonArray(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System),"kernel32.dll")),["aggregateDriverMemoryMeasured"]=false,["networkAttempts"]=0,["failureStage"]=null,["failure"]=null,["humanReview"]="pending",["promotion"]=false};
-            File.WriteAllText(spec.Arguments[6],report.ToJsonString());
+            ReportMutation?.Invoke(report);File.WriteAllText(spec.Arguments[6],report.ToJsonString());
         }
     }
 }

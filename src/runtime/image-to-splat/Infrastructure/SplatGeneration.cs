@@ -276,7 +276,7 @@ public sealed class SplatGeneration(Workspace workspace,AuditedResources resourc
             || report["modelLoads"]!.GetValue<int>()!=1 || report["stochasticInferences"]!.GetValue<int>()!=1
             || report["networkAttempts"]!.GetValue<int>()!=0 || report["promotion"]!.GetValue<bool>() || Text(report,"humanReview")!="pending")
             throw new InvalidOperationException("Actual worker identity/candidate observations differ");
-        var allowed="schemaVersion status operation backend sourceRevision modelRevision inputSha256 settings python versions device preprocessing loadingSeconds preprocessingSeconds encodingSeconds inferenceSeconds unloadingSeconds densityDecoding conditioningSha256 latentSha256 execution outputs modelLoads stochasticInferences peakTorchAllocatedBytes peakTorchReservedBytes cleanup networkAttempts failureStage failure humanReview promotion aggregateDriverMemoryMeasured loadedModules cacheObservations".Split(' ').ToHashSet(StringComparer.Ordinal);
+        var allowed="schemaVersion status operation backend sourceRevision modelRevision inputSha256 settings python versions device preprocessing loadingSeconds preprocessingSeconds encodingSeconds inferenceSeconds unloadingSeconds densityDecoding conditioningSha256 latentSha256 execution outputs modelLoads stochasticInferences peakTorchAllocatedBytes peakTorchReservedBytes cleanup networkAttempts failureStage failure humanReview promotion aggregateDriverMemoryMeasured loadedModules cacheObservations memoryObservations".Split(' ').ToHashSet(StringComparer.Ordinal);
         if(report.Any(x=>!allowed.Contains(x.Key)) || allowed.Where(x=>x!="aggregateDriverMemoryMeasured").Any(x=>!report.ContainsKey(x))
             || report["failureStage"] is not null || report["failure"] is not null)
             throw new InvalidOperationException("Incomplete or unknown native result fields");
@@ -353,6 +353,13 @@ public sealed class SplatGeneration(Workspace workspace,AuditedResources resourc
         if(cache["maximumObservedBytes"]!.GetValue<long>() is <0 or >67108864 || cache["byteLimit"]!.GetValue<long>()!=67108864
             || cache["fileLimit"]!.GetValue<int>()!=4096 || Text(cache,"measurement")!="stage-sampled; not OS quota")
             throw new InvalidOperationException("Actual cache/temp observations exceed the fixed bounded profile");
+        var memory=report["memoryObservations"]!.AsObject();Keys(memory,["scope","peakCommittedBytes","currentPrivateBytes","peakWorkingSetBytes","currentWorkingSetBytes","measurement"]);
+        var peakCommit=memory["peakCommittedBytes"]!.GetValue<long>();var currentPrivate=memory["currentPrivateBytes"]!.GetValue<long>();
+        var peakResident=memory["peakWorkingSetBytes"]!.GetValue<long>();var currentResident=memory["currentWorkingSetBytes"]!.GetValue<long>();
+        if(Text(memory,"scope")!="worker-process; not aggregate job" || Text(memory,"measurement")!="Windows process memory counters"
+            || peakCommit<1 || peakCommit>request.Request.Budgets.MaxProcessMemoryBytes || currentPrivate<1 || currentPrivate>peakCommit
+            || peakResident<1 || currentResident<1 || currentResident>peakResident)
+            throw new InvalidOperationException("Actual committed/private/resident memory evidence differs from the bounded worker scope");
         var modules=report["loadedModules"]!.AsArray().Select(x=>x!.GetValue<string>()).ToArray();
         Bubo.Media.Infrastructure.StandalonePythonIntegrity.VerifyLoadedModules(workspace.HostContext!,installed.Inputs.Select(x=>Path.GetFullPath(x.Path,workspace.Root)),modules);
         var files=report["outputs"]!.AsArray();
