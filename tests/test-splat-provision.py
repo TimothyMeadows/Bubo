@@ -94,6 +94,9 @@ class Fixture:
         self.evidence_path = self.root / 'inputs/agreement.txt'
         self.evidence_path.parent.mkdir()
         self.evidence_path.write_bytes(b'SYNTHETIC fixture; no human acceptance\n')
+        self.bootstrap = self.root / 'bootstrap/python.exe'
+        self.bootstrap.parent.mkdir()
+        self.bootstrap.write_bytes(b'SYNTHETIC bootstrap identity; never executed\n')
         self.licence_path = self.root / 'inputs/licences.json'
         self.licence = {'schemaVersion': 'bubo-splat-license-evidence/v1', 'task': 'synthetic-task',
                         'backend': 'triposplat', 'accepted': True,
@@ -147,7 +150,7 @@ class Fixture:
                     'installRoot': str(self.install), 'downloadRoot': str(self.downloads),
                     'catalog': str(self.catalog_path), 'catalogSha256': '',
                     'helper': str(self.helper_path), 'helperSha256': module.sha256(self.helper_path),
-                    'bootstrapPython': {'path': sys.executable, 'sha256': module.sha256(sys.executable)},
+                    'bootstrapPython': {'path': str(self.bootstrap), 'sha256': module.sha256(self.bootstrap)},
                     'runtimeSourceRoot': str(self.runtime), 'noticeSourceRoot': str(self.notices),
                     'resourceIdentities': [{'path': str(self.catalog_path), 'sha256': ''},
                                            {'path': str(self.helper_path), 'sha256': module.sha256(self.helper_path)},
@@ -218,6 +221,7 @@ class Fixture:
 
     def run(self, job_hash=None, free_disk=100 * 1024**3):
         with patch.object(module, 'windows_host', return_value=True), \
+                patch.object(module.sys, 'executable', str(self.bootstrap)), \
                 patch.object(module, '__file__', str(self.worker_script)), \
                 patch.object(module, 'load_helper', side_effect=self.helper), \
                 patch.object(module.shutil, 'disk_usage', return_value=types.SimpleNamespace(free=free_disk)), \
@@ -293,6 +297,22 @@ for label, alter in [
 ]:
     denied = rejected(alter, label)
     check(not denied.download_calls, label + ' before network/package operations')
+
+if os.name != 'nt':
+    fixture = Fixture()
+    bootstrap_alias = fixture.root / 'bootstrap-link'
+    bootstrap_alias.symlink_to(fixture.bootstrap)
+    fixture.job['bootstrapPython']['path'] = str(bootstrap_alias)
+    fixture.save()
+    try:
+        fixture.run()
+    except ValueError as error:
+        check(str(error) == 'Linked provisioning path rejected' and
+              not fixture.download_calls and not fixture.child_calls and
+              not fixture.install.exists() and not fixture.result_path.exists(),
+              'linked bootstrap rejected before any setup mutation or child/network operation')
+    else:
+        raise AssertionError('Linked bootstrap was admitted')
 
 rejected(lambda f: None, 'changed helper rejected before source execution',
          lambda f: f.helper_path.write_bytes(b'raise AssertionError("must not execute")\n'))
