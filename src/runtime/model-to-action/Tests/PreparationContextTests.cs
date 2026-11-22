@@ -23,7 +23,7 @@ static class PreparationContextTests
         }
         files.Save("inputs/policy.json", new { kind = "original synthetic policy", engine = "THREEJS" });
         var style = files.HashProjectFile("inputs/policy.json");
-        var engine = new JsonObject { ["effectiveEngine"] = "THREEJS", ["contractSha256"] = new string('1', 64), ["definitionSha256"] = new string('2', 64), ["registrySha256"] = new string('3', 64) };
+        var engine = new JsonObject { ["effectiveEngine"] = "THREEJS", ["contractSha256"] = new string('1', 64), ["definitionSha256"] = new string('2', 64), ["registrySha256"] = new string('3', 64), ["outputScope"] = null, ["task"] = null };
         files.Save("inputs/request.json", new JsonObject
         {
             ["schemaVersion"] = "bubo-vfx-preparation/v1", ["id"] = "original-mask", ["version"] = "v1", ["styleSha256"] = style,
@@ -65,6 +65,9 @@ static class PreparationContextTests
         var before = Snapshot(); var admitted = new List<ActionEffectFile>();
         var verified = ActionPreparationContextVerifier.Verify(Current(), source, context, admitted.Add, default);
         Check(verified.Result.IsValid && verified.Result.PackageSha256 == prepared.PackageSha256, "explicit original-task context permits same-project readonly preparation reuse");
+        Check(Current().HostContext!.Engine.ContainsKey("outputScope") && Current().HostContext!.Engine["outputScope"] is null
+            && Current().HostContext!.Engine.ContainsKey("task") && Current().HostContext!.Engine["task"] is null,
+            "canonical nullable engine metadata survives original-context verification unchanged");
         Check(admitted.Any(file => file.Role == "native-preparation-claim" && file.Path.Contains("/origin/", StringComparison.Ordinal)), "receiving verification binds the original permanent task claim");
         var after = Snapshot();
         Check(before.Count == after.Count && before.All(pair => after[pair.Key] == pair.Value), "actual cross-task verification changes no source, seal, claim or context bytes");
@@ -81,6 +84,43 @@ static class PreparationContextTests
         Reject(() => ActionPreparationContextVerifier.Verify(Current(), source with { PreparationContext = source.PreparationContext! with { Sha256 = changedHash } }, context, _ => { }, default), "rehashed context cannot transplant original preparation task identity");
         File.WriteAllBytes(files.ResolveWrite("inputs/origin-context.json"), old); files.Save("inputs/current-context.json", currentValue);
         Check(ActionPreparationContextVerifier.Verify(Current(), source, context, _ => { }, default).Result.IsValid, "restored exact original contexts remain verifiable without resetting attempts");
+        void RejectOriginal(byte[] payload, string name, string? expectedError = null)
+        {
+            File.WriteAllBytes(files.ResolveWrite("inputs/origin-context.json"), payload);
+            var receiver = currentValue.DeepClone().AsObject(); receiver["references"]!.AsArray()[2] = Ref("inputs/origin-context.json");
+            files.Save("inputs/current-context.json", receiver);
+            var altered = source with { PreparationContext = source.PreparationContext! with { Sha256 = files.HashProjectFile("inputs/origin-context.json") } };
+            if (expectedError is null) Reject(() => ActionPreparationContextVerifier.Verify(Current(), altered, context, _ => { }, default), name);
+            else
+            {
+                Exception? failure = null;
+                try { ActionPreparationContextVerifier.Verify(Current(), altered, context, _ => { }, default); }
+                catch (InvalidOperationException error) { failure = error; }
+                Check(failure?.Message.Contains(expectedError, StringComparison.Ordinal) == true,
+                    name + " (exact parser/length guard)");
+            }
+            File.WriteAllBytes(files.ResolveWrite("inputs/origin-context.json"), old); files.Save("inputs/current-context.json", currentValue);
+        }
+        var originalText = System.Text.Encoding.UTF8.GetString(old);
+        RejectOriginal(System.Text.Encoding.UTF8.GetBytes(originalText.Insert(originalText.LastIndexOf('}'), ",\"policy\":{}")), "duplicate host policy cannot hide behind the last JSON member");
+        RejectOriginal(System.Text.Encoding.UTF8.GetBytes("{\"schemaVersion\":"), "malformed original context is rejected");
+        RejectOriginal(System.Text.Encoding.UTF8.GetBytes("[]"), "original context requires an object root");
+        var missingTask = Context("origin"); missingTask["task"] = null;
+        RejectOriginal(System.Text.Encoding.UTF8.GetBytes(missingTask.ToJsonString()), "nullable metadata does not allow a null required host task");
+        var expanded = Context("origin"); expanded["permissions"]!["promotion"] = true;
+        RejectOriginal(System.Text.Encoding.UTF8.GetBytes(expanded.ToJsonString()), "nullable metadata does not expand original promotion authority");
+        var oversizedText = Context("origin"); oversizedText["diagnostic"] = new string('x', 4097);
+        RejectOriginal(System.Text.Encoding.UTF8.GetBytes(oversizedText.ToJsonString()), "original context retains bounded text parsing", "Original preparation context text exceeds its bound");
+        RejectOriginal(System.Text.Encoding.UTF8.GetBytes("{\"padding\":\"" + new string('x', 1048576) + "\"}"), "original context retains its finite byte bound before parsing", "finite bounded file length");
+        var largeArray = "[" + string.Join(",", Enumerable.Repeat("0", 4097)) + "]";
+        RejectOriginal(System.Text.Encoding.UTF8.GetBytes("{\"padding\":" + largeArray + "}"), "original context retains its array bound", "Original preparation context array exceeds its bound");
+        var boundedArray = "[" + string.Join(",", Enumerable.Repeat("0", 4096)) + "]";
+        RejectOriginal(System.Text.Encoding.UTF8.GetBytes("{\"padding\":[" + string.Join(",", Enumerable.Repeat(boundedArray, 16)) + "]}"), "original context retains its cumulative node bound", "Original preparation context exceeds its node bound");
+        var deepObject = "0";
+        for (var depth = 0; depth < 33; depth++) deepObject = "{\"nested\":" + deepObject + "}";
+        RejectOriginal(System.Text.Encoding.UTF8.GetBytes(deepObject), "original context retains its JSON depth bound", "Invalid original preparation context JSON");
+        Reject(() => EffectProfileV2.ParseData<JsonObject>(System.Text.Encoding.UTF8.GetBytes("{\"size\":null}")), "effect data continues to reject null fields separately from host contexts");
+        Check(ActionPreparationContextVerifier.Verify(Current(), source, context, _ => { }, default).Result.IsValid, "parser rejection cases leave the genuine original context and preparation reusable");
         return passed;
     }
 }

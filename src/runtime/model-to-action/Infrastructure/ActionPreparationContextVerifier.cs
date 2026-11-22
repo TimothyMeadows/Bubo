@@ -107,7 +107,7 @@ public static class ActionPreparationContextVerifier
         {
             currentHost!.RequireReference(originReference.Path, "input");
             originFile = Register("native-preparation-context", originReference.Path, originReference.Sha256, json: true);
-            originValue = EffectProfileV2.ParseData<JsonObject>(Payload(originFile));
+            originValue = PreparationHostContextJson.Parse(Payload(originFile));
             Fields(originValue, "schemaVersion", "projectRoot", "task", "roots", "policy", "references", "tools", "budgets", "permissions");
             if (Text(originValue, "schemaVersion") != "bubo-host-context/v1" || Text(originValue, "task") != seal.TaskId
                 || !Path.TrimEndingDirectorySeparator(Path.GetFullPath(Text(originValue, "projectRoot"))).Equals(Path.TrimEndingDirectorySeparator(Path.GetFullPath(current.Root)), Comparison))
