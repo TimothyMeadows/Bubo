@@ -87,7 +87,7 @@ public sealed partial class Pipeline
     }
     void InitializeSources()
     {
-        if (m.SchemaVersion != 2) return;
+        if (!IsMultiView) return;
         JsonObject? supplied = options.TryGetValue("sources", out var sourcePath) ? ReadPreparation(sourcePath) : null;
         if (supplied is not null) { PreparationVersion(supplied); PreparationFields(supplied, "schemaVersion", "images"); }
         var images = supplied is null
@@ -153,7 +153,7 @@ public sealed partial class Pipeline
     }
     IEnumerable<string> PreparationPaths()
     {
-        if (m.SchemaVersion != 2 || string.IsNullOrEmpty(m.SourceSet)) yield break;
+        if (!IsMultiView || string.IsNullOrEmpty(m.SourceSet)) yield break;
         yield return m.SourceSet;
         foreach (var node in PreparationArray(CurrentSourceSet(), "images")) yield return PreparationText(PreparationObject(node), "path");
         if (!string.IsNullOrEmpty(m.Classification)) yield return m.Classification;
@@ -302,7 +302,7 @@ public sealed partial class Pipeline
         stage.Artifacts["classification"] = target;
         var usable = PreparationArray(report, "sourceViews").Select(PreparationObject).Where(view => view["usable"]!.GetValue<bool>()).ToArray();
         var covered = usable.Select(view => PreparationText(view, "view")).ToHashSet(StringComparer.Ordinal);
-        var missing = MultiViewGeometry.Views.Where(view => !covered.Contains(view)).ToArray();
+        var missing = ConditioningViews.Where(view => !covered.Contains(view)).ToArray();
         var blocked = new JsonArray();
         foreach (var node in PreparationArray(report, "unknowns"))
         {
@@ -315,7 +315,16 @@ public sealed partial class Pipeline
             if (!conflict["resolved"]!.GetValue<bool>() || string.IsNullOrWhiteSpace(conflict["resolution"]?.GetValue<string>())) blocked.Add(PreparationText(conflict, "description"));
         }
         var plan = stage.Attempt + "/proof-plan.json";
-        w.Save(plan, new JsonObject { ["schemaVersion"] = 1, ["sourceSetHash"] = Hash(m.SourceSet), ["classificationHash"] = Hash(target), ["requiredViews"] = new JsonArray(MultiViewGeometry.Views.Select(view => JsonValue.Create(view)).ToArray()), ["usableSourceViews"] = new JsonArray(usable.Select(view => view.DeepClone()).ToArray()), ["missingViews"] = new JsonArray(missing.Select(view => JsonValue.Create(view)).ToArray()), ["minimumGeneratedViews"] = missing.Length, ["generationExecution"] = false, ["blockedBy"] = blocked, ["humanApproval"] = "pending" });
+        w.Save(plan, new JsonObject { ["schemaVersion"] = 1, ["sourceSetHash"] = Hash(m.SourceSet), ["classificationHash"] = Hash(target), ["requiredViews"] = new JsonArray(ConditioningViews.Select(view => JsonValue.Create(view)).ToArray()), ["usableSourceViews"] = new JsonArray(usable.Select(view => view.DeepClone()).ToArray()), ["missingViews"] = new JsonArray(missing.Select(view => JsonValue.Create(view)).ToArray()), ["minimumGeneratedViews"] = missing.Length, ["generationExecution"] = false, ["blockedBy"] = blocked, ["humanApproval"] = "pending" });
+        if (IsFourView)
+        {
+            var selectedPlan = w.Load<JsonObject>(plan);
+            selectedPlan["schemaVersion"] = 2;
+            selectedPlan["conditioningProfile"] = m.ConditioningProfile;
+            selectedPlan["viewCount"] = 4;
+            selectedPlan["unconditionedViews"] = new JsonArray("top", "bottom");
+            w.Save(plan, selectedPlan);
+        }
         stage.Artifacts["proof-plan"] = plan;
         m.Classification = target;
         m.ProofSet = "";
@@ -330,11 +339,11 @@ public sealed partial class Pipeline
         ValidateProofSet(report, sources, false);
         return report;
     }
-    string CurrentFrontProof() => m.SchemaVersion == 2 && !string.IsNullOrEmpty(m.ProofSet)
+    string CurrentFrontProof() => IsMultiView && !string.IsNullOrEmpty(m.ProofSet)
         ? PreparationText(PreparationObject(PreparationArray(CurrentProofSet(), "views")[0]), "image") : m.Proof;
     void ValidatePreparation()
     {
-        if (m.SchemaVersion != 2) return;
+        if (!IsMultiView) return;
         var sources = CurrentSourceSet();
         if (!string.IsNullOrEmpty(m.Classification)) ValidateClassification(ReadPreparation(m.Classification), sources, !string.IsNullOrEmpty(m.ProofSet));
         if (!string.IsNullOrEmpty(m.ProofSet)) _ = CurrentProofSet();
@@ -410,11 +419,15 @@ public sealed partial class Pipeline
     }
     void ValidateProofSet(JsonObject report, JsonObject sourceSet, bool incoming)
     {
-        PreparationVersion(report);
-        PreparationFields(report, "schemaVersion", "revision", "sourceSetHash", "classificationHash", "camera", "views", "generationPolicy", "previousProofSetHash", "reviewStatus", "revisedViews");
+        if (IsFourView)
+        {
+            if (report["schemaVersion"]?.GetValue<int>() != 2) throw new InvalidOperationException("Four-view proof set requires schemaVersion2");
+        }
+        else PreparationVersion(report);
+        PreparationFields(report, "schemaVersion", "conditioningProfile", "viewCount", "revision", "sourceSetHash", "classificationHash", "camera", "views", "generationPolicy", "previousProofSetHash", "reviewStatus", "revisedViews");
         if (PreparationText(report, "sourceSetHash") != Hash(m.SourceSet) || PreparationText(report, "classificationHash") != Hash(m.Classification)) throw new InvalidOperationException("Proof set ancestry is stale");
         if (report["revision"]?.GetValue<int>() is not > 0) throw new InvalidOperationException("Proof set requires positive revision");
-        MultiViewGeometry.Validate(report);
+        MultiViewGeometry.Validate(report, m.ConditioningProfile);
         var sources = SourceIdentities(sourceSet);
         var hashes = new HashSet<string>(StringComparer.Ordinal);
         var generated = new List<JsonObject>();
@@ -425,7 +438,7 @@ public sealed partial class Pipeline
             var path = w.Relative(PreparationText(view, "image"));
             if (!incoming && !path.StartsWith(m.Staging + "/attempts/prepare-proofs-", StringComparison.Ordinal)) throw new InvalidOperationException("Selected proof images must be immutable preparation artifacts");
             var hash = PreparationText(view, "sha256"); RequireHash(hash);
-            if (!hashes.Add(hash)) throw new InvalidOperationException("Six angles require distinct image bytes, not duplicated or mirrored file aliases");
+            if (!hashes.Add(hash)) throw new InvalidOperationException("Conditioning angles require distinct image bytes, not duplicated or mirrored file aliases");
             if (Hash(path) != hash) throw new InvalidOperationException("Changed selected proof image");
             var dimensions = PreparationImage(path);
             if (!incoming && (view["width"]?.GetValue<int>() != dimensions.Width || view["height"]?.GetValue<int>() != dimensions.Height)) throw new InvalidOperationException("Selected proof dimensions changed");
@@ -554,7 +567,7 @@ public sealed partial class Pipeline
         var page = stage.Attempt + "/proof-review.html";
         var figures = string.Join("", PreparationArray(report, "views").Select(PreparationObject).Select(view => "<figure><img src=\"" + WebUtility.HtmlEncode(Path.GetRelativePath(w.Resolve(stage.Attempt), w.Resolve(PreparationText(view, "image"))).Replace('\\', '/')) + "\"><figcaption>" + WebUtility.HtmlEncode(PreparationText(view, "view") + " / " + PreparationText(view, "origin") + " / " + PreparationText(view, "sha256")) + "</figcaption></figure>"));
         var originals = string.Join("", PreparationArray(sources, "images").Select(PreparationObject).Select(image => "<figure><img src=\"" + WebUtility.HtmlEncode(Path.GetRelativePath(w.Resolve(stage.Attempt), w.Resolve(PreparationText(image, "path"))).Replace('\\', '/')) + "\"><figcaption>Original " + WebUtility.HtmlEncode(PreparationText(image, "id")) + "</figcaption></figure>"));
-        File.WriteAllText(w.ResolveWrite(page), "<!doctype html><meta charset=\"utf-8\"><title>Six-view proof review</title><style>body{font-family:sans-serif;background:#222;color:#eee}main{display:flex;flex-wrap:wrap}img{max-width:400px;max-height:400px}figure{margin:12px}pre{white-space:pre-wrap}</style><h1>Six-view proof set: human approval pending</h1><p>Inspect full-resolution files. Generated hidden surfaces are proposed interpretations. Structural checks do not certify anatomy, likeness, materials or camera alignment.</p><h2>Immutable original sources</h2><main>" + originals + "</main><h2>Current six-view selection</h2><main>" + figures + "</main><p><a href=\"proof-set.json\">Proof-set and camera data</a></p><h2>Source-only classification, hypotheses and unknowns</h2><pre>" + WebUtility.HtmlEncode(ReadPreparation(m.Classification).ToJsonString(Serialization.Json)) + "</pre>");
+        File.WriteAllText(w.ResolveWrite(page), "<!doctype html><meta charset=\"utf-8\"><title>Multi-view proof review</title><style>body{font-family:sans-serif;background:#222;color:#eee}main{display:flex;flex-wrap:wrap}img{max-width:400px;max-height:400px}figure{margin:12px}pre{white-space:pre-wrap}</style><h1>Multi-view proof set: human approval pending</h1><p>Inspect full-resolution files. Generated hidden surfaces are proposed interpretations. Structural checks do not certify anatomy, likeness, materials or camera alignment.</p><h2>Immutable original sources</h2><main>" + originals + "</main><h2>Current conditioning selection</h2><main>" + figures + "</main><p><a href=\"proof-set.json\">Proof-set and camera data</a></p><h2>Source-only classification, hypotheses and unknowns</h2><pre>" + WebUtility.HtmlEncode(ReadPreparation(m.Classification).ToJsonString(Serialization.Json)) + "</pre>");
         stage.Artifacts["proof-review"] = page;
         foreach (var history in candidateHistory) m.History.Add(history);
         m.History.Add(new JsonObject { ["event"] = "proof-set-revision", ["revision"] = report["revision"]!.GetValue<int>(), ["proofSet"] = destination, ["sha256"] = Hash(destination), ["revisedViews"] = revised.DeepClone(), ["humanApproval"] = "pending" });

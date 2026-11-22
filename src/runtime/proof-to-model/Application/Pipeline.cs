@@ -27,7 +27,11 @@ public sealed partial class Pipeline(IWorkspace w, Dictionary<string, string> op
         Hephaera.AssetProduction.AuditJournal.Append(w, State + "/audit.jsonl", audit);
     }
     JsonObject Toolchain => w.Load<JsonObject>(m.Toolchain);
-    bool IsMultiView => m.SchemaVersion == 2;
+    bool IsMultiView => m.SchemaVersion is 2 or 3;
+    bool IsFourView => m.SchemaVersion == 3;
+    string[] ConditioningViews => MultiViewGeometry.RequiredViews(m.ConditioningProfile);
+    string ConditioningMode => IsFourView ? "multi-view-four" : "multi-view";
+    IEnumerable<string> ConditioningPaths => m.ConditioningProfileFile is null ? [] : [m.ConditioningProfileFile];
     string[] StageOrder => IsMultiView ? ["classify", "prepare-proofs", "preprocess", "reconstruct", "finish", "guided", "review"] : ["preprocess", "reconstruct", "finish", "guided", "review"];
     string ProofApprovalKind => IsMultiView ? "proof-set" : "proof";
     Bubo.Host.HostExecutionContext Host => w.HostContext ?? throw new InvalidOperationException("Validated Bubo host context required");
@@ -38,6 +42,7 @@ public sealed partial class Pipeline(IWorkspace w, Dictionary<string, string> op
     IEnumerable<string> MetadataPaths => new[] { m.ProofMetadata, m.Brief }.Where(path => !string.IsNullOrEmpty(path));
     void Fresh(string? rerun = null)
     {
+        ValidateConditioningProfile();
         if (w.Load<JsonObject>(m.Rights)["authorized"]?.GetValue<bool>() != true)
             throw new InvalidOperationException("Current rights evidence does not authorize this input");
         if (!string.IsNullOrEmpty(m.ProofMetadata))
@@ -77,7 +82,7 @@ public sealed partial class Pipeline(IWorkspace w, Dictionary<string, string> op
     string ApprovalFingerprint(string kind)
     {
         IEnumerable<string> outputs = kind is "proof" or "proof-set" ? [] : kind == "preprocessing" ? (m.Stages.GetValueOrDefault("preprocess")?.Outputs.Keys ?? Enumerable.Empty<string>()) : m.Stages.Where(p => p.Value.Status == "complete" && (!(kind is "rigging" or "animation") || p.Key != "review")).SelectMany(p => p.Value.Outputs.Keys);
-        return Fingerprint(outputs.Append(m.Proof).Append(m.Rights).Append(m.Recipe).Append(m.Toolchain).Concat(PolicyPaths).Concat(MetadataPaths).Concat(IsMultiView ? PreparationPaths() : []));
+        return Fingerprint(outputs.Append(m.Proof).Append(m.Rights).Append(m.Recipe).Append(m.Toolchain).Concat(PolicyPaths).Concat(MetadataPaths).Concat(IsMultiView ? PreparationPaths() : []).Concat(ConditioningPaths));
     }
     bool Approved(string kind) => m.Approvals.Any(a => a.Kind == kind && a.Fingerprint == ApprovalFingerprint(kind) && File.Exists(w.Resolve(a.Evidence)) && Hash(a.Evidence) == a.EvidenceHash);
     void RequireApproval(string kind)
@@ -140,6 +145,7 @@ public sealed partial class Pipeline(IWorkspace w, Dictionary<string, string> op
         switch (command)
         {
             case "reuse":
+                if (IsFourView) throw new InvalidOperationException("Four-view reuse is not supported");
                 if (!IsMultiView) throw new InvalidOperationException("Use a fresh v2 six-view asset for production reuse");
                 await ReuseMultiView(cancellation);
                 break;
@@ -147,23 +153,23 @@ public sealed partial class Pipeline(IWorkspace w, Dictionary<string, string> op
                 if (!IsMultiView) throw new InvalidOperationException("Classification requires a new v2 asset version");
                 m.Classification = "";
                 m.ProofSet = "";
-                await RunStage(command, PreparationPaths().Append(Need("classification")), RegisterClassification, cancellation);
+                await RunStage(command, PreparationPaths().Concat(ConditioningPaths).Append(Need("classification")), RegisterClassification, cancellation);
                 break;
             case "prepare-proofs":
                 if (!IsMultiView) throw new InvalidOperationException("Six-view proof preparation requires a new v2 asset version");
                 RequireStage("classify");
-                await RunStage(command, PreparationPaths().Append(Need("proof-set")), RegisterProofSet, cancellation);
+                await RunStage(command, PreparationPaths().Concat(ConditioningPaths).Append(Need("proof-set")), RegisterProofSet, cancellation);
                 break;
             case "preprocess":
                 if (IsMultiView) { RequireStage("classify"); RequireStage("prepare-proofs"); }
                 RequireApproval(ProofApprovalKind);
-                await RunStage(command, new[] { m.Proof, m.Rights, m.Recipe, m.Toolchain }.Concat(PolicyPaths).Concat(IsMultiView ? PreparationPaths() : []), IsMultiView ? PreprocessViews : Preprocess, cancellation);
+                await RunStage(command, new[] { m.Proof, m.Rights, m.Recipe, m.Toolchain }.Concat(PolicyPaths).Concat(ConditioningPaths).Concat(IsMultiView ? PreparationPaths() : []), IsMultiView ? PreprocessViews : Preprocess, cancellation);
                 break;
             case "reconstruct":
                 RequireApproval(ProofApprovalKind);
                 RequireApproval("preprocessing");
                 RequireStage("preprocess");
-                await RunStage(command, RequireStage("preprocess").Outputs.Keys.Append(m.Toolchain).Concat(IsMultiView ? PreparationPaths() : []), IsMultiView ? ReconstructViews : Reconstruct, cancellation);
+                await RunStage(command, RequireStage("preprocess").Outputs.Keys.Append(m.Toolchain).Concat(ConditioningPaths).Concat(IsMultiView ? PreparationPaths() : []), IsMultiView ? ReconstructViews : Reconstruct, cancellation);
                 break;
             case "finish":
                 RequireApproval(ProofApprovalKind);
@@ -172,14 +178,14 @@ public sealed partial class Pipeline(IWorkspace w, Dictionary<string, string> op
                 finishingSelection = ReadFinishingSettings();
                 rigidSelection = ReadRigidSelection();
                 finishBudgetSelection = ReadFinishBudget();
-                await RunStage(command, RequireStage("reconstruct").Outputs.Keys.Append(m.Recipe).Append(m.Toolchain)
+                await RunStage(command, RequireStage("reconstruct").Outputs.Keys.Append(m.Recipe).Append(m.Toolchain).Concat(ConditioningPaths)
                     .Concat(finishingSelection is { } selected ? new[] { selected.Path } : [])
                     .Concat(rigidSelection?.Inputs.Keys ?? Enumerable.Empty<string>())
                     .Concat(finishBudgetSelection is { } budget ? new[] { budget.Path } : []), Finish, cancellation);
                 break;
             case "review":
                 RequireStage("finish");
-                await RunStage(command, RequireStage("finish").Outputs.Keys.Append(m.Proof).Append(m.Toolchain).Concat(IsMultiView ? PreparationPaths() : []), Review, cancellation);
+                await RunStage(command, RequireStage("finish").Outputs.Keys.Append(m.Proof).Append(m.Toolchain).Concat(ConditioningPaths).Concat(IsMultiView ? PreparationPaths() : []), Review, cancellation);
                 break;
             case "record":
                 Record();
@@ -198,12 +204,14 @@ public sealed partial class Pipeline(IWorkspace w, Dictionary<string, string> op
     void Init()
     {
         var selectedMode = options.GetValueOrDefault("mode", "multi-view");
-        if (selectedMode is not ("multi-view" or "single-view-diagnostic"))
-            throw new InvalidOperationException("Mode must be multi-view or explicitly single-view-diagnostic; no silent fallback");
-        if (selectedMode == "multi-view" && options.ContainsKey("reuse-manifest"))
+        if (selectedMode is not ("multi-view" or "multi-view-four" or "single-view-diagnostic"))
+            throw new InvalidOperationException("Mode must be multi-view, multi-view-four or explicitly single-view-diagnostic; no silent fallback");
+        if (selectedMode != "single-view-diagnostic" && options.ContainsKey("reuse-manifest"))
             throw new InvalidOperationException("Register/classify/approve the new six-view asset first, then use reuse --reuse-manifest; init cannot inherit a donor's approvals");
         if (options.ContainsKey("sources") && options.ContainsKey("proof"))
             throw new InvalidOperationException("Supply --proof as one original or --sources as a source set, not both");
+        if (selectedMode != "multi-view-four" && options.ContainsKey("conditioning-profile"))
+            throw new InvalidOperationException("--conditioning-profile requires --mode multi-view-four");
         var initialProof = options.TryGetValue("sources", out var sourceSetPath)
             ? w.Load<JsonObject>(sourceSetPath)["images"]?.AsArray().FirstOrDefault()?["path"]?.GetValue<string>() ?? throw new InvalidOperationException("Source set requires images with paths")
             : Need("proof");
@@ -220,7 +228,9 @@ public sealed partial class Pipeline(IWorkspace w, Dictionary<string, string> op
         {
             HostPolicySha256 = Hephaera.AssetProduction.HostPolicyIdentity.Fingerprint(Host),
             RuntimeBuildSha256 = options.GetValueOrDefault("runtime-build-sha256"),
-            SchemaVersion = selectedMode == "multi-view" ? 2 : 1,
+            SchemaVersion = selectedMode == "multi-view-four" ? 3 : selectedMode == "multi-view" ? 2 : 1,
+            ConditioningProfile = selectedMode == "multi-view-four" ? MultiViewGeometry.CardinalFourProfile : null,
+            ConditioningProfileFile = selectedMode == "multi-view-four" ? w.Relative(Need("conditioning-profile")) : null,
             Asset = asset,
             Version = version,
             Task = task,
@@ -236,6 +246,7 @@ public sealed partial class Pipeline(IWorkspace w, Dictionary<string, string> op
         foreach (var path in new[] { m.Proof, m.Rights, m.Recipe, m.Toolchain })
             if (!File.Exists(w.Resolve(path)))
                 throw new InvalidOperationException("Missing input: " + path);
+        ValidateConditioningProfile();
         Host.ValidateFresh();
         if (Host.Pipeline != "PROOF_TO_MODEL")
             throw new InvalidOperationException("Host context must explicitly select PROOF_TO_MODEL");
@@ -334,7 +345,10 @@ public sealed partial class Pipeline(IWorkspace w, Dictionary<string, string> op
     }
     void CheckStatePaths()
     {
-        if (m.SchemaVersion is not (1 or 2))
+        ValidateConditioningProfile();
+        if (options.TryGetValue("mode", out var mode) && mode != (IsMultiView ? ConditioningMode : "single-view-diagnostic"))
+            throw new InvalidOperationException("Requested mode conflicts with the immutable manifest");
+        if (m.SchemaVersion is not (1 or 2 or 3))
             throw new InvalidOperationException("Unsupported manifest schema version");
         Id(m.Asset);
         Id(m.Version);
@@ -457,7 +471,7 @@ public sealed partial class Pipeline(IWorkspace w, Dictionary<string, string> op
         if (maxAttempts < 1 || ConsumedAttempts(name) >= maxAttempts)
             throw new InvalidOperationException(name == "finish" ? "Finish attempt budget exhausted; authorize exactly one additional finish with --finish-budget TASK_LOCAL_JSON bound to the current status manifestSha256 and consumedFinishAttempts" : "Stage attempt budget exhausted; select a new asset version/budget explicitly");
         _ = Timeout;
-        var paths = inputs.Concat(MetadataPaths).Distinct().ToArray();
+        var paths = inputs.Concat(MetadataPaths).Concat(ConditioningPaths).Distinct().ToArray();
         var stage = new Stage { Attempt = m.Staging + "/attempts/" + name + "-" + Guid.NewGuid().ToString("N"), Inputs = paths.ToDictionary(x => x, Hash), Fingerprint = Fingerprint(paths) };
         Directory.CreateDirectory(w.ResolveWrite(stage.Attempt));
         var start = new JsonObject
@@ -861,8 +875,10 @@ public sealed partial class Pipeline(IWorkspace w, Dictionary<string, string> op
         }
         w.Save(job, new
         {
-            schemaVersion = IsMultiView && mode == "review" ? 2 : 1,
-            mode = IsMultiView ? "multi-view" : "single-view-diagnostic",
+            schemaVersion = IsMultiView && mode == "review" ? IsFourView ? 3 : 2 : 1,
+            mode = IsMultiView ? ConditioningMode : "single-view-diagnostic",
+            conditioningProfile = m.ConditioningProfile,
+            viewCount = IsMultiView ? ConditioningViews.Length : 1,
             root = w.Root,
             input,
             inputFrame = IsMultiView ? mode == "finish" ? "pixal3d-mv-export" : "hephaera-proof-z-up" : "legacy-native",

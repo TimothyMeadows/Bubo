@@ -38,7 +38,7 @@ def load_job(allow_subject=False, allow_multiview=False):
     args = parser.parse_args(sys.argv[sys.argv.index("--") + 1:])
     job_path = Path(args.job).resolve(strict=True)
     job = json.loads(job_path.read_text(encoding="utf-8-sig"))
-    if job.get("schemaVersion") not in ((1, 2) if allow_multiview else (1,)):
+    if job.get("schemaVersion") not in ((1, 2, 3) if allow_multiview else (1,)):
         raise ValueError("Unsupported job schema")
     root = Path(job["root"]).resolve(strict=True)
     job_path.relative_to(root)
@@ -102,15 +102,26 @@ def review_multiview_inputs(job, root):
     Pipeline registration remains responsible for candidate/receipt provenance.
     """
     import re
-    if job.get("schemaVersion") != 2 or job.get("mode") != "multi-view":
+    four = job.get("schemaVersion") == 3
+    expected_views = REVIEW_VIEWS[:4] if four else REVIEW_VIEWS
+    if four:
+        if (job.get("mode") != "multi-view-four" or job.get("conditioningProfile") != "cardinal-four-v1"
+                or job.get("viewCount") != 4):
+            raise ValueError("Four-view review requires an explicit v3 cardinal-four-v1 job")
+    elif job.get("schemaVersion") != 2 or job.get("mode") != "multi-view":
         raise ValueError("Six-view review requires an explicit v2 multi-view job")
     if job.get("inputFrame") not in ("pixal3d-mv-export", "hephaera-proof-z-up"):
         raise ValueError("Six-view review requires an explicit input geometry frame")
     proof_set, source_set, classification = (job.get(name) for name in ("proofSet", "sourceSet", "classification"))
     if not all(isinstance(item, dict) for item in (proof_set, source_set, classification)):
         raise ValueError("Six-view review requires proofSet, sourceSet and classification")
-    if source_set.get("schemaVersion") != 1 or proof_set.get("schemaVersion") != 1:
+    if source_set.get("schemaVersion") != 1 or proof_set.get("schemaVersion") != (2 if four else 1):
         raise ValueError("Unsupported source/proof-set schema")
+    if four:
+        if proof_set.get("conditioningProfile") != "cardinal-four-v1" or proof_set.get("viewCount") != 4:
+            raise ValueError("Four-view dataset profile/count differs from its review job")
+    elif "conditioningProfile" in proof_set or "viewCount" in proof_set:
+        raise ValueError("Six-view job cannot consume a four-view dataset")
     camera = proof_set.get("camera", {})
     if camera.get("convention") != "blender-nerf-z-up" or camera.get("calibration") not in ("nominal-prescribed", "measured"):
         raise ValueError("Unknown camera convention or calibration")
@@ -160,8 +171,8 @@ def review_multiview_inputs(job, root):
     if classification.get("sourceSetHash") != proof_set["sourceSetHash"]:
         raise ValueError("Classification and proof-set source identities differ")
     views = proof_set.get("views")
-    if not isinstance(views, list) or tuple(item.get("view") for item in views) != REVIEW_VIEWS:
-        raise ValueError("Exactly six ordered front/right/back/left/top/bottom views are required")
+    if not isinstance(views, list) or tuple(item.get("view") for item in views) != expected_views:
+        raise ValueError("Exactly the profile's ordered conditioning views are required")
     view_paths = set()
     for item in views:
         path = review_input_image(root, item)

@@ -10,6 +10,7 @@ for project in src/Bubo.Host.Tests/Bubo.Host.Tests.csproj src/runtime/proof-to-m
 done
 dotnet run --project src/runtime/vfx-assets/Tests/Vfx.Tests.csproj -c "$configuration" --no-build -- --cli "src/Bubo.Cli/bin/$configuration/net10.0/bubo.dll"
 python3 scripts/audit-resources.py
+python3 -B -X utf8 tests/test-proof-four-view-review.py
 python3 tests/test-cli-contract.py --cli "src/Bubo.Cli/bin/$configuration/net10.0/bubo.dll"
 python3 tests/test-floor-plan-authoring.py
 python3 tests/test-floor-plan-export-geometry.py

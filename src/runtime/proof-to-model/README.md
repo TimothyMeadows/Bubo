@@ -5,3 +5,5 @@ The extracted .NET 10 Domain/Application/Infrastructure implementation preserves
 Use the explicitly built `bubo` entrypoint described in the repository README with API version 2 and a validated host context. Direct legacy executable entrypoints are retired. Audited resources are owned under `resources/`; a host Hephaera checkout, Docker or sibling repository is not a runtime prerequisite.
 
 The preserved executable tests distinguish actual persistence/process mechanics from simulated model/engine/human producers. Native Blender and actual browser fixtures require their declared existing tool/test prerequisites and do not establish production asset acceptance. Source ancestry and MIT adaptation receipts remain in `provenance/hephaera-extraction.json` and the original vendor/REUSE files.
+
+Explicit additive four-view MV production uses a fresh v3 manifest and a hash-bound `cardinal-four-v1` profile while keeping the accepted six-view base installation unchanged. See [four-view contracts](../../../../docs/PROOF_MODEL_FOUR_VIEW.md). Six-view default and diagnostic modes retain their scope.

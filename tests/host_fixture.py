@@ -80,7 +80,7 @@ def context(project, task, arguments=()):
             file = toolchain.get(kind, {}).get('path')
             if file and (project / file).is_file():
                 add_tool(project / file)
-    input_flags = {'--rights', '--recipe', '--toolchain', '--selection', '--library-search', '--evidence', '--proof-set', '--classification',
+    input_flags = {'--rights', '--recipe', '--toolchain', '--conditioning-profile', '--selection', '--library-search', '--evidence', '--proof-set', '--classification',
                    '--finish-settings', '--finish-budget', '--revision', '--source-review', '--sources', '--proof', '--model', '--motion-package',
                    '--motion-source', '--mapping', '--brief', '--proof-metadata', '--source-metadata', '--editable-source', '--artifact', '--source'}
     for index, argument in enumerate(arguments):

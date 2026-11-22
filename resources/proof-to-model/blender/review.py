@@ -9,7 +9,7 @@ import sys
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from common import (bounds, confined, digest, import_glb, inspect_glb, load_job, relative,
-                    review_multiview_inputs, triangles, write_json)
+                    review_multiview_inputs, review_camera_matrix, triangles, write_json)
 import bpy
 from mathutils import Matrix, Vector
 
@@ -32,7 +32,8 @@ def figure(path, caption, page):
 
 def main():
     job, root, source, output, result = load_job(allow_subject=True, allow_multiview=True)
-    multi = job.get("schemaVersion") == 2
+    multi = job.get("schemaVersion") in (2, 3)
+    four = job.get("schemaVersion") == 3
     checked = {source: digest(source)}
     originals, prepared, approved = [], {}, {}
     if multi:
@@ -137,7 +138,12 @@ def main():
         export_to_proof = (Matrix.Diagonal((-1.0, -1.0, 1.0, 1.0))
                            if job["inputFrame"] == "pixal3d-mv-export" else Matrix.Identity(4))
         fit = Matrix.Scale(scale, 4) @ export_to_proof @ Matrix.Translation(-center)
-        directions = proof_set["views"]
+        directions = list(proof_set["views"])
+        if four:
+            # Model-only diagnostics. These are never conditioning evidence or paired proofs.
+            directions += [{"view": name, "cameraToWorld": review_camera_matrix(name, proof_set["camera"]["distance"]),
+                            "cameraAngleX": proof_set["camera"]["cameraAngleX"], "diagnosticOnly": True}
+                           for name in ("top", "bottom")]
     else:
         camera_data.type = "ORTHO"
         camera_data.ortho_scale = extent * 1.8
@@ -155,6 +161,8 @@ def main():
             bpy.context.view_layer.update()
             cameras.append({"view": name, "cameraToWorld": item["cameraToWorld"], "cameraAngleX": fov,
                             "effectiveBlenderCameraToWorld": [list(row) for row in camera.matrix_world]})
+            if four:
+                cameras[-1]["diagnosticOnly"] = item.get("diagnosticOnly") is True
         else:
             camera.location = center + Vector(item["direction"]).normalized() * extent * 4
             camera.rotation_euler = (center - camera.location).to_track_quat("-Z", "Y").to_euler()
@@ -166,7 +174,7 @@ def main():
         contacts.append(path)
     page = output / "comparison.html"
     if multi:
-        title = "Original sources and six-view proof versus exported GLB"
+        title = "Original sources and " + ("four-view" if four else "six-view") + " proof versus exported GLB"
         source_section = "<h2>Immutable original sources</h2><main>" + "".join(
             figure(item["path"], item["id"] + " original / SHA256 " + item["sha256"], page) for item in originals) + "</main>"
         rows = "".join('<section><h2>' + html.escape(item["view"]) + '</h2><main>' +
@@ -182,6 +190,12 @@ def main():
                      "orientation": "one declared input-frame mapping; no per-view rotation or refitting",
                      "limitation": "Camera orientations/FOV match submitted metadata. Common bounds fitting is nominal alignment, not measured pixel correspondence or proof of likeness."}
         content = source_section + '<p>' + html.escape(alignment["limitation"]) + '</p>' + rows
+        if four:
+            content += '<h2>Unconditioned polar surfaces: model-only diagnostics</h2><p>No top/bottom input proofs exist. Hidden anatomy is inferred and requires review.</p><main>' + "".join(
+                figure(path, path.stem + " model-only diagnostic; not a conditioning image", page) for path in contacts[4:]) + '</main>'
+            alignment["conditioningProfile"] = "cardinal-four-v1"
+            alignment["viewCount"] = 4
+            alignment["unpairedDiagnosticViews"] = ["top", "bottom"]
         content += '<h2>Source-only classification and unresolved interpretations</h2><pre>' + html.escape(json.dumps(classification, indent=2, ensure_ascii=False)) + '</pre>'
     else:
         title = "Proof versus exported GLB: single-view diagnostic"

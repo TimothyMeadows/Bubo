@@ -6,21 +6,21 @@ public sealed partial class Pipeline
 {
     async Task ReuseMultiView(CancellationToken cancellation)
     {
-        if (!IsMultiView) throw new InvalidOperationException("Multi-view reuse requires a new v2 target, never a single-view diagnostic");
+        if (!IsMultiView || IsFourView) throw new InvalidOperationException("Multi-view reuse requires a new v2 target, never a single-view diagnostic");
         RequireStage("classify"); RequireStage("prepare-proofs"); RequireApproval("proof-set");
         if (w.Load<JsonObject>(m.Rights)["reuseAuthorized"]?.GetValue<bool>() != true) throw new InvalidOperationException("Current target rights require reuseAuthorized:true");
         RequireMultiViewToolchain();
         var path = w.Relative(Need("reuse-manifest"));
         if (path == manifestPath) throw new InvalidOperationException("An asset cannot reuse itself");
         var donor = OpenDonor(path);
-        if (!donor.IsMultiView) throw new InvalidOperationException("Single-view donors cannot satisfy six-view reuse");
+        if (!donor.IsMultiView || donor.IsFourView) throw new InvalidOperationException("Single-view donors cannot satisfy six-view reuse");
         if (donor.m.Staging == m.Staging) throw new InvalidOperationException("Reuse source and target staging trees must be distinct");
         using var donorLock = w.LockRead(donor.State + "/asset.lock");
         // Another approved native operation may have atomically saved the donor
         // between discovery and lock acquisition. Bind the locked snapshot only.
         donor.m = w.Load<Hephaera.ProofToModel.Domain.Manifest>(path);
         donor.CheckStatePaths();
-        if (!donor.IsMultiView || donor.m.Staging == m.Staging) throw new InvalidOperationException("Locked donor must remain a distinct v2 six-view asset");
+        if (!donor.IsMultiView || donor.IsFourView || donor.m.Staging == m.Staging) throw new InvalidOperationException("Locked donor must remain a distinct v2 six-view asset");
         donor.Validate(); donor.RequireMultiViewToolchain();
         foreach (var stage in new[] { "classify", "prepare-proofs", "preprocess", "reconstruct", "finish", "review" }) donor.RequireStage(stage);
         var requiredApprovals = new List<string> { "proof-set", "preprocessing", "independent", "human" };

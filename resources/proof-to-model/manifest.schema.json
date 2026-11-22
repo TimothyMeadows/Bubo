@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://hephaera.local/schemas/proof-to-model/manifest-v2",
+  "$id": "https://hephaera.local/schemas/proof-to-model/manifest-v3",
   "title": "PROOF_TO_MODEL asset manifest",
   "type": "object",
   "required": [
@@ -23,9 +23,10 @@
     "schemaVersion": {
       "enum": [
         1,
-        2
+        2,
+        3
       ],
-      "description": "2 is six-view production; 1 is historical explicit single-view diagnostic only"
+      "description": "3 is explicit cardinal-four-v1 MV production;2 retains six-view;1 retains diagnostics"
     },
     "asset": {
       "type": "string",
@@ -103,6 +104,13 @@
     "runtimeBuildSha256": {
       "type": "string",
       "pattern": "^[a-f0-9]{64}$"
+    },
+    "conditioningProfile": {
+      "const": "cardinal-four-v1"
+    },
+    "conditioningProfileFile": {
+      "type": "string",
+      "minLength": 1
     }
   },
   "allOf": [
@@ -110,7 +118,10 @@
       "if": {
         "properties": {
           "schemaVersion": {
-            "const": 2
+            "enum": [
+              2,
+              3
+            ]
           }
         },
         "required": [
@@ -128,6 +139,40 @@
             "type": "string",
             "minLength": 1
           }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "schemaVersion": {
+            "const": 3
+          }
+        },
+        "required": [
+          "schemaVersion"
+        ]
+      },
+      "then": {
+        "required": [
+          "conditioningProfile",
+          "conditioningProfileFile"
+        ]
+      },
+      "else": {
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "conditioningProfile"
+              ]
+            },
+            {
+              "required": [
+                "conditioningProfileFile"
+              ]
+            }
+          ]
         }
       }
     }

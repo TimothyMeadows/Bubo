@@ -15,6 +15,8 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'VFX contract/dependency checks failed.' }
     python -X utf8 scripts/audit-resources.py
     if ($LASTEXITCODE -ne 0) { throw 'Resource audit failed.' }
+    python -B -X utf8 tests/test-proof-four-view-review.py
+    if ($LASTEXITCODE -ne 0) { throw 'Four-view fixed review admission checks failed.' }
     python -X utf8 tests/test-cli-contract.py --cli "src/Bubo.Cli/bin/$Configuration/net10.0/bubo.dll"
     if ($LASTEXITCODE -ne 0) { throw 'Public CLI contract checks failed.' }
     python -X utf8 tests/test-floor-plan-authoring.py
