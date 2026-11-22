@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hephaera.local/schemas/proof-to-model/cardinal-four-profile-v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "id",
+    "mode",
+    "modelFamily",
+    "viewCount",
+    "views",
+    "baseToolchain"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "id": {
+      "const": "cardinal-four-v1"
+    },
+    "mode": {
+      "const": "multi-view-four"
+    },
+    "modelFamily": {
+      "const": "mv"
+    },
+    "viewCount": {
+      "const": 4
+    },
+    "views": {
+      "const": [
+        "front",
+        "right",
+        "back",
+        "left"
+      ]
+    },
+    "baseToolchain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      }
+    }
+  }
+}

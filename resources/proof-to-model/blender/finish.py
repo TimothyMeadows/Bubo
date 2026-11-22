@@ -1694,7 +1694,9 @@ def main():
     stages = [{"stage": "source", "sha256": original_hash, "meshNames": names},
               {"stage": "finishingSettings", "selection": "explicit" if job.get("finishingSettings") is not None else "legacy-default",
                "settings": settings}]
-    if job.get("mode") == "multi-view":
+    if job.get("mode") in ("multi-view", "multi-view-four"):
+        if job.get("mode") == "multi-view-four" and (job.get("conditioningProfile") != "cardinal-four-v1" or job.get("viewCount") != 4):
+            raise ValueError("Four-view finishing requires explicit cardinal-four-v1 metadata")
         if job.get("inputFrame") != "pixal3d-mv-export":
             raise ValueError("Multi-view finishing requires the declared Pixal3D export frame")
         scale = job.get("engineToProofScale")

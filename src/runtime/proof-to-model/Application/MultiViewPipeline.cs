@@ -25,7 +25,7 @@ public sealed partial class Pipeline
     async Task PreprocessViews(Stage stage, CancellationToken cancellation)
     {
         var set = CurrentProofSet();
-        MultiViewGeometry.Validate(set);
+        MultiViewGeometry.Validate(set, m.ConditioningProfile);
         var views = set["views"]!.AsArray().Select(node => node!.AsObject()).ToArray();
         var processed = new List<(JsonObject View, string Cutout, AlphaMatte Matte, bool Preserved)>();
         foreach (var view in views)
@@ -67,7 +67,7 @@ public sealed partial class Pipeline
         foreach (var (view, cutout, matte, preserved) in processed)
         {
             var name = ViewText(view, "view");
-            var index = Array.IndexOf(MultiViewGeometry.Views, name);
+            var index = Array.IndexOf(ConditioningViews, name);
             var file = index.ToString("D2", CultureInfo.InvariantCulture) + "-" + name + ".png";
             var image = directory + "/" + file;
             alpha.PadSquare(w.Resolve(cutout), w.ResolveWrite(image), side);
@@ -118,7 +118,8 @@ public sealed partial class Pipeline
         dataset["transforms"] = transforms;
         dataset["transformsSha256"] = Hash(transforms);
         dataset["engineExportFrame"] = "pixal3d-mv-export";
-        dataset["sixViewNativeAcceptance"] = "not-established-by-preprocessing";
+        if (IsFourView) dataset["fourViewNativeAcceptance"] = "not-established-by-preprocessing";
+        else dataset["sixViewNativeAcceptance"] = "not-established-by-preprocessing";
         var report = stage.Attempt + "/dataset.json";
         w.Save(report, dataset);
         stage.Artifacts["transforms"] = transforms;
@@ -131,19 +132,19 @@ public sealed partial class Pipeline
 
     void ValidateMultiViewDataset(JsonObject dataset)
     {
-        MultiViewGeometry.Validate(dataset);
+        MultiViewGeometry.Validate(dataset, m.ConditioningProfile);
         if (ViewText(dataset, "approvedProofSetSha256") != Hash(m.ProofSet) || ViewText(dataset, "approvalFingerprint") != ApprovalFingerprint("proof-set"))
             throw new InvalidOperationException("Prepared dataset is stale against the approved six-view set");
         var transformsPath = ViewText(dataset, "transforms");
         if (Hash(transformsPath) != ViewText(dataset, "transformsSha256")) throw new InvalidOperationException("Camera dataset hash changed");
         var transforms = w.Load<JsonObject>(transformsPath);
         var frames = transforms["frames"]?.AsArray() ?? throw new InvalidOperationException("Missing native camera frames");
-        if (frames.Count != 6 || transforms["mesh_scale"]?.GetValue<double>() != dataset["camera"]!["meshScale"]!.GetValue<double>())
+        if (frames.Count != ConditioningViews.Length || transforms["mesh_scale"]?.GetValue<double>() != dataset["camera"]!["meshScale"]!.GetValue<double>())
             throw new InvalidOperationException("Exactly six native frames and the selected projection scale are required");
         int? side = null;
         var current = CurrentProofSet()["views"]!.AsArray();
         var hashes = new HashSet<string>(StringComparer.Ordinal);
-        for (var index = 0; index < 6; index++)
+        for (var index = 0; index < ConditioningViews.Length; index++)
         {
             var view = dataset["views"]![index]!.AsObject();
             var approved = current[index]!.AsObject();
@@ -180,7 +181,7 @@ public sealed partial class Pipeline
         Directory.CreateDirectory(w.ResolveWrite(submitted));
         var frames = w.Load<JsonObject>(ViewText(dataset, "transforms"));
         var submittedViews = dataset.DeepClone().AsObject();
-        for (var index = 0; index < 6; index++)
+        for (var index = 0; index < ConditioningViews.Length; index++)
         {
             var view = submittedViews["views"]![index]!.AsObject();
             var file = ViewText(frames["frames"]![index]!.AsObject(), "file_path");
@@ -199,6 +200,12 @@ public sealed partial class Pipeline
         stage.Artifacts["submittedTransforms"] = transforms;
         var output = stage.Attempt + "/raw.glb";
         var arguments = Arguments("reconstruction", submitted, output, stage.Attempt);
+        if (IsFourView)
+        {
+            // Derive only this fixed count from the hash-bound unchanged six-view base template.
+            ValidateFourViewBaseArguments();
+            arguments[Array.IndexOf(arguments, "--num-views") + 1] = "4";
+        }
         void RequireArgument(string flag, string value)
         {
             var index = Array.IndexOf(arguments, flag);
@@ -208,7 +215,7 @@ public sealed partial class Pipeline
         RequireArgument("--views", w.Resolve(submitted));
         RequireArgument("--models", w.Resolve(Toolchain["modelDir"]!.GetValue<string>()));
         RequireArgument("--pixal3d-weights", "mv");
-        RequireArgument("--num-views", "6");
+        RequireArgument("--num-views", ConditioningViews.Length.ToString(CultureInfo.InvariantCulture));
         RequireArgument("--res", "1024");
         if (arguments.Contains("--sv-image") || arguments.Contains("--image") || !arguments.Contains("--require-gpu") || arguments.Last() != w.Resolve(output))
             throw new InvalidOperationException("Single-view/CPU fallback or substituted output cannot satisfy six-view production");
@@ -228,12 +235,19 @@ public sealed partial class Pipeline
         var receipt = stage.Attempt + "/reconstruction-inputs.json";
         w.Save(receipt, new JsonObject
         {
-            ["schemaVersion"] = 1, ["mode"] = "multi-view", ["viewCount"] = 6,
+            ["schemaVersion"] = IsFourView ? 2 : 1, ["mode"] = ConditioningMode, ["viewCount"] = ConditioningViews.Length,
             ["dataset"] = stage.Artifacts["submittedDataset"], ["datasetSha256"] = Hash(stage.Artifacts["submittedDataset"]),
             ["transformsSha256"] = Hash(transforms), ["views"] = submittedViews["views"]!.DeepClone(),
             ["engineExportFrame"] = "pixal3d-mv-export", ["output"] = output, ["outputSha256"] = Hash(output),
             ["upstreamValidationLimit"] = "MV upstream validates four views; this receipt proves submitted inputs, not anatomical or visual acceptance"
         });
+        if (IsFourView)
+        {
+            var fourReceipt = w.Load<JsonObject>(receipt);
+            fourReceipt["conditioningProfile"] = m.ConditioningProfile;
+            fourReceipt["conditioningProfileSha256"] = Hash(m.ConditioningProfileFile!);
+            w.Save(receipt, fourReceipt);
+        }
         stage.Artifacts["inputReceipt"] = receipt;
         stage.Artifacts["glb"] = output;
     }

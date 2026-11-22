@@ -130,7 +130,7 @@ try
     pipelineOptions["runtime-build-sha256"] = runtimeBuildSha256;
     if (workflow == "model-to-action") pipelineOptions["host-style-sha256"] = context.StyleSha256;
     if (workflow is "floor-plan-to-model" or "schematic-to-model") pipelineOptions["runtime-resource-catalog-sha256"] = RuntimeCatalog.ExpectedSha256;
-    foreach (var name in new[] { "rights", "recipe", "toolchain", "selection", "library-search", "evidence", "proof-set", "classification", "finish-settings", "finish-budget", "revision", "source-review", "sources", "proof", "model", "motion-package", "motion-source", "mapping", "brief", "proof-metadata", "source-metadata", "editable-source", "artifact", "source", "plan", "design", "parent-manifest", "handoff" })
+    foreach (var name in new[] { "rights", "recipe", "toolchain", "conditioning-profile", "selection", "library-search", "evidence", "proof-set", "classification", "finish-settings", "finish-budget", "revision", "source-review", "sources", "proof", "model", "motion-package", "motion-source", "mapping", "brief", "proof-metadata", "source-metadata", "editable-source", "artifact", "source", "plan", "design", "parent-manifest", "handoff" })
         if (pipelineOptions.TryGetValue(name, out var value)) context.RequireReference(value);
     if (operation == "init")
     {
@@ -251,7 +251,7 @@ static void ValidateOperation(string workflow, string operation, Dictionary<stri
         ("vfx-assets", "validate" or "inspect") => ["package"],
         ("vfx-assets", "prepare") => ["request","output"],
         ("vfx-assets", "verify-preparation") => ["manifest"],
-        ("proof-to-model", "init") => ["task","asset","version","actor","proof","sources","mode","rights","recipe","toolchain","brief","proof-metadata","selection","library-search","reuse-manifest"],
+        ("proof-to-model", "init") => ["task","asset","version","actor","proof","sources","mode","conditioning-profile","rights","recipe","toolchain","brief","proof-metadata","selection","library-search","reuse-manifest"],
         ("proof-to-model", "classify") => ["classification"],
         ("proof-to-model", "prepare-proofs") => ["proof-set"],
         ("proof-to-model", "reuse") => ["reuse-manifest"],
@@ -315,6 +315,7 @@ static JsonObject Capabilities()
         ["vfx"] = new JsonObject { ["phase"] = "fixed-input-preparation", ["operations"] = new JsonArray("validate","inspect","prepare","verify-preparation"), ["packageSchema"] = "bubo-vfx-package/v1", ["packageSchemas"] = new JsonArray("bubo-vfx-package/v1","bubo-vfx-package/v2"), ["preparationSchema"] = "bubo-vfx-preparation/v1", ["processingProfiles"] = new JsonArray("sheet","sequence","math-mask"), ["processingAvailable"] = true, ["videoDecodingAvailable"] = false, ["hardProcessingMemoryAvailable"] = false, ["renderingAvailable"] = false, ["runtimeAcceptanceAvailable"] = false },
         ["schematic"] = new JsonObject { ["phase"] = "portable-assembly-export", ["operations"] = new JsonArray("init","doctor","preview","validate","record","build-parts","assemble","prove-motion","export","review","status"), ["partConstructionAvailable"] = true, ["assemblyAvailable"] = true, ["motionProofAvailable"] = true, ["requiresApprovedAssemblyV2"] = true, ["modelExportAvailable"] = true, ["motionHandoffProfile"] = "mechanical-assembly", ["humanModelAcceptanceSeparate"] = true },
         ["floorPlan"] = new JsonObject { ["phase"] = "architectural-export", ["operations"] = new JsonArray("init","doctor","preview","validate","record","build","export","review","status"), ["modelingAvailable"] = true, ["requiresApprovedConstructionPlanV2"] = true, ["modelExportAvailable"] = true },
+        ["proofToModel"] = new JsonObject { ["modes"] = new JsonArray("multi-view", "multi-view-four", "single-view-diagnostic"), ["fourViewConditioningProfile"] = "cardinal-four-v1", ["fourViewManifestVersion"] = 3, ["fourViewProofSetVersion"] = 2, ["fourViewReuseAvailable"] = false },
         ["modelRuntime"] = "pinned-native-tools", ["mediaBackends"] = JsonSerializer.SerializeToNode(Bubo.Media.Domain.MediaCapabilities.Implemented,Bubo.Media.Domain.MediaJson.Options),
         ["build"] = new JsonObject { ["cliSha256"] = Workspace.Hash(Assembly.GetExecutingAssembly().Location), ["resourceCatalogSha256"] = RuntimeCatalog.ExpectedSha256, ["assemblies"] = assemblies, ["launch"] = launch },
         ["platform"] = new JsonObject { ["os"] = System.Runtime.InteropServices.RuntimeInformation.OSDescription, ["nativeProcessOwnershipSupported"] = OperatingSystem.IsWindows() || OperatingSystem.IsLinux(), ["osSandbox"] = false }

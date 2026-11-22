@@ -21,6 +21,20 @@ static class MultiViewGeometryTests
                 ["view"] = view, ["cameraToWorld"] = MultiViewGeometry.Matrix(view)
             }).ToArray())
         };
+        var four = ProofSet();
+        four["schemaVersion"] = 2; four["conditioningProfile"] = "cardinal-four-v1"; four["viewCount"] = 4;
+        four["views"]!.AsArray().RemoveAt(5); four["views"]!.AsArray().RemoveAt(4);
+        MultiViewGeometry.Validate(four, MultiViewGeometry.CardinalFourProfile);
+        check(true, "four-view geometry uses explicit schema/profile and the existing four cardinal matrices");
+        await reject(() => Task.Run(() => MultiViewGeometry.Validate(four)), "four cannot masquerade as existing six-view geometry");
+        await reject(() => Task.Run(() => MultiViewGeometry.Validate(ProofSet(), MultiViewGeometry.CardinalFourProfile)), "six cannot masquerade as new four-view geometry");
+        foreach (var mutation in new Action<JsonObject>[] { x => x.Remove("conditioningProfile"), x => x["schemaVersion"] = 1,
+            x => x["viewCount"] = 6, x => x["views"]!.AsArray().Add(x["views"]![0]!.DeepClone()), x => x["views"]![1]!["view"] = "left",
+            x => x["camera"]!["meshScale"] = 0, x => x["views"]![0]!["cameraToWorld"]![0]![0] = 2 })
+        {
+            var invalid = four.DeepClone().AsObject(); mutation(invalid);
+            await reject(() => Task.Run(() => MultiViewGeometry.Validate(invalid, MultiViewGeometry.CardinalFourProfile)), "four-view invalid discriminator/order/camera rejected");
+        }
         var valid = ProofSet();
         MultiViewGeometry.Validate(valid);
         check(true, "six prescribed cameras accept JSON integer mesh scale without coercing strings");

@@ -12,7 +12,7 @@ static class MultiViewPipelineTests
 
     public static async Task Run(Workspace parent, Action<bool, string> check, Func<Func<Task>, string, Task> reject)
     {
-        async Task<Fixture> Prepare(string name, Action<Fixture, JsonObject>? configure = null, bool diagnostic = false)
+        async Task<Fixture> Prepare(string name, Action<Fixture, JsonObject>? configure = null, bool diagnostic = false, bool four = false)
         {
             var root = parent.Resolve("mv-runtime-" + name + "-" + Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(root);
@@ -47,6 +47,12 @@ static class MultiViewPipelineTests
                     ["arguments"] = new JsonArray("--views", "{input}", "--models", "{modelDir}", "--pixal3d-weights", "mv", "--num-views", "6", "--res", "1024", "--require-gpu", "{output}")
                 }
             };
+            if (four)
+            {
+                toolchain["reconstruction"]!["arguments"] = new JsonArray("--views", "{input}", "--models", "{modelDir}", "--pixal3d-weights", "mv", "--num-views", "6", "--res", "1024", "--seed", "42", "--gss", "10", "--require-gpu", "{output}");
+                fixture.Process.ExpectedFrames = 4;
+                fixture.Process.ExpectedSide = 8;
+            }
             configure?.Invoke(fixture, toolchain);
             workspace.Save("toolchain.json", toolchain);
             var originals = new JsonArray();
@@ -69,6 +75,17 @@ static class MultiViewPipelineTests
                 originals.Add(new JsonObject { ["id"] = "source-" + i, ["path"] = image });
             }
             workspace.Save("sources.json", new JsonObject { ["schemaVersion"] = 1, ["images"] = originals });
+            if (four)
+            {
+                workspace.Save("profile.json", new JsonObject
+                {
+                    ["schemaVersion"] = 1, ["id"] = "cardinal-four-v1", ["mode"] = "multi-view-four", ["modelFamily"] = "mv", ["viewCount"] = 4,
+                    ["views"] = new JsonArray("front", "right", "back", "left"),
+                    ["baseToolchain"] = new JsonObject { ["path"] = "toolchain.json", ["sha256"] = workspace.HashProjectFile("toolchain.json") }
+                });
+                fixture.Options["mode"] = "multi-view-four";
+                fixture.Options["conditioning-profile"] = "profile.json";
+            }
             if (diagnostic) fixture.Options["mode"] = "single-view-diagnostic";
             await fixture.Execute("init");
             fixture.Options["manifest"] = fixture.ManifestPath;
@@ -78,7 +95,15 @@ static class MultiViewPipelineTests
             await fixture.Execute("classify");
             var proofs = PreparationTests.ProofSet(workspace, fixture.State);
             proofs["views"]![1]!["cameraAngleX"] = .42;
-            proofs["views"]![5]!["cameraAngleX"] = .38;
+            if (four)
+            {
+                proofs["schemaVersion"] = 2;
+                proofs["conditioningProfile"] = "cardinal-four-v1";
+                proofs["viewCount"] = 4;
+                proofs["views"]!.AsArray().RemoveAt(5);
+                proofs["views"]!.AsArray().RemoveAt(4);
+            }
+            else proofs["views"]![5]!["cameraAngleX"] = .38;
             workspace.Save("proof-set.json", proofs);
             fixture.Options["proof-set"] = "proof-set.json";
             await fixture.Execute("prepare-proofs");
@@ -112,6 +137,53 @@ static class MultiViewPipelineTests
             await fixture.Execute("preprocess");
             await Approve(fixture, "preprocessing");
         }
+
+        // These decisions and native output are deliberately synthetic fixture evidence.
+        var four = await Prepare("four", four: true);
+        check(four.State.SchemaVersion == 3 && four.State.ConditioningProfile == "cardinal-four-v1", "four-view init records distinct explicit manifest identity");
+        var plan = four.Workspace.Load<JsonObject>(four.State.Stages["classify"].Artifacts["proof-plan"]);
+        check(plan["requiredViews"]!.AsArray().Count == 4 && plan["unconditionedViews"]!.AsArray().Count == 2,
+            "four-view classification retains original-only coverage but requires only explicit cardinal conditioning");
+        await reject(() => four.Execute("preprocess"), "four-view requires a genuine whole-set decision before preprocessing (synthetic test)");
+        await Ready(four);
+        await four.Execute("reconstruct");
+        var fourReceipt = four.Workspace.Load<JsonObject>(four.State.Stages["reconstruct"].Artifacts["inputReceipt"]);
+        check(four.Process.FramesRead == 4 && four.Process.Launches == 1 && fourReceipt["viewCount"]!.GetValue<int>() == 4 &&
+            fourReceipt["conditioningProfile"]!.GetValue<string>() == "cardinal-four-v1" && fourReceipt["schemaVersion"]!.GetValue<int>() == 2,
+            "simulated subprocess actually reads exactly four images/transforms and output receipt distinguishes new profile");
+        check(four.Workspace.Load<JsonObject>("toolchain.json")["viewCount"]!.GetValue<int>() == 6,
+            "four-view overlay leaves accepted six-view base toolchain and installation identity unchanged");
+        four.Options.Remove("mode"); four.Options.Remove("conditioning-profile");
+        await four.Execute("status");
+        check(true, "four-view continuations use registered manifest rather than requiring selection flags again");
+        await reject(() => four.Execute("reuse"), "four-view reuse cannot inherit six-view stages or approvals");
+        four.Options["mode"] = "multi-view";
+        await reject(() => four.Execute("status"), "six-mode flag cannot reinterpret four-view state even on read-only status");
+        four.Options.Remove("mode");
+        var originalManifest = four.State;
+        foreach (var mutation in new Action<Manifest>[] { x => x.ConditioningProfile = null, x => x.ConditioningProfileFile = null,
+            x => x.SchemaVersion = 2, x => x.ConditioningProfile = "six-under-four" })
+        {
+            var changed = four.Workspace.Load<Manifest>(four.ManifestPath); mutation(changed); four.Workspace.Save(four.ManifestPath, changed);
+            await reject(() => four.Execute("status"), "invalid manifest/profile pair refuses status before diagnostic fallthrough");
+            await reject(() => four.Execute("doctor"), "invalid manifest/profile pair refuses doctor before launch");
+            four.Workspace.Save(four.ManifestPath, originalManifest);
+        }
+        var profileBytes = File.ReadAllBytes(four.Workspace.Resolve("profile.json"));
+        File.AppendAllText(four.Workspace.Resolve("profile.json"), "\n");
+        await reject(() => four.Execute("reconstruct"), "even semantically equivalent profile byte drift invalidates bound stage/approval freshness");
+        File.WriteAllBytes(four.Workspace.Resolve("profile.json"), profileBytes);
+        var duringFour = await Prepare("four-profile-during-child", four: true);
+        await Ready(duringFour);
+        duringFour.Process.Mutate = _ => File.AppendAllText(duringFour.Workspace.Resolve("profile.json"), "\n");
+        await reject(() => duringFour.Execute("reconstruct"), "profile mutation during simulated inference fails immutable post-child readback");
+        check(duringFour.State.Stages["reconstruct"].Status == "failed", "failed four-view profile readback cannot mark reconstruction complete");
+        var changedProfile = four.Workspace.Load<JsonObject>("profile.json"); changedProfile["baseToolchain"]!["sha256"] = new string('0',64);
+        four.Workspace.Save("profile.json", changedProfile);
+        await reject(() => four.Execute("reconstruct"), "changed profile base identity invalidates stage/approval before dispatch");
+        check(four.Process.Launches == 1, "invalid four-view state never relaunches simulated inference");
+        await reject(() => Prepare("four-sv", (_, toolchain) => toolchain["modelFamily"] = "sv", four: true), "four-view rejects SV at init before any subprocess");
+        await reject(() => Prepare("four-extra-flag", (_, toolchain) => toolchain["reconstruction"]!["arguments"]!.AsArray().Insert(0,"--canonical-views"), four: true), "four-view refuses noncanonical base argument overrides at init");
 
         var valid = await Prepare("valid");
         await reject(() => valid.Execute("preprocess"), "SYNTHETIC: six-view preparation does not manufacture whole-set approval");
@@ -269,6 +341,8 @@ static class MultiViewPipelineTests
         }
         public int Launches { get; private set; }
         public int FramesRead { get; private set; }
+        public int ExpectedFrames { get; set; } = 6;
+        public int ExpectedSide { get; set; } = 10;
         public List<string> LastReadHashes { get; } = [];
         public string? LastOutput { get; private set; }
         public bool ThrowAfterWrite { get; set; }
@@ -286,13 +360,13 @@ static class MultiViewPipelineTests
                 if (index < 0 || index + 1 >= args.Length) throw new InvalidOperationException("Simulated process missing " + flag);
                 return args[index + 1];
             }
-            if (Value("--num-views") != "6" || Value("--pixal3d-weights") != "mv" || Value("--res") != "1024")
+            if (Value("--num-views") != ExpectedFrames.ToString() || Value("--pixal3d-weights") != "mv" || Value("--res") != "1024")
                 throw new InvalidOperationException("Simulated process did not receive the six-view MV invocation");
             var directory = Value("--views");
             var transformsPath = Path.Combine(directory, "transforms.json");
             var transforms = workspace.Load<JsonObject>(transformsPath);
             var frames = transforms["frames"]!.AsArray();
-            if (frames.Count != 6) throw new InvalidOperationException("Simulated process actually discovered fewer than six frames");
+            if (frames.Count != ExpectedFrames) throw new InvalidOperationException("Simulated process actually discovered fewer than six frames");
             var expected = workspace.Load<JsonObject>(Path.Combine(Path.GetDirectoryName(directory)!, "submitted-dataset.json"));
             var actualFiles = new List<string>();
             LastReadHashes.Clear();
@@ -302,7 +376,7 @@ static class MultiViewPipelineTests
                 var pixels = RgbaPng.Read(path);
                 var reviewed = expected["views"]![index]!.AsObject();
                 var hash = workspace.HashFile(path);
-                if (pixels.Width != 10 || pixels.Height != 10 || !pixels.Pixels.Where((_, offset) => offset % 4 == 3).Any(alpha => alpha > 0)
+                if (pixels.Width != ExpectedSide || pixels.Height != ExpectedSide || !pixels.Pixels.Where((_, offset) => offset % 4 == 3).Any(alpha => alpha > 0)
                     || hash != reviewed["sha256"]!.GetValue<string>()
                     || !JsonNode.DeepEquals(frame["transform_matrix"], reviewed["cameraToWorld"])
                     || frame["camera_angle_x"]!.GetValue<double>() != reviewed["cameraAngleX"]!.GetValue<double>())

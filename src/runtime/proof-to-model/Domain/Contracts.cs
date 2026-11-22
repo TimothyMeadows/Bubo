@@ -8,6 +8,10 @@ public sealed class Manifest
     [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
     public string? RuntimeBuildSha256 { get; set; }
     public int SchemaVersion { get; set; } = 1;
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public string? ConditioningProfile { get; set; }
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public string? ConditioningProfileFile { get; set; }
     public string Asset { get; set; } = ""; public string Version { get; set; } = "";
     public string Task { get; set; } = ""; public string Staging { get; set; } = "";
     [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
