@@ -46,7 +46,7 @@ public sealed partial class Pipeline
                 var arguments = Arguments("preprocessing", image, output, child.Attempt);
                 if (!arguments.Contains("birefnet") || !arguments.Contains("--bg-only") || arguments.Contains("threshold"))
                     throw new InvalidOperationException("Multi-view preprocessing requires explicit BiRefNet --bg-only without threshold fallback");
-                await RunEngine(child, arguments, cancellation);
+                await RunEngine(child, arguments, cancellation, preprocessing: true);
                 cutout = (Section("preprocessing")["outputPattern"]?.GetValue<string>() ?? "{outputStem}_cutout.png").Replace("{outputStem}", Path.ChangeExtension(output, null));
                 matte = alpha.Inspect(w.Resolve(cutout));
                 if (matte?.Suitable != true)

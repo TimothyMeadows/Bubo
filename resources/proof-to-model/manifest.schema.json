@@ -108,6 +108,8 @@
     "conditioningProfile": {
       "const": "cardinal-four-v1"
     },
+    "preprocessingProfileFile": { "type": "string", "minLength": 1 },
+    "stageLineageFile": { "type": "string", "minLength": 1 },
     "conditioningProfileFile": {
       "type": "string",
       "minLength": 1
@@ -175,6 +177,10 @@
           ]
         }
       }
+    },
+    {
+      "if": { "anyOf": [ { "required": ["preprocessingProfileFile"] }, { "required": ["stageLineageFile"] } ] },
+      "then": { "required": ["preprocessingProfileFile", "stageLineageFile"], "properties": { "schemaVersion": { "const": 3 } } }
     }
   ],
   "$defs": {

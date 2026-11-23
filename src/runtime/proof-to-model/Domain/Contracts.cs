@@ -12,6 +12,10 @@ public sealed class Manifest
     public string? ConditioningProfile { get; set; }
     [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
     public string? ConditioningProfileFile { get; set; }
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public string? PreprocessingProfileFile { get; set; }
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public string? StageLineageFile { get; set; }
     public string Asset { get; set; } = ""; public string Version { get; set; } = "";
     public string Task { get; set; } = ""; public string Staging { get; set; } = "";
     [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
