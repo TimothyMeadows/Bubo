@@ -72,11 +72,12 @@ public sealed partial class Pipeline
             if (reference.Path != priorPath) throw new InvalidOperationException("Exact prior manifest required");
             Host.RequireReference(priorPath); CanvasReference(reference);
             prior = w.Load<Manifest>(priorPath);
-            if (prior.SchemaVersion != 3 || prior.ConditioningProfile != m.ConditioningProfile || prior.Task != m.Task || prior.Asset != m.Asset || prior.Version != lineage.SourceVersion || prior.Staging != expectedStaging || prior.PreprocessingProfileFile is not null || prior.StageLineageFile is not null || Hash(prior.Proof) != Hash(m.Proof) ||
+            if (prior.SchemaVersion != 3 || prior.ConditioningProfile != m.ConditioningProfile || prior.Task != m.Task || prior.Asset != m.Asset || prior.Version != lineage.SourceVersion || prior.Staging != expectedStaging || lineage.InheritedLineage is null && (prior.PreprocessingProfileFile is not null || prior.StageLineageFile is not null) || Hash(prior.Proof) != Hash(m.Proof) ||
                 Hash(prior.Toolchain) != Hash(m.Toolchain) || Hash(prior.Rights) != Hash(m.Rights) || Hash(prior.Recipe) != Hash(m.Recipe))
                 throw new InvalidOperationException("Only explicit direct lineage from unchanged four-view originals/toolchain/recipe is supported; no chained budget reset");
         }
         else if (File.Exists(w.Resolve(priorPath))) throw new InvalidOperationException("An existing prior manifest cannot be omitted");
+        var inherited = ValidateCanvasInheritedLineage(lineage, prior);
         foreach (var stage in CanvasStageLineage.Stages)
         {
             var observed = CanvasAttemptInventory.Scan(w, expectedStaging, prior?.History ?? [], stage);
@@ -84,7 +85,7 @@ public sealed partial class Pipeline
             lineage.ValidatePrior(stage, observed, CanvasAttemptInventory.Directories(w, expectedStaging, stage), persisted);
             var configured = stage is "classify" or "prepare-proofs" ? w.Load<JsonObject>(m.Recipe)["proofPreparation"]!["maxSetRevisions"]!.GetValue<int>() : Toolchain["limits"]!["maxAttempts"]!.GetValue<int>();
             var maximum = lineage.Limit(stage, configured);
-            if (observed.Length + CurrentCanvasAttempts(stage).Length > maximum) throw new InvalidOperationException("Cumulative old/current stage allowance exceeded");
+            if (observed.Length + (inherited?.PriorAttempts[stage].Length ?? 0) + CurrentCanvasAttempts(stage).Length > maximum) throw new InvalidOperationException("Cumulative old/current stage allowance exceeded");
         }
         // No attempt/approval/toolchain data is copied or rewritten here. Fresh
         // native build and ordinary proof/preprocessing acceptance stay required.

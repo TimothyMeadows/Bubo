@@ -112,7 +112,9 @@ try
     await FinishingSettingsTests.Run(w, Check, Reject);
     await FinishAttemptBudgetTests.Run(w, Check, Reject);
     await CanvasRecoveryTests.Run(w, Check, Reject);
+    await CanvasChainedLineageTests.Run(w, Check, Reject);
     await CanvasPipelineTransportTests.Run(w, Check, Reject);
+await CanvasV2PipelineTransportTests.Run(w, Check, Reject);
     await RigidFinishingTests.Run(w, Check, Reject);
     passed += CompatibilityTests.Run();
     File.AppendAllText(w.Resolve("STYLE.md"), "changed");

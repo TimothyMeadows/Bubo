@@ -1,0 +1,234 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hephaera.local/schemas/proof-to-model/canvas-stage-lineage-v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "kind",
+    "decision",
+    "task",
+    "asset",
+    "sourceVersion",
+    "targetVersion",
+    "authorization",
+    "inputApproval",
+    "priorManifest",
+    "priorStateRoot",
+    "priorStaging",
+    "priorAttempts",
+    "priorDirectories",
+    "priorHistoryCounts",
+    "stageLimits",
+    "inheritedLineage"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 2
+    },
+    "kind": {
+      "const": "proof-to-model-stage-lineage"
+    },
+    "decision": {
+      "const": "approved"
+    },
+    "task": {
+      "$ref": "#/$defs/id"
+    },
+    "asset": {
+      "$ref": "#/$defs/id"
+    },
+    "sourceVersion": {
+      "$ref": "#/$defs/id"
+    },
+    "targetVersion": {
+      "$ref": "#/$defs/id"
+    },
+    "authorization": {
+      "$ref": "#/$defs/reference"
+    },
+    "inputApproval": {
+      "$ref": "#/$defs/reference"
+    },
+    "priorManifest": {
+      "$ref": "#/$defs/reference"
+    },
+    "priorStateRoot": {
+      "type": "string",
+      "minLength": 1
+    },
+    "priorStaging": {
+      "type": "string",
+      "minLength": 1
+    },
+    "priorAttempts": {
+      "$ref": "#/$defs/attempts"
+    },
+    "priorDirectories": {
+      "$ref": "#/$defs/attempts"
+    },
+    "priorHistoryCounts": {
+      "$ref": "#/$defs/counts"
+    },
+    "stageLimits": {
+      "$ref": "#/$defs/limits"
+    },
+    "inheritedLineage": {
+      "$ref": "#/$defs/reference"
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$"
+    },
+    "reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      }
+    },
+    "attemptList": {
+      "type": "array",
+      "maxItems": 4,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "attempts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "classify",
+        "prepare-proofs",
+        "preprocess",
+        "reconstruct",
+        "finish",
+        "guided",
+        "review"
+      ],
+      "properties": {
+        "classify": {
+          "$ref": "#/$defs/attemptList"
+        },
+        "prepare-proofs": {
+          "$ref": "#/$defs/attemptList"
+        },
+        "preprocess": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "reconstruct": {
+          "$ref": "#/$defs/attemptList"
+        },
+        "finish": {
+          "$ref": "#/$defs/attemptList"
+        },
+        "guided": {
+          "$ref": "#/$defs/attemptList"
+        },
+        "review": {
+          "$ref": "#/$defs/attemptList"
+        }
+      }
+    },
+    "count": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "classify",
+        "prepare-proofs",
+        "preprocess",
+        "reconstruct",
+        "finish",
+        "guided",
+        "review"
+      ],
+      "properties": {
+        "classify": {
+          "$ref": "#/$defs/count"
+        },
+        "prepare-proofs": {
+          "$ref": "#/$defs/count"
+        },
+        "preprocess": {
+          "const": 1
+        },
+        "reconstruct": {
+          "$ref": "#/$defs/count"
+        },
+        "finish": {
+          "$ref": "#/$defs/count"
+        },
+        "guided": {
+          "$ref": "#/$defs/count"
+        },
+        "review": {
+          "$ref": "#/$defs/count"
+        }
+      }
+    },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "classify",
+        "prepare-proofs",
+        "preprocess",
+        "reconstruct",
+        "finish",
+        "guided",
+        "review"
+      ],
+      "properties": {
+        "classify": {
+          "const": 4
+        },
+        "prepare-proofs": {
+          "const": 4
+        },
+        "preprocess": {
+          "const": 3
+        },
+        "reconstruct": {
+          "const": 1
+        },
+        "finish": {
+          "const": 1
+        },
+        "guided": {
+          "const": 1
+        },
+        "review": {
+          "const": 1
+        }
+      }
+    }
+  },
+  "$comment": "Exactly one actual inherited v1 ancestor; own immediate prior lists are not cumulative. Native revalidates both prior manifests/roots/live directories/history and two FAILED preprocess stages/model0. Additional-stage assertion is not human authentication; project must bind genuine future grant. V1 unchanged."
+}

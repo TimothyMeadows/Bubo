@@ -67,9 +67,11 @@ public sealed record CanvasStageLineage(string Task, string Asset, string Source
     IReadOnlyDictionary<string, int> StageLimits)
 {
     public static readonly string[] Stages = ["classify", "prepare-proofs", "preprocess", "reconstruct", "finish", "guided", "review"];
+    public CanvasFile? InheritedLineage { get; init; }
     public static CanvasStageLineage Parse(byte[] bytes)
     {
         var root = CanvasJson.Parse(bytes);
+        if (root["schemaVersion"]?.GetValue<int>() == 2) return CanvasChainedLineage.Parse(root);
         CanvasJson.Fields(root, "schemaVersion", "kind", "decision", "task", "asset", "sourceVersion", "targetVersion", "authorization", "inputApproval", "priorManifest", "priorStateRoot", "priorStaging", "priorAttempts", "priorDirectories", "priorHistoryCounts", "stageLimits");
         if (root["schemaVersion"]!.GetValue<int>() != 1 || root["kind"]!.GetValue<string>() != "proof-to-model-stage-lineage" || root["decision"]!.GetValue<string>() != "approved") throw new InvalidOperationException("Explicit approved stage lineage required");
         var task = CanvasJson.Id(root, "task"); var asset = CanvasJson.Id(root, "asset");
@@ -109,6 +111,7 @@ public sealed record CanvasStageLineage(string Task, string Asset, string Source
     public int Limit(string stage, int configured)
     {
         var limit = StageLimits[stage];
+        if (InheritedLineage is not null && stage == "preprocess" && configured == 1 && limit == 3 && PriorAttempts[stage].Length == 1) return limit;
         if (stage != "preprocess" && limit > configured || stage == "preprocess" && limit != configured && !(configured == 1 && limit == 2 && PriorAttempts[stage].Length == 1)) throw new InvalidOperationException("Stage lineage cannot widen the selected configured budget");
         return limit;
     }
