@@ -235,8 +235,7 @@ public static class GpuGuardian
         context.ValidateFresh();
         if(context.InspectionOnly)throw new InvalidOperationException("Read-only inspection cannot claim GPU production ownership");
         var spec=job.Process;
-        context.EnsureToolAllowed(spec.Executable);
-        if(!Path.GetFullPath(spec.WorkingDirectory).Equals(context.Root,OperatingSystem.IsWindows()?StringComparison.OrdinalIgnoreCase:StringComparison.Ordinal)) context.EnsureWriteAllowed(spec.WorkingDirectory);
+        context.EnsureNativeWorkingDirectoryAllowed(spec.Executable,spec.WorkingDirectory);
         context.EnsureWriteAllowed(spec.Log);
         if(spec.TimeoutSeconds is <1 or >86400 || spec.TimeoutSeconds>context.TimeoutSeconds || spec.MaximumLogBytes is <1024 or >1073741824 || spec.MaximumLogBytes>context.MaxLogBytes
             || spec.MaximumPrivateBytes is <=0 || context.MaxPrivateBytes is { } maximum && spec.MaximumPrivateBytes>maximum

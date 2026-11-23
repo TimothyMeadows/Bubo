@@ -154,6 +154,7 @@ Console.WriteLine($"PASS: {count} media request/host contract assertions; no mod
 ApplicationFixtures.Run(Check);
 CodecFixtures.Run(Check);
 VoiceFixtures.Run(Check);
+await ReadOnlyToolWorkingDirectoryFixtures.Run(Check);
 var gpuCount=await GpuGuardianFixtures.Run(Check);
 Console.WriteLine($"PASS: {gpuCount} actual guardian lifecycle assertions; total{count} assertions.");
 return 0;
