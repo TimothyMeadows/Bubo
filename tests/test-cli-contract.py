@@ -42,7 +42,7 @@ def main():
     check(capabilities['proofToModel']=={'modes':['multi-view','multi-view-four','single-view-diagnostic'],
           'fourViewConditioningProfile':'cardinal-four-v1','fourViewManifestVersion':3,
           'fourViewProofSetVersion':2,'fourViewReuseAvailable':False,
-          'canvasPreprocessingProfile':'birefnet-source-canvas-v1','stageLineageVersion':1},'explicit additive four-view and canvas capability identity')
+          'canvasPreprocessingProfile':'birefnet-source-canvas-v1','stageLineageVersion':1,'stageLineageVersions':[1,2]},'explicit additive four-view and canvas capability identity')
     check('media' in capabilities['workflows'] and all(b['maximumBatch']==4 for b in capabilities['mediaBackends']),'media workflow advertises finite backend batches')
     check(all(len(value)==64 for value in capabilities['build']['assemblies'].values()),'all shipped assemblies have build identities')
     old_api=invoke(['capabilities','--api-version','1'],'Explicit --api-version 2')

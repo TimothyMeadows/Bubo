@@ -39,7 +39,7 @@ public sealed partial class Pipeline(IWorkspace w, Dictionary<string, string> op
     IEnumerable<string> PolicyPaths => Host.References.Where(reference => reference.Kind == "policy" && reference.Sha256 == CurrentStyle).Select(reference => reference.Path);
     string TaskRoot(string task) => options.GetValueOrDefault("state-root", ".hephaera/.cache/tasks/" + task);
     string StagingRoot => options.GetValueOrDefault("staging-root", ".art-staging");
-    IEnumerable<string> MetadataPaths => new[] { m.ProofMetadata, m.Brief, m.PreprocessingProfileFile, m.StageLineageFile }.Where(path => !string.IsNullOrEmpty(path)).Select(path => path!);
+    IEnumerable<string> MetadataPaths => new[] { m.ProofMetadata, m.Brief, m.PreprocessingProfileFile, m.StageLineageFile }.Where(path => !string.IsNullOrEmpty(path)).Select(path => path!).Concat(CanvasAncestryPaths());
     void Fresh(string? rerun = null)
     {
         ValidateConditioningProfile();
@@ -719,7 +719,7 @@ public sealed partial class Pipeline(IWorkspace w, Dictionary<string, string> op
         if (!s.Artifacts.Values.Any(x => x.EndsWith("transforms.json")) || !s.Artifacts.Values.Any(x => x.EndsWith("input.png")))
             throw new InvalidOperationException("Engine did not retain single-view input and transforms ancestry");
     }
-    int ConsumedAttempts(string stage) => CanvasLineage() is { } lineage ? checked(lineage.PriorAttempts[stage].Length + CurrentCanvasAttempts(stage).Length) : m.History.Count(item => item["event"]?.GetValue<string>() == "stage-start" && item["stage"]?.GetValue<string>() == stage);
+    int ConsumedAttempts(string stage) => CanvasLineage() is { } lineage ? checked(CanvasPriorAttemptCount(lineage,stage) + CurrentCanvasAttempts(stage).Length) : m.History.Count(item => item["event"]?.GetValue<string>() == "stage-start" && item["stage"]?.GetValue<string>() == stage);
     void ValidateFinishBudgetContext(FinishAttemptBudget receipt)
     {
         var configured = Toolchain["limits"]?["maxAttempts"]?.GetValue<int>() ?? 3;

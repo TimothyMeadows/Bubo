@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hephaera.local/schemas/proof-to-model/canvas-additional-stage-grant-v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "kind",
+    "authorized",
+    "actor",
+    "task",
+    "asset",
+    "sourceVersion",
+    "targetVersion",
+    "stage",
+    "priorManifest",
+    "inheritedLineage",
+    "consumedAttempts",
+    "maximumAttempts",
+    "maximumChildren",
+    "automaticRetries"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "kind": {
+      "const": "proof-to-model-additional-stage"
+    },
+    "authorized": {
+      "const": true
+    },
+    "actor": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "task": {
+      "$ref": "#/$defs/id"
+    },
+    "asset": {
+      "$ref": "#/$defs/id"
+    },
+    "sourceVersion": {
+      "$ref": "#/$defs/id"
+    },
+    "targetVersion": {
+      "$ref": "#/$defs/id"
+    },
+    "stage": {
+      "const": "preprocess"
+    },
+    "priorManifest": {
+      "$ref": "#/$defs/reference"
+    },
+    "inheritedLineage": {
+      "$ref": "#/$defs/reference"
+    },
+    "consumedAttempts": {
+      "const": 2
+    },
+    "maximumAttempts": {
+      "const": 3
+    },
+    "maximumChildren": {
+      "const": 4
+    },
+    "automaticRetries": {
+      "const": false
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$"
+    },
+    "reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      }
+    }
+  },
+  "$comment": "Assertion only; no file or actor assertion authenticates human permission. Current exact project authorization must be independently pinned. No grant file is created by this schema."
+}

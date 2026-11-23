@@ -7,6 +7,7 @@ using Bubo.Media.Domain;
 using Hephaera.AssetProduction;
 
 if(args.Length>=2 && args[0]=="gpu-guardian" && args[1]=="run")return await GpuGuardian.Serve(args[2..]);
+if(args is ["--readonly-tool-cwd-child",var readonlyRoot])return ReadOnlyToolGuardianExecutionFixtures.Child(readonlyRoot);
 if(args.Length>0 && args[0].StartsWith("--owned-",StringComparison.Ordinal))return await GpuGuardianFixtures.Child(args);
 if(args is ["--verify-installed-python",var project,var contextFile,var environment,var pythonBase,var wheelhouse,var archive,var catalogFile,var specFile])
 {
@@ -156,5 +157,6 @@ CodecFixtures.Run(Check);
 VoiceFixtures.Run(Check);
 await ReadOnlyToolWorkingDirectoryFixtures.Run(Check);
 var gpuCount=await GpuGuardianFixtures.Run(Check);
+await ReadOnlyToolGuardianExecutionFixtures.Run(Check);
 Console.WriteLine($"PASS: {gpuCount} actual guardian lifecycle assertions; total{count} assertions.");
 return 0;
