@@ -41,7 +41,8 @@ def main():
     check(capabilities['apiVersions']==[2] and {b['id'] for b in capabilities['mediaBackends']}=={'flux-schnell','stable-audio-open','ace-step-turbo','qwen3-tts-customvoice','qwen3-tts-base'},'API and implemented direct-media capability identities')
     check(capabilities['proofToModel']=={'modes':['multi-view','multi-view-four','single-view-diagnostic'],
           'fourViewConditioningProfile':'cardinal-four-v1','fourViewManifestVersion':3,
-          'fourViewProofSetVersion':2,'fourViewReuseAvailable':False},'explicit additive four-view capability identity')
+          'fourViewProofSetVersion':2,'fourViewReuseAvailable':False,
+          'canvasPreprocessingProfile':'birefnet-source-canvas-v1','stageLineageVersion':1},'explicit additive four-view and canvas capability identity')
     check('media' in capabilities['workflows'] and all(b['maximumBatch']==4 for b in capabilities['mediaBackends']),'media workflow advertises finite backend batches')
     check(all(len(value)==64 for value in capabilities['build']['assemblies'].values()),'all shipped assemblies have build identities')
     old_api=invoke(['capabilities','--api-version','1'],'Explicit --api-version 2')
@@ -80,6 +81,12 @@ def main():
     invoke(['media','inspect',*common,'--manifest','inputs/media.json','--load','false'],'--load accepts only true')
     check(not (project/'state').exists() and not (project/'staging').exists(),'media purpose/option failures create no execution or output')
     context['references'].pop();context['policy']=original_policy;write_context()
+    invoke(['proof-to-model','init',*common,'--preprocessing-profile','inputs/canvas-profile.json','--stage-lineage','inputs/canvas-lineage.json'],'matching registered host reference')
+    canvas_profile=inputs/'canvas-profile.json';canvas_profile.write_text('{}\n',encoding='utf-8')
+    context['references'].append({'path':'inputs/canvas-profile.json','sha256':sha(canvas_profile),'kind':'input'});write_context()
+    invoke(['proof-to-model','init',*common,'--preprocessing-profile','inputs/canvas-profile.json','--stage-lineage','inputs/canvas-lineage.json'],'matching registered host reference')
+    check(not (project/'state').exists() and not (project/'staging').exists(),'unregistered canvas selector failures create no workflow state or output')
+    context['references'].pop();write_context()
     invoke(['proof-to-model','preprocess',*common,'--mode','single-view-diagnostic','--manifest','state/missing.json'],'Could not find')
     invoke(['model-to-action','init',*common,'--asset','owned','--version','v1','--manifest','state/custom.json'],'Action init requires its canonical manifest path')
     check(not (project/'state').exists() and not (project/'staging').exists(),'noncanonical action init rejects before any workflow write')

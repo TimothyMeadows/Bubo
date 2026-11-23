@@ -39,10 +39,11 @@ public sealed partial class Pipeline(IWorkspace w, Dictionary<string, string> op
     IEnumerable<string> PolicyPaths => Host.References.Where(reference => reference.Kind == "policy" && reference.Sha256 == CurrentStyle).Select(reference => reference.Path);
     string TaskRoot(string task) => options.GetValueOrDefault("state-root", ".hephaera/.cache/tasks/" + task);
     string StagingRoot => options.GetValueOrDefault("staging-root", ".art-staging");
-    IEnumerable<string> MetadataPaths => new[] { m.ProofMetadata, m.Brief }.Where(path => !string.IsNullOrEmpty(path));
+    IEnumerable<string> MetadataPaths => new[] { m.ProofMetadata, m.Brief, m.PreprocessingProfileFile, m.StageLineageFile }.Where(path => !string.IsNullOrEmpty(path)).Select(path => path!);
     void Fresh(string? rerun = null)
     {
         ValidateConditioningProfile();
+        ValidateCanvasRecovery();
         if (w.Load<JsonObject>(m.Rights)["authorized"]?.GetValue<bool>() != true)
             throw new InvalidOperationException("Current rights evidence does not authorize this input");
         if (!string.IsNullOrEmpty(m.ProofMetadata))
@@ -118,6 +119,7 @@ public sealed partial class Pipeline(IWorkspace w, Dictionary<string, string> op
             throw new InvalidOperationException("Historical v1 state is single-view. Initialize a fresh v2 version for six-view production; --mode single-view-diagnostic explicitly selects diagnostic execution only.");
         if (command == "status")
         {
+            if (m.StageLineageFile is not null) { Console.WriteLine(CanvasStatus()); return; }
             Console.WriteLine(JsonSerializer.Serialize(new
             {
                 manifest = m,
@@ -212,6 +214,8 @@ public sealed partial class Pipeline(IWorkspace w, Dictionary<string, string> op
             throw new InvalidOperationException("Supply --proof as one original or --sources as a source set, not both");
         if (selectedMode != "multi-view-four" && options.ContainsKey("conditioning-profile"))
             throw new InvalidOperationException("--conditioning-profile requires --mode multi-view-four");
+        if (options.ContainsKey("preprocessing-profile") != options.ContainsKey("stage-lineage") || selectedMode != "multi-view-four" && options.ContainsKey("preprocessing-profile"))
+            throw new InvalidOperationException("Canvas selection requires both --preprocessing-profile and --stage-lineage on explicit fresh four-view init");
         var initialProof = options.TryGetValue("sources", out var sourceSetPath)
             ? w.Load<JsonObject>(sourceSetPath)["images"]?.AsArray().FirstOrDefault()?["path"]?.GetValue<string>() ?? throw new InvalidOperationException("Source set requires images with paths")
             : Need("proof");
@@ -231,6 +235,8 @@ public sealed partial class Pipeline(IWorkspace w, Dictionary<string, string> op
             SchemaVersion = selectedMode == "multi-view-four" ? 3 : selectedMode == "multi-view" ? 2 : 1,
             ConditioningProfile = selectedMode == "multi-view-four" ? MultiViewGeometry.CardinalFourProfile : null,
             ConditioningProfileFile = selectedMode == "multi-view-four" ? w.Relative(Need("conditioning-profile")) : null,
+            PreprocessingProfileFile = options.TryGetValue("preprocessing-profile", out var preprocessingProfile) ? w.Relative(preprocessingProfile) : null,
+            StageLineageFile = options.TryGetValue("stage-lineage", out var stageLineage) ? w.Relative(stageLineage) : null,
             Asset = asset,
             Version = version,
             Task = task,
@@ -247,6 +253,7 @@ public sealed partial class Pipeline(IWorkspace w, Dictionary<string, string> op
             if (!File.Exists(w.Resolve(path)))
                 throw new InvalidOperationException("Missing input: " + path);
         ValidateConditioningProfile();
+        ValidateCanvasRecovery();
         Host.ValidateFresh();
         if (Host.Pipeline != "PROOF_TO_MODEL")
             throw new InvalidOperationException("Host context must explicitly select PROOF_TO_MODEL");
@@ -346,6 +353,7 @@ public sealed partial class Pipeline(IWorkspace w, Dictionary<string, string> op
     void CheckStatePaths()
     {
         ValidateConditioningProfile();
+        ValidateCanvasRecovery();
         if (options.TryGetValue("mode", out var mode) && mode != (IsMultiView ? ConditioningMode : "single-view-diagnostic"))
             throw new InvalidOperationException("Requested mode conflicts with the immutable manifest");
         if (m.SchemaVersion is not (1 or 2 or 3))
@@ -468,6 +476,7 @@ public sealed partial class Pipeline(IWorkspace w, Dictionary<string, string> op
             ValidateFinishBudgetContext(budget.Value);
             maxAttempts = budget.Value.MaxFinishAttempts;
         }
+        if (CanvasLineage() is { } lineage) maxAttempts = lineage.Limit(name, maxAttempts);
         if (maxAttempts < 1 || ConsumedAttempts(name) >= maxAttempts)
             throw new InvalidOperationException(name == "finish" ? "Finish attempt budget exhausted; authorize exactly one additional finish with --finish-budget TASK_LOCAL_JSON bound to the current status manifestSha256 and consumedFinishAttempts" : "Stage attempt budget exhausted; select a new asset version/budget explicitly");
         _ = Timeout;
@@ -608,31 +617,53 @@ public sealed partial class Pipeline(IWorkspace w, Dictionary<string, string> op
         }
     }
     long LogBudget => Toolchain["limits"]?["maxLogBytes"]?.GetValue<long>() ?? 16777216;
-    async Task RunEngine(Stage stage, string[] arguments, CancellationToken cancellation)
+    async Task RunEngine(Stage stage, string[] arguments, CancellationToken cancellation, bool preprocessing = false)
     {
         var executable = Executable("engine");
+        var canvas = preprocessing ? CanvasProfile() : null;
+        if (canvas is not null)
+        {
+            ValidateCanvasRecovery();
+            if (++canvasMattingChildren > CanvasMattingProfile.MaximumChildren) throw new InvalidOperationException("Canvas stage matting child budget exhausted; no retry");
+            arguments = CanvasMattingProfile.PreserveCanvasArguments(arguments);
+            executable = w.Resolve(canvas.Executable.Path);
+            foreach (var file in canvas.Files) stage.ExternalInputs[w.Resolve(file.Path)] = file.Sha256;
+            foreach (var runtime in canvas.ExistingRuntimeDependencies) stage.ExternalInputs[Path.GetFullPath(runtime.AbsolutePath)] = runtime.Sha256;
+        }
         stage.ExternalInputs[executable] = w.HashFile(executable);
         if (!int.TryParse(options.GetValueOrDefault("gpu", "0"), System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var deviceId) || deviceId < 0)
             throw new InvalidOperationException("GPU must be a nonnegative integer device index");
         var device = deviceId.ToString(System.Globalization.CultureInfo.InvariantCulture);
         var receipt = stage.Attempt + "/execution.json";
-        w.Save(receipt, new
+        var execution = JsonSerializer.SerializeToNode(new
         {
             schemaVersion = 1,
             executable,
             executableHash = w.HashFile(executable),
-            engine = Section("engine"),
+            engine = canvas is null ? Section("engine") : new JsonObject { ["path"] = canvas.Executable.Path, ["sha256"] = canvas.Executable.Sha256, ["profile"] = CanvasMattingProfile.Id },
             arguments,
             device,
             timeoutSeconds = Timeout,
             maxLogBytes = LogBudget,
             nativeExecution = true,
             osSandbox = false
-        });
+        }, Serialization.Json)!.AsObject();
+        if (canvas is not null) execution["canvasRuntime"] = JsonSerializer.SerializeToNode(new { installedBundleBytes = canvas.Files.Sum(file => file.Bytes!.Value), existingRuntimeDependencies = canvas.ExistingRuntimeDependencies, existingRuntimeBytes = canvas.ExistingRuntimeDependencies.Sum(file => file.Bytes), localGpuOrdinal = 0, requireGpu = true }, Serialization.Json);
+        w.Save(receipt, execution);
         stage.Artifacts["execution"] = receipt;
         var inputs=stage.ExternalInputs.Select(x=>new Hephaera.AssetProduction.GpuInputIdentity(x.Key,x.Value)).ToArray();
-        await native.RunGpu(new Hephaera.AssetProduction.GpuProcessSpec(executable,arguments,w.Root,w.Resolve(stage.Attempt+"/process.log"),Timeout,LogBudget,w.HostContext?.MaxPrivateBytes,
-            new Dictionary<string,string>{{"CUDA_VISIBLE_DEVICES",device}},inputs,w.ResolveWrite(".local/tools/proof-to-model/gpu-"+device+".lock"),Math.Min(300,Timeout)),cancellation);
+        var environment = new Dictionary<string, string> { ["CUDA_VISIBLE_DEVICES"] = device };
+        var workingDirectory = canvas is null ? w.Root : Path.GetDirectoryName(executable)!;
+        if (canvas is not null)
+        {
+            var search = new List<string> { workingDirectory };
+            if (canvas.ExistingRuntimeDependencies.Count != 0) search.Add(Path.GetDirectoryName(Path.GetFullPath(canvas.ExistingRuntimeDependencies[0].AbsolutePath))!);
+            if (!string.IsNullOrEmpty(Environment.SystemDirectory)) search.Add(Environment.SystemDirectory);
+            environment["PATH"] = string.Join(Path.PathSeparator, search.Distinct(StringComparer.OrdinalIgnoreCase));
+        }
+        await native.RunGpu(new Hephaera.AssetProduction.GpuProcessSpec(executable,arguments,workingDirectory,w.Resolve(stage.Attempt+"/process.log"),Timeout,LogBudget,w.HostContext?.MaxPrivateBytes,
+            environment,inputs,w.ResolveWrite(".local/tools/proof-to-model/gpu-"+device+".lock"),Math.Min(300,Timeout)),cancellation);
+        if (canvas is not null) ValidateCanvasRecovery(); // Includes exact existing-runtime tool hashes after retirement.
     }
     async Task Preprocess(Stage s, CancellationToken c)
     {
@@ -688,7 +719,7 @@ public sealed partial class Pipeline(IWorkspace w, Dictionary<string, string> op
         if (!s.Artifacts.Values.Any(x => x.EndsWith("transforms.json")) || !s.Artifacts.Values.Any(x => x.EndsWith("input.png")))
             throw new InvalidOperationException("Engine did not retain single-view input and transforms ancestry");
     }
-    int ConsumedAttempts(string stage) => m.History.Count(item => item["event"]?.GetValue<string>() == "stage-start" && item["stage"]?.GetValue<string>() == stage);
+    int ConsumedAttempts(string stage) => CanvasLineage() is { } lineage ? checked(lineage.PriorAttempts[stage].Length + CurrentCanvasAttempts(stage).Length) : m.History.Count(item => item["event"]?.GetValue<string>() == "stage-start" && item["stage"]?.GetValue<string>() == stage);
     void ValidateFinishBudgetContext(FinishAttemptBudget receipt)
     {
         var configured = Toolchain["limits"]?["maxAttempts"]?.GetValue<int>() ?? 3;
