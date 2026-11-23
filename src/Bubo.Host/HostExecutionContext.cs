@@ -252,6 +252,34 @@ public sealed class HostExecutionContext
 
     public void EnsureWriteAllowed(string path) => _ = ResolveWritePath(path);
 
+    /// <summary>Admit a native working directory without granting any write.
+    /// An exact read-only input root is allowed only for its registered tool's
+    /// own parent. This is dependency selection, not an operating-system sandbox.</summary>
+    public void EnsureNativeWorkingDirectoryAllowed(string executable, string path)
+    {
+        EnsureToolAllowed(executable);
+        CheckSyntax(path);
+        var candidate = Path.TrimEndingDirectorySeparator(Path.GetFullPath(Separators(path), Root));
+        if (candidate.Equals(Root, comparison))
+        {
+            CheckComponents(candidate, false);
+            return;
+        }
+        var relative = ProjectRelative(Root, path);
+        var full = Full(Root, relative);
+        CheckComponents(full, false);
+        if (!Directory.Exists(full))
+            throw Invalid("Native working directory must be an existing directory");
+        // Preserve the original project-root and ordinary writable-CWD routes.
+        if (inputRoots.Any(scope => full.Equals(Full(Root, scope), comparison))
+            && full.Equals(Path.GetDirectoryName(AbsoluteToolPath(Root, executable)), comparison))
+        {
+            EnsureReadAllowed(full);
+            return;
+        }
+        EnsureWriteAllowed(full);
+    }
+
     /// <summary>Admit a write and return the same checked canonical full path.</summary>
     public string ResolveWritePath(string path)
     {

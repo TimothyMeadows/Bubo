@@ -10,10 +10,7 @@ public sealed class HostNativeProcess(HostExecutionContext context, INativeProce
     void Admit(string executable, string cwd, string log, int seconds, long logBytes, long? privateBytes)
     {
         context.ValidateFresh();
-        context.EnsureToolAllowed(executable);
-        var fullCwd = Path.GetFullPath(cwd);
-        if (!fullCwd.Equals(context.Root, OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal))
-            context.EnsureWriteAllowed(fullCwd);
+        context.EnsureNativeWorkingDirectoryAllowed(executable, cwd);
         context.EnsureWriteAllowed(log);
         if (seconds < 1 || seconds > context.TimeoutSeconds || logBytes < 1 || logBytes > context.MaxLogBytes)
             throw new InvalidOperationException("Native request exceeds the host timeout/log budget; nothing launched");
